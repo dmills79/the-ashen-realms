@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ashen Realms — Character Atelier</title>
+  <style>
+    :root{color-scheme:dark;font-family:Georgia,serif;color:#e8e1d1;background:#0b121b}
+    *{box-sizing:border-box}body{max-width:1500px;margin:auto;padding:32px 24px}
+    header{border-bottom:1px solid #bca57533;padding-bottom:24px;margin-bottom:20px;display:flex;justify-content:space-between;gap:20px;align-items:center}
+    h1{font-weight:normal;font-size:30px;color:#ddbe87;margin:6px 0 12px;letter-spacing:2px}
+    p{color:#a9b8c2;line-height:1.6;max-width:820px;font-size:14px;margin:8px 0}
+    .eyebrow{font:10px Arial,sans-serif;letter-spacing:2px;color:#ddbe87}
+    a{color:#ddbe87}nav{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+    button{border:1px solid #8f9d9e44;padding:10px 14px;color:#d3dce0;background:#172432;border-radius:3px;cursor:pointer;font:12px Arial,sans-serif}
+    button.active{border-color:#ddbe87;color:#eed3a4;background:#4f443233}button:focus-visible{outline:2px solid #ddbe87}
+    #gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:16px}
+    article{border:1px solid #9eafbf22;border-radius:5px;overflow:hidden;background:#101d28}
+    .figure{position:relative;background:radial-gradient(ellipse at 50% 65%,#344551,#131f2b 65%)}
+    canvas{display:block;width:100%;aspect-ratio:1/1;height:auto}img{position:absolute;top:12px;left:12px;width:42px;height:52px;border-radius:3px;object-fit:cover}
+    .caption{padding:13px 16px;border-top:1px solid #9eafbf22}h2{font-size:17px;color:#dfcda9;font-weight:normal;margin:0 0 7px}small{font:10px Arial,sans-serif;color:#97afbf;line-height:1.6}
+    #status{font:11px Arial,sans-serif;color:#a6bfc9}#pause{min-width:94px}
+    @media(max-width:550px){body{padding:20px 14px}h1{font-size:24px}header{display:block}#gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}h2{font-size:13px}.caption{padding:9px}img{width:30px;height:38px}button{padding:9px}}
+  </style>
+</head>
+<body>
+  <header><div><span class="eyebrow">THE ASHEN REALMS · MILESTONE 2</span><h1>Character Atelier</h1><p>Full-body illustrated characters, original portrait identities, and six animation states. This preview uses the same manifest, frames, proportions, and ground anchors as the game.</p></div><a href="/">Return to the adventure →</a></header>
+  <nav aria-label="Animation state"><button data-state="idle" class="active" aria-pressed="true">Idle</button><button data-state="walk" aria-pressed="false">Walk</button><button data-state="attack" aria-pressed="false">Attack</button><button data-state="cast" aria-pressed="false">Cast / Roar</button><button data-state="hit" aria-pressed="false">Hit</button><button data-state="death" aria-pressed="false">Defeat</button><button id="pause" aria-pressed="false">Pause</button><button id="face" aria-pressed="false">Face left</button></nav>
+  <p id="status" aria-live="polite">Loading character sheets…</p>
+  <main id="gallery"></main>
+  <script src="character-assets.js"></script>
+  <script src="sprites.js"></script>
+  <script>
+    'use strict';
+    const sprites=window.AshenSprites,entries=Object.entries(sprites.manifest.characters);
+    let state='idle',facing='right',startedAt=performance.now(),paused=false,heldTime=0;
+    const cards=entries.map(([id,asset])=>{
+      const article=document.createElement('article'),figure=document.createElement('div');figure.className='figure';
+      const canvas=document.createElement('canvas');canvas.width=600;canvas.height=600;canvas.setAttribute('aria-label',asset.name+' animation preview');figure.append(canvas);
+      if(asset.kind==='hero'){const img=document.createElement('img');img.src='assets/portrait_'+id+'.png';img.alt=asset.name+' original portrait';figure.append(img)}
+      const caption=document.createElement('div');caption.className='caption';const title=document.createElement('h2');title.textContent=asset.name;
+      const meta=document.createElement('small');meta.textContent='12 frames · idle / walk / attack / cast / hit / defeat';caption.append(title,meta);article.append(figure,caption);document.getElementById('gallery').append(article);
+      return {id,asset,canvas,ctx:canvas.getContext('2d')};
+    });
+    for(const button of document.querySelectorAll('[data-state]'))button.onclick=()=>{
+      state=button.dataset.state;startedAt=performance.now();heldTime=0;
+      for(const b of document.querySelectorAll('[data-state]')){b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button))}
+    };
+    document.getElementById('pause').onclick=()=>{if(!paused)heldTime=performance.now()-startedAt;else startedAt=performance.now()-heldTime;paused=!paused;document.getElementById('pause').textContent=paused?'Resume':'Pause';document.getElementById('pause').setAttribute('aria-pressed',String(paused))};
+    document.getElementById('face').onclick=()=>{facing=facing==='right'?'left':'right';document.getElementById('face').textContent=facing==='right'?'Face left':'Face right';document.getElementById('face').setAttribute('aria-pressed',String(facing==='left'))};
+    function render(){
+      const elapsed=paused?heldTime:performance.now()-startedAt;
+      for(const {id,asset,ctx,canvas} of cards){
+        ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.scale(2,2);
+        ctx.strokeStyle='#ab947a40';ctx.beginPath();ctx.moveTo(20,250);ctx.lineTo(280,250);ctx.stroke();
+        const duration=asset.animations[state].duration,time=state==='death'?Math.min(elapsed,700):elapsed%(duration+350);
+        sprites.draw(ctx,id,150,250,{state,time,facing,height:asset.heightInBattle*1.8});ctx.restore();
+      }
+      document.getElementById('status').textContent=sprites.debug().ready.length+' / '+entries.length+' sheets ready · painted raster artwork · transparent backgrounds';
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

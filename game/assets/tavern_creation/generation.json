@@ -1,0 +1,34 @@
+{
+  "tool": "Built-in image_gen",
+  "date": "2026-10-13",
+  "assets": [
+    {
+      "file": "tavern.png",
+      "prompt": "Use case: stylized-concept. Asset type: premium hand-painted background for an immersive dark fantasy RPG character creation scene. Wide 16:9 medieval tavern interior, seen from a seated guest at a large oak gaming table. Beautiful natural architecture: massive aged wooden beams, rough stone fireplace on right with warm fire, barrels and shelves along back, candles, hanging lanterns, dark leather chairs, amber light, delicate smoke and floating dust, deep atmospheric navy brown shadows. Foreground bottom third features an unobstructed richly textured wooden tabletop, with empty room for gaming dice and parchment. Natural believable perspective and depth, detailed painterly illustration, restrained realism, no cartoon, no pixel art, no geometric blocky room, no UI, no text, no people. Keep center and left half composition tranquil and readable for UI overlays without erasing architectural richness. The scene must feel like sitting in the Blue Lantern tavern before an adventure."
+    },
+    {
+      "file": "tabletop.png",
+      "prompt": "Use case: stylized-concept. Asset type: realistic painted oak tabletop texture for a 3D dice table in a premium fantasy RPG. Orthographic directly overhead view of a single aged tavern tabletop, broad oak planks with natural grain, scratches, small knots and subtle wear. Warm amber diffuse candlelight, rich medium brown wood with readable fine detail, no baked perspective, no dice, no objects, no text, no borders, no dramatic directional shadows. Hand-painted high quality fantasy material, not flat colors, not pixel art, not cartoon. Wood fills the entire image."
+    },
+    {
+      "file": "parchment.png",
+      "prompt": "Use case: stylized-concept. Asset type: aged parchment material for a medieval fantasy RPG journal sheet. Directly overhead flat single blank parchment, warm cream ochre paper with subtle fibers, lightly stained worn edges, slight organic variation. Entire image paper, center largely clean for dark readable text, no words, no symbols, no drawings, no UI, no wooden background. Hand-painted detailed natural material, no cartoon outlines, no large dark stains."
+    },
+    {
+      "file": "human.png",
+      "prompt": "Use case: stylized-concept. Asset type: illustrated Human ancestry portrait for The Ashen Realms dark fantasy RPG. Mature human adventurer with dark wavy hair, weathered handsome face and short beard, reminiscent of a veteran named Arden, wearing practical dark leather traveling clothes. Bust portrait, facing slightly right, full head and shoulders visible, warm tavern firelight from upper left, cool soft shadows, dark atmospheric tavern background. Detailed hand-painted realistic fantasy illustration, consistent proportions, medieval materials, restrained amber and navy palette, no text, no border, no UI, no cartoon or pixel art. Composition: centered head and shoulders, generous head margin."
+    },
+    {
+      "file": "elf.png",
+      "prompt": "Use case: stylized-concept. Asset type: illustrated Elf ancestry portrait for The Ashen Realms dark fantasy RPG. Adult elven adventurer with clearly pointed ears, silver-blond long hair, slender angular face and keen gray eyes, wearing finely worn forest-green traveling leather. Bust portrait, facing slightly right, full head and shoulders visible, warm tavern firelight from upper left, cool soft shadows, dark atmospheric tavern background. Detailed hand-painted realistic fantasy illustration, consistent proportions, medieval materials, restrained amber and navy palette, no text, no border, no UI, no cartoon or pixel art. Composition: centered head and shoulders, generous head margin."
+    },
+    {
+      "file": "dwarf.png",
+      "prompt": "Use case: stylized-concept. Asset type: illustrated Dwarf ancestry portrait for The Ashen Realms dark fantasy RPG. Mature stout dwarven adventurer with broad weathered face, heavy braided reddish-brown beard, thick brows, stocky shoulders, wearing worn dark leather and simple aged iron clasps. Bust portrait, facing slightly right, full head and shoulders visible, warm tavern firelight from upper left, cool soft shadows, dark atmospheric tavern background. Detailed hand-painted realistic fantasy illustration, consistent proportions, medieval materials, restrained amber and navy palette, no text, no border, no UI, no cartoon or pixel art. Composition: centered head and shoulders, generous head margin."
+    },
+    {
+      "file": "halfling.png",
+      "prompt": "Use case: stylized-concept. Asset type: illustrated Halfling ancestry portrait for The Ashen Realms dark fantasy RPG. Clearly adult halfling traveler, small stature indicated by compact narrow shoulders, curly chestnut hair, round subtly pointed ears, lively expressive face, wearing modest worn moss-green leather waistcoat and cloak. Bust portrait, facing slightly right, full head and shoulders visible, warm tavern firelight from upper left, cool soft shadows, dark atmospheric tavern background. Detailed hand-painted realistic fantasy illustration, consistent proportions, medieval materials, restrained amber and navy palette, no text, no border, no UI, no cartoon or pixel art, not a child. Composition: centered head and shoulders, generous head margin."
+    }
+  ]
+}

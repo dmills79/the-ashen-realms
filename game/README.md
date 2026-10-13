@@ -1,4 +1,12 @@
-# The Ashen Realms v1.7 — LPC Character Preview
+# The Ashen Realms — Visual Overhaul Preview
+
+Milestone 2 adds 16 illustrated character/enemy animation sheets, a manifest-driven renderer, and an animation preview at `http://127.0.0.1:8844/characters.html`. The original portraits, artwork fallbacks, campaign, combat rules, and save key remain intact. Milestone 1 provides the responsive combat layout and structured event log.
+
+See [the character art pipeline](CHARACTER_ART_PIPELINE.md) for the delivered artwork, preview, validation commands, and remaining animation/art limitations. The LPC integration notes below describe the preceding release; the new illustrated sheets now render first, with those original assets retained as fallbacks.
+
+---
+
+# The Ashen Realms v1.7 — LPC Character Preview (previous release)
 
 This is an incremental, playable visual integration of the user's **LPC Revised** open-art ZIP into the existing v1.6 Node.js/browser RPG. It is **not** a finished world/graphics overhaul.
 
@@ -105,3 +113,9 @@ These were independently researched CC0 alternatives for the future consistent s
 
 ## Known limits
 The combat and exploration sprites remain the existing stylized originals. The soundtrack is electronically synthesized, not an orchestra recording. LAN only syncs presence and chat; not cooperative battles. Browser audio playback is initiated by user gesture.
+
+Milestone 3 adds continuous outdoor terrain, painted woodland assets, a Havenmere gatehouse, improved river/bridge rendering and subtle environmental animation. See [WORLD_ENVIRONMENT.md](WORLD_ENVIRONMENT.md) for preview, validation and remaining environment artwork. Existing saves retain their original hostname/port requirements.
+
+Milestone 4 introduces a cinematic title menu with new Havenmere-at-night artwork, responsive New Game/Continue/Settings controls and separate sound, zoom and title-motion preferences. See [TITLE_SCREEN.md](TITLE_SCREEN.md) for files, artwork provenance, validation and preview instructions. Milestone 5 remains pending.
+
+Milestone 5 replaces the character-creation form with portrait-led ancestry/class cards, pip-dice rolls, score swapping, live starting statistics and a final review. Existing 4d6-drop-lowest rules, bonuses and saves are preserved. See [CHARACTER_CREATOR.md](CHARACTER_CREATOR.md) for files, validation, preview and remaining portrait needs.

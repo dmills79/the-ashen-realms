@@ -11,6 +11,7 @@ export default defineConfig({
   use:{
     baseURL:'http://127.0.0.1:8877',
     browserName:'chromium',
+    ...(process.env.ASHEN_BROWSER_CHANNEL?{channel:process.env.ASHEN_BROWSER_CHANNEL}:{}),
     viewport:{width:1440,height:900},
     trace:'retain-on-failure',
     screenshot:'only-on-failure'

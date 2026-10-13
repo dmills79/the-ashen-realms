@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {mkdirSync} from 'node:fs';
+import {finishCreation} from './creation-helpers.mjs';
 
 const screenshots='artifacts/ui-inspection';
 mkdirSync(screenshots,{recursive:true});
@@ -8,9 +9,7 @@ async function startAdventure(page){
   await page.goto('/');
   await expect(page.getByRole('button',{name:'Begin a New Adventure',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Begin a New Adventure',exact:true}).click();
-  await page.locator('#heroName').fill('UI Inspector');
-  await page.locator('#heroClass').selectOption('Wizard');
-  await page.getByRole('button',{name:'ENTER THE REALM →',exact:true}).click();
+  await finishCreation(page,{name:'UI Inspector',role:'Wizard'});
   await expect(page.locator('html')).toHaveClass(/world-explore/);
   await expect(page.locator('#overlay')).toHaveClass(/hidden/);
 }
@@ -57,11 +56,9 @@ test('desktop title, character creation, world, inventory, party and shop',async
   await expect(page.getByRole('button',{name:'Begin a New Adventure',exact:true})).toBeVisible();
   await page.screenshot({path:screenshots+'/desktop-title.png'});
   await page.getByRole('button',{name:'Begin a New Adventure',exact:true}).click();
-  await expect(page.locator('#heroClass')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Choose Human ancestry',exact:true})).toBeVisible();
   await page.screenshot({path:screenshots+'/desktop-character.png'});
-  await page.locator('#heroName').fill('UI Inspector');
-  await page.locator('#heroClass').selectOption('Wizard');
-  await page.getByRole('button',{name:'ENTER THE REALM →',exact:true}).click();
+  await finishCreation(page,{name:'UI Inspector',role:'Wizard'});
   await expect(page.locator('html')).toHaveClass(/world-explore/);
   await page.screenshot({path:screenshots+'/desktop-world.png'});
   await page.getByRole('button',{name:'I INVENTORY',exact:true}).click();

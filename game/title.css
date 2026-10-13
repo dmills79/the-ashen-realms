@@ -1,0 +1,72 @@
+/* Milestone 4: title-only presentation, isolated from exploration and creation. */
+#titleScene{display:none}
+html.title-screen #titleScene{display:block;position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none;background:#07111a}
+.title-art{position:absolute;inset:-3%;background-image:url('assets/title_v4/havenmere_night.png'),url('assets/title_backdrop.jpg');background-size:cover;background-position:65% center;animation:title-drift 38s ease-in-out infinite alternate;will-change:transform}
+#titleScene::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#040c16ed 0%,#07101ba6 34%,#08122128 66%,#040b1520),linear-gradient(0deg,#040910a3,transparent 35%,#09111e24)}
+.title-mist{position:absolute;inset:40% -15% -15%;background:radial-gradient(ellipse at 70% 70%,#b3c9ca16,transparent 60%),radial-gradient(ellipse at 30% 55%,#b3c9ca0f,transparent 50%);animation:title-mist 29s ease-in-out infinite alternate;will-change:transform}
+.title-embers{position:absolute;inset:0}
+.title-embers i{position:absolute;left:var(--x);bottom:-12px;width:2px;height:2px;background:#efd3a2;border-radius:50%;box-shadow:0 0 7px #e7a454;animation:title-ember 19s linear infinite;animation-delay:var(--delay);opacity:0}
+@keyframes title-drift{from{transform:scale(1)}to{transform:scale(1.04) translate(-.6%,.3%)}}
+@keyframes title-mist{from{transform:translateX(-3%)}to{transform:translateX(3%)}}
+@keyframes title-ember{0%{transform:translate(0,0);opacity:0}15%{opacity:.45}80%{opacity:.2}100%{transform:translate(32px,-75vh);opacity:0}}
+html.title-screen.title-menu-open #overlay{background:transparent;backdrop-filter:none;align-items:flex-start;padding:0;overflow-y:auto;overscroll-behavior:contain}
+html.title-screen #modal[data-screen='title-menu']{width:100%;max-height:none;min-height:100%;padding:0;border:0;background:transparent;box-shadow:none;backdrop-filter:none;overflow:visible}
+.title-menu{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:clamp(28px,6vh,80px) clamp(28px,7vw,130px);color:#f5e7ca}
+.title-content{width:min(520px,48vw)}
+.title-eyebrow{display:flex;align-items:center;gap:14px;font:10px Arial,sans-serif;letter-spacing:3.5px;color:#c9ad7b;margin-bottom:22px}
+.title-eyebrow::before{content:'';width:32px;height:1px;background:#b99a65}
+html.title-screen .title-menu h2{font-size:clamp(42px,5.2vw,82px);line-height:1.02;font-weight:normal;text-align:left;letter-spacing:1px;margin:0;color:#efd5a0;text-shadow:0 3px 28px #02060a}
+.title-menu h2 small{display:block;font-size:.26em;line-height:1.9;letter-spacing:.36em;color:#d2bb8c;margin-left:3px}
+.title-menu h2 span{display:block}
+.title-chapter{display:flex;align-items:center;gap:15px;margin:24px 0 0;font:10px Arial,sans-serif;letter-spacing:2.5px;color:#d1b480}
+.title-chapter::after{content:'';width:60px;height:1px;background:#bfa17266}
+html.title-screen .title-menu .title-story{font-size:15px;line-height:1.75;max-width:370px;color:#c6c8c6;margin:18px 0 28px}
+.title-actions{display:grid;gap:9px;width:min(340px,100%)}
+html.title-screen .title-actions button{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:62px;padding:13px 18px;text-align:left;border:1px solid #9b835648;background:linear-gradient(110deg,#0b1623d9,#12202bc2);border-radius:2px;color:#d8c9ab;box-shadow:0 5px 20px #02071030}
+.title-actions button strong{display:block;font:13px Georgia,serif;letter-spacing:2px;font-weight:normal}
+.title-actions button small{display:block;font:10px Arial,sans-serif;color:#a3afb4;letter-spacing:.4px;margin-top:6px}
+.title-actions button>span:last-child{font-size:19px;color:#bda36b}
+html.title-screen .title-actions .primary{background:linear-gradient(110deg,#5a452bdd,#2b281fd9);border-color:#c9a46c91;color:#f7e2b5}
+html.title-screen .title-actions button:hover:not(:disabled){background:#263540e8;border-color:#c6a469;transform:translateX(3px)}
+html.title-screen .title-actions button:focus-visible,.title-help:focus-visible{outline:2px solid #f1cf91;outline-offset:4px}
+html.title-screen .title-actions button:disabled{opacity:.55}
+.title-menu .title-help{background:none;border:0;border-bottom:1px solid #b69b645c;border-radius:0;padding:8px 0;margin-top:16px;font:10px Arial,sans-serif;letter-spacing:1.4px;color:#b9b5a5;min-height:40px}
+.title-footer{font:9px/1.8 Arial,sans-serif;color:#89959c;letter-spacing:1.3px;margin-top:34px;max-width:380px}
+.title-footer span{display:block;color:#b0a184}
+html.title-screen #toast{z-index:25}
+html.title-screen #modal[data-screen='title-settings']{width:min(510px,94%);padding:28px;border:1px solid #af916162;box-shadow:0 25px 85px #0009;background:linear-gradient(145deg,#14212fee,#08131fef)}
+.title-settings .settings-eyebrow{display:block;text-align:center;font:9px Arial,sans-serif;letter-spacing:3px;color:#bca16f}
+.title-settings h2{margin:12px 0 20px!important}
+.settings-row{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px 0;border-top:1px solid #b89e6326}
+.settings-row strong{display:block;font-size:14px;font-weight:normal;color:#e6d7bb}
+.settings-row small{display:block;font:11px/1.5 Arial,sans-serif;color:#aebac0;max-width:265px;margin-top:6px}
+.title-settings .settings-row button{min-width:86px;min-height:44px;font:11px Arial,sans-serif;letter-spacing:1px;border-color:#aa925650;background:#0d1b28}
+.title-settings .settings-return{width:100%;min-height:46px;margin-top:18px;font:11px Arial,sans-serif;letter-spacing:1px}
+@media(max-width:700px){
+ .title-art{background-position:67% center}
+ #titleScene::after{background:linear-gradient(90deg,#040b16cd,#040c1699),linear-gradient(0deg,#040c16ef,transparent 80%)}
+ .title-menu{align-items:center;padding:32px 26px}
+ .title-content{width:min(390px,100%)}
+ html.title-screen .title-menu h2{font-size:clamp(45px,11.5vw,68px)}
+ .title-eyebrow{font-size:9px;letter-spacing:2.5px;margin-bottom:16px}
+ .title-chapter{font-size:9px;letter-spacing:1.6px;margin-top:20px}
+ html.title-screen .title-menu .title-story{font-size:14px;margin:16px 0 24px}
+ .title-actions{width:100%}
+ .title-footer{margin-top:24px;font-size:8px}
+}
+@media(max-height:540px) and (min-width:640px){
+ .title-menu{padding:24px 6vw;justify-content:center}
+ .title-content{width:100%;display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,340px);column-gap:5vw;align-items:center}
+ .title-intro{grid-column:1;grid-row:1/4}
+ html.title-screen .title-menu h2{font-size:52px}
+ .title-eyebrow{margin-bottom:12px}
+ .title-chapter{margin-top:16px}
+ html.title-screen .title-menu .title-story{font-size:13px;margin-bottom:0}
+ .title-actions{grid-column:2;grid-row:1;width:100%}
+ .title-menu .title-help{grid-column:2;grid-row:2;justify-self:start;margin-top:8px}
+ .title-footer{grid-column:2;grid-row:3;margin-top:12px;font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.title-art,.title-mist,.title-embers i{animation:none!important;will-change:auto}.title-actions button{transition:none!important}}
+html.title-motion-paused .title-art,html.title-motion-paused .title-mist,html.title-motion-paused .title-embers i{animation:none!important;will-change:auto}
+/* Keep the dashboard behind the title out of keyboard navigation. */
+html.title-screen .topbar,html.title-screen .game-meta,html.title-screen .sidepane,html.title-screen .lowerbar,html.title-screen #shell>footer{visibility:hidden}

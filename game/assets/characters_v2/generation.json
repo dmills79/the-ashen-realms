@@ -1,0 +1,122 @@
+{
+  "tool": "Built-in image_gen",
+  "sharedPrompt": "Use case: stylized-concept. Asset type: production transparent 2D RPG animation spritesheet, landscape 4:3, exactly FOUR equal columns and THREE equal rows, TWELVE distinct full-body frames. Match the supporting Fighter spritesheet's detailed painted dark-fantasy rendering and realistic proportions, not its character. Natural adult seven-and-a-half-head anatomy where humanoid, no oversized heads, no pixel art, no chibi, no cartoons. All standing poses face RIGHT in a three-quarter side view from a slightly elevated game camera. Consistent identity, costume, scale and lighting across every frame. Soft cool overhead light with subtle warm edge light. True transparent background with no scenery, ground, floor shadow, text, borders, grids, checkerboard or labels. Each body, weapon and effect is fully contained inside its own equal cell, with substantial TRANSPARENT gutters between every row and column and 8% margin on all four sides of every cell. Boots/paws at 88% cell height. No bleeding into adjacent cells. Row 1: idle breathing A, idle breathing B, walking left-foot A, walking right-foot B. Row 2: attack windup, attack impact, casting/roaring windup, casting/roaring release. Row 3: struck/recoil A, recovery/recoil B, falling defeated, lying defeated. Death non-gory. The two idle frames change only a little; walking clearly changes leg poses. Keep scale identical, even for defeated poses. Subject: ",
+  "characters": {
+    "fighter": {
+      "name": "Arden / Fighter",
+      "kind": "hero",
+      "height": 76,
+      "worldHeight": 43,
+      "portrait": "portrait_fighter.png",
+      "prompt": "Use case: stylized-concept. Asset type: production transparent 2D RPG animation spritesheet, 2048x1536 pixels, exactly FOUR equal columns and THREE equal rows, TWELVE separate frames. Reference image 1 is ONLY the existing Arden Fighter PORTRAIT for face identity, brown hair, beard, worn dark steel armor and muted gold trim. Preserve that identity; do not reproduce the portrait or its border. Render a complete adult male warrior in natural realistic seven-and-a-half-head proportions, fully visible from head to boot soles, detailed painted dark-fantasy game art, sophisticated material shading, NOT pixel art, NOT chibi or cartoon, no oversized head. Three-quarter side view facing RIGHT in every standing frame, slightly elevated camera appropriate for a 2D RPG. Right hand steel longsword, left arm modest worn steel shield, dark navy cloth, leather straps. Consistent design and scale across all twelve frames. Soft cool overhead light and subtle warm edge light, no baked scenery or floor shadows. TRUE transparent background. Each frame has ample transparent margin; the figure and weapon stay completely within its own cell. Equal cell sizes. Baseline in each cell at 88% height; head near 10% height; x position centered. Order reading LEFT TO RIGHT then TOP TO BOTTOM: row 1 idle breathing pose A, idle breathing pose B, walking left-foot forward A, walking right-foot forward B. Row 2 sword attack windup, sword slash impact, Battle Cry rally gesture winding up, Battle Cry rally gesture extended. Row 3 recoiling from a hit A, recovering from a hit B, falling defeated to a knee, lying defeated on side with sword fallen. Death frames are non-gory and contained in the cell. The walking and idle frames have very small changes; the body must not change size or clothing between cells. No text, labels, grids, frames, border, background, other characters, checkerboard, floating portraits, magic effects, cropped feet or weapons. Return the spritesheet image itself."
+    },
+    "cleric": {
+      "name": "Sister Elowen / Cleric",
+      "kind": "hero",
+      "height": 74,
+      "worldHeight": 42,
+      "portrait": "portrait_cleric.png",
+      "subject": "Sister Elowen, an adult elf cleric. Reference image 1 is her portrait: preserve her recognizable calm serious face, long chestnut-brown hair and brown eyes; small pointed elf ears. Pale ivory robes over silver chainmail, muted antique-gold trim, dark warm-gray cloak, leather boots, a modest oak staff with a pale gold metal sun finial. Graceful capable adult physique. Attack thrusts the staff; cast raises her free hand in a restrained blessing. No large halos or effects outside the cell. Reference image 2 is ONLY rendering/style guidance."
+    },
+    "rogue": {
+      "name": "Rook / Rogue",
+      "kind": "hero",
+      "height": 73,
+      "worldHeight": 41,
+      "portrait": "portrait_rogue.png",
+      "subject": "Rook, an adult male halfling rogue. Reference image 1 is his portrait: preserve the angular weathered face, dark hood, dark eyebrows, short brown beard/stubble and sharp serious gaze. Smaller and leaner than the fighter but realistic ADULT proportions, not a child, no enlarged head. Fitted charcoal leather armor, deep desaturated forest-green hooded cloak, brown leather belt and pouches, two narrow steel daggers and supple dark boots. Attack slashes with a dagger; cast throws a small smoke pellet, with smoke confined to the hand/cell. Reference image 2 is ONLY rendering/style guidance."
+    },
+    "wizard": {
+      "name": "Wizard",
+      "kind": "hero",
+      "height": 74,
+      "worldHeight": 42,
+      "portrait": "portrait_wizard.png",
+      "subject": "An adult female elf wizard. Reference image 1 is her portrait: preserve her recognizable serious face, pale complexion, straight black shoulder-length hair, dark eyes and small pointed ears. Realistic adult physique in midnight navy and muted violet layered robes, dark leather belts, antique-silver clasps and fine runic embroidery, leather boots. Oak-and-silver staff with a small pale blue crystal. Attack thrusts the staff; cast extends a free hand with restrained cool arcane light confined to the cell. Reference image 2 is ONLY rendering/style guidance."
+    },
+    "slime": {
+      "name": "Mire Slime",
+      "kind": "enemy",
+      "height": 37,
+      "worldHeight": 24,
+      "subject": "Mire Slime, a menacing shapeless low mound of translucent dark olive-green swamp ooze, glossy viscous folds with suspended stones and tiny fragments of bone. It has NO eyes, NO face, NO smile and NO human features. Organic realistic surface detail with wet highlights and subtle poisonous teal luminescence deep inside. Wide low asymmetrical silhouette. Idle frames gently ripple; walk frames compress and stretch as it oozes; attack extends a slime tendril; casting is a restrained rising toxic vapor; hit dents/compresses; death collapses into a shallow puddle. All tendrils remain inside their own frame. Match the reference's painted realism and lighting, not its anatomy."
+    },
+    "wolf": {
+      "name": "Dusk Wolf",
+      "kind": "enemy",
+      "height": 52,
+      "worldHeight": 32,
+      "subject": "Dusk Wolf, a threatening realistic adult gray forest wolf, four correctly jointed legs, thick layered charcoal and silver fur, long natural muzzle, ears, heavy shoulders, powerful haunches, bushy tail and restrained amber eyes. NO armor, no collars, no cartoon/angular geometric limbs. Anatomically natural predator silhouette, full body visible in right-facing three-quarter side view. Idle alert, walking paws alternating, attack jaws lunge forward and bare teeth, casting poses a natural raised-head howl, hit recoils, death falls then lies on its side. No gore. Match the reference's painted realism and lighting."
+    },
+    "goblin": {
+      "name": "Gromclaw Scout",
+      "kind": "enemy",
+      "height": 57,
+      "worldHeight": 35,
+      "subject": "Gromclaw Scout, a lean small adult goblin with muted olive skin, narrow cunning face, small pointed ears and realistic adult proportions. Worn brown leather and patched dark forest-green cloth, belt pouches, short iron knife, bare wiry forearms and wrapped boots. Menacing grounded medieval fantasy creature, not cute. Attack knife slash; cast warcry with raised knife. Match reference painted dark-fantasy detail."
+    },
+    "shaman": {
+      "name": "Goblin Hexcaller",
+      "kind": "enemy",
+      "height": 59,
+      "worldHeight": 36,
+      "subject": "Goblin Hexcaller, a wiry adult goblin with muted olive-gray skin and pointed ears wearing weathered rust-red robes, charcoal hood, bone charms and leather wraps. Crooked wooden staff with an iron cage containing a tiny cinder. Natural adult anatomy, stern sinister face. Staff attack and restrained ember magic hand gestures; keep effects within frame. Match reference painted dark-fantasy detail."
+    },
+    "orc": {
+      "name": "Orc Reaver",
+      "kind": "enemy",
+      "height": 84,
+      "worldHeight": 48,
+      "subject": "Orc Reaver, a powerful tall adult orc with desaturated olive-gray skin, broad realistic muscular anatomy, coarse black hair, small lower tusks, grim scarred face. Scarred iron shoulder armor, dark leather harness and brown fur strips, heavy boots. Heavy iron battle axe. Fierce medieval raider, not cartoonish. Axe windup and strike; casting poses a forceful roar, no magic. Match reference painted dark-fantasy detail."
+    },
+    "warboss": {
+      "name": "Gruk Bloodtusk",
+      "kind": "enemy",
+      "height": 99,
+      "worldHeight": 52,
+      "subject": "Gruk Bloodtusk, a massive adult orc warleader, desaturated gray-green skin, heavy muscular realistic anatomy, small tusks, battle-scarred grim face, short black hair. Heavy scarred black iron plate, dull bronze rivets, torn dark red cloak, one heavy battle axe, natural skull-shaped shoulder trim. Strong imposing silhouette, not cartoon or oversized head. Axe strike and warcry gestures. Match reference painted dark-fantasy detail."
+    },
+    "bandit": {
+      "name": "Road Brigand",
+      "kind": "enemy",
+      "height": 75,
+      "worldHeight": 43,
+      "subject": "Road Brigand, an adult male human highwayman with rough beard, stern weathered face, muted brown hooded cloak, quilted charcoal gambeson and weathered leather armor, iron shortsword, belt satchels and leather boots. Realistic adult proportions. Attack sword slash, casting poses a threat gesture with the free hand. Match reference painted dark-fantasy detail."
+    },
+    "sentinel": {
+      "name": "Ash Sentinel",
+      "kind": "enemy",
+      "height": 83,
+      "worldHeight": 47,
+      "subject": "Ash Sentinel, an imposing humanoid animated suit of ash-black iron armor, weathered tarnished copper edges, narrow ember-lit visor, no visible flesh, dark tattered cloth. Heavy iron sword and modest shield. Natural knight proportions, grounded weight and joints, subtly glowing cracks. Attack sword slash; cast raises sword with confined ash wisps. Match reference painted dark-fantasy detail."
+    },
+    "boss": {
+      "name": "The Bell Warden",
+      "kind": "enemy",
+      "height": 101,
+      "worldHeight": 54,
+      "subject": "The Bell Warden, a towering ancient spectral knight bound inside ornate soot-black plate with antique gold and tarnished bronze bell motifs, closed narrow visor with a dim amber glow, long ragged ash-gray cloak, immense two-handed iron sword. Natural adult knight anatomy, menacing solemn silhouette, richly worn materials, no cartoon. Sword attack; casting raises gauntlet in a tolling curse gesture with confined amber embers. Match reference painted dark-fantasy detail."
+    },
+    "bone": {
+      "name": "Restless Bones",
+      "kind": "enemy",
+      "height": 72,
+      "worldHeight": 41,
+      "subject": "Restless Bones, a menacing anatomically accurate human skeleton with aged ivory bones, skull eye sockets in shadow, scraps of weathered leather armor and torn charcoal cloth, rusty iron sword. Correct spine, ribs, pelvis and limb proportions, no enlarged skull or cartoon face. Sword attack; casting threatening raised skeletal hand. Death bones collapse together in a contained heap. Match reference painted dark-fantasy detail."
+    },
+    "wisp": {
+      "name": "Grave Wisp",
+      "kind": "enemy",
+      "height": 45,
+      "worldHeight": 29,
+      "subject": "Grave Wisp, a restrained spectral blue-white flame with an indistinct eerie skull-like suggestion within layered translucent cold mist, ethereal tendrils contained inside its frame, no cute eyes or smiling face. Ground anchor under its low floating mist. Idle flickers, walking drifting variations, attack extends a spectral filament, cast builds a small bright core, hurt disperses, death fades to a thin low mist curl. Match reference painted dark-fantasy detail."
+    },
+    "bat": {
+      "name": "Crypt Bat",
+      "kind": "enemy",
+      "height": 40,
+      "worldHeight": 25,
+      "subject": "Crypt Bat, a realistic threatening large cave bat with charcoal-brown fur, delicate leathery wings, correctly jointed wing fingers, natural small face and ears. All wings entirely contained in each cell. Idle crouched wings folded, walk crawls on wing joints, attack wings spread and bite, cast shriek with half-spread wings, hit recoils, death lies with wings crumpled. No cartoon oversized eyes or head. Match reference painted dark-fantasy detail."
+    }
+  }
+}

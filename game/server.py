@@ -112,8 +112,9 @@ def build_app():
     app=web.Application(client_max_size=4096)
     app.router.add_get('/',homepage)
     app.router.add_get('/index.html',homepage)
+    app.router.add_get('/characters.html',lambda req: web.FileResponse(ROOT/'characters.html'))
     app.router.add_get('/ws',websocket)
-    for file in ('game.js','network.js','style.css'):
+    for file in ('game.js','network.js','style.css','combat.css','character-assets.js','sprites.js','environment.js','title-ui.js','title.css','creator.css','character-config.js','dice-3d.js','tavern-creator.js'):
         app.router.add_get('/'+file,lambda req,p=ROOT/file: web.FileResponse(p))
     app.router.add_static('/assets/',ROOT/'assets',show_index=False)
     return app

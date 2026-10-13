@@ -2,8 +2,6 @@
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 3%,#233149 0,#101621 48%,#090d14 100%);color:var(--ink);font-family:Georgia,'Times New Roman',serif;min-height:100vh;display:flex;justify-content:center;padding:20px 16px 35px}button,input,select{font:inherit}button{background:linear-gradient(180deg,#293747,#182330);color:#eee7d7;border:1px solid #506070;cursor:pointer;border-radius:4px;transition:background .13s,border .13s,transform .13s}button:hover:not(:disabled),button:focus-visible{background:#33485b;border-color:#d8b674;outline:none}button:active:not(:disabled){transform:translateY(1px)}button:disabled{opacity:.35;cursor:not-allowed}#shell{width:min(1320px,100%);margin:auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:11px 13px 15px}.brand{display:flex;align-items:center;gap:10px}.crest{font-size:37px;color:#deb978;text-shadow:0 1px 18px #db894a}.kicker{font:9px/1.5 Arial,sans-serif;letter-spacing:2px;color:#aab4c0}h1{font-size:24px;color:#f8e6bf;letter-spacing:3px;font-weight:normal;margin:1px 0;text-shadow:0 2px 10px #000}.chapter{font:11px Arial,sans-serif;letter-spacing:1.6px;color:#bb9b69;white-space:nowrap}.chapter span{display:block;margin-top:5px;font-family:Georgia,serif;letter-spacing:2.5px;font-size:15px;color:#eee1c7}.topactions{display:flex;gap:6px}.topactions button{font:10px Arial,sans-serif;letter-spacing:1px;padding:9px 10px}.layout{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:13px}.mainpane{min-width:0}.gameframe{border:4px ridge #9b7c51;position:relative;box-shadow:0 12px 60px #0009, inset 0 0 10px black;background:#080e1a;aspect-ratio:5/3;overflow:hidden}.gameframe:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 26px #0008;z-index:2}canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}.frame-label{position:absolute;z-index:3;top:9px;left:12px;color:#f7e8cb;background:#080d18b0;padding:5px 9px;font:9px Arial,sans-serif;letter-spacing:2px;border:1px solid #fff3}#toast{position:absolute;z-index:10;top:45px;left:50%;transform:translateX(-50%);width:max-content;max-width:80%;background:#111a27ec;border:1px solid #d5b57e;padding:9px 14px;box-shadow:0 6px 22px #0007;font-size:13px;text-align:center;pointer-events:none;opacity:0;transition:opacity .2s}#toast.show{opacity:1}.lowerbar{padding:12px 5px;min-height:40px}.guide{font:10px Arial,sans-serif;letter-spacing:.6px;color:#a0aab7;text-align:center}.guide span{color:#cdad77;margin:0 6px}.sidepane{background:linear-gradient(165deg,#1c2635,#131a26);border:1px solid #455063;box-shadow:0 16px 55px #0006;display:flex;flex-direction:column;min-height:520px}.sidebar-section{padding:16px 16px 15px;border-bottom:1px solid #364155}.sidebar-section h2{margin:0 0 13px;font:11px Arial,sans-serif;letter-spacing:2.4px;color:#f1d9a9;font-weight:600}.bullet{color:#cf9c61;margin-right:6px}.partySummary{display:grid;gap:11px}.memberline{display:flex;gap:10px;align-items:center}.portrait{width:36px;height:38px;display:grid;place-items:center;background:#263c4c;border:1px solid #6c7772;font-size:23px;flex-shrink:0}.memberinfo{flex:1;min-width:0}.memberhead{font-size:13px;display:flex;justify-content:space-between;gap:4px}.memberhead small{color:#c9b784;font-size:10px}.bars{display:grid;gap:4px;margin-top:5px}.bar{height:5px;background:#101823;overflow:hidden;border-radius:2px}.bar span{display:block;height:100%;background:#c66a65}.bar.mana span{background:#73b7d5}.subtle{color:var(--muted);font-size:13px;line-height:1.5}.questSummary{color:#c8d1d7;font-size:13px;line-height:1.5}.questSummary b{display:block;color:#e3c78f;font-size:14px;margin-bottom:5px}.quickactions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.quickactions button{padding:10px 7px;font:11px Arial,sans-serif;letter-spacing:1.1px}.quickactions small{color:#aaadad}.event-section{flex:1}.chronicle{font-size:12px;line-height:1.5;color:#acb6bd;max-height:155px;overflow-y:auto}.chronicle div{margin-bottom:8px;border-left:2px solid #6a6c67;padding-left:8px}.sidebar-footer{padding:11px 16px;display:flex;justify-content:space-between;font:10px Arial,sans-serif;letter-spacing:1px;color:#dbb77b}footer{text-align:center;font:9px Arial,sans-serif;color:#67758b;letter-spacing:1.8px;margin-top:23px;line-height:1.8}.overlay{position:absolute;inset:0;z-index:5;display:flex;justify-content:center;align-items:center;background:#040811db;overflow-y:auto;padding:14px}.overlay.hidden{display:none}.modal{background:linear-gradient(#222e3f,#101c2b);color:#eee9dc;border:2px solid #bc996a;box-shadow:0 9px 45px #000e,inset 0 0 0 4px #172130;padding:17px 20px;width:min(560px,100%);max-height:100%;overflow-y:auto;scrollbar-width:thin}.modal h2{margin:2px 0 12px;color:#efd5a0;font-weight:normal;letter-spacing:2px;text-align:center;font-size:23px}.modal h3{color:#e7c58c;font-weight:normal;margin:12px 0 7px}.modal p{font-size:13px;line-height:1.55;color:#c8d0d8;margin:9px 0}.modal .narrative{font-style:italic;color:#e9dac1}.modal button{padding:10px 13px;font-size:13px}.modal .choices{display:grid;gap:8px;margin-top:16px}.modal .choices.horizontal{grid-template-columns:repeat(2,minmax(0,1fr))}.modal .choices button{text-align:left;min-height:40px}.modal .choices button.primary{border-color:#f6d48f;color:#ffe4b5}.modal label{display:block;font-size:12px;color:#d9d0c4;margin:9px 0 4px}.modal input,.modal select{background:#0e1725;border:1px solid #647487;padding:9px;color:#fff;width:100%;border-radius:3px}.modal .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.modal .statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}.stat{background:#162131;border:1px solid #384a60;padding:8px;font-size:11px;text-align:center;color:#d5dce1}.stat b{display:block;color:#f4d293;font-size:16px;margin-top:3px}.modal .scroll{max-height:245px;overflow:auto}.shoprow,.itemrow,.partyrow,.logrow{padding:10px 8px;border-bottom:1px solid #3b4c60;display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px}.shoprow strong,.itemrow strong{font-size:13px;color:#e9dfcb}.shoprow small,.itemrow small{display:block;color:#abb5c2;margin-top:4px;line-height:1.3}.shoprow button,.itemrow button{padding:7px 10px;white-space:nowrap}.gold{color:#f0c680}.muted{color:#a9b3bf}.rule{height:1px;background:#445369;margin:11px 0}.combatui{margin-top:8px}.combattitle{text-align:center;color:#ebd7b3;font-size:13px}.combat-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}.combat-buttons button{font:12px Georgia,serif;padding:8px 4px}.combatlog{font:12px/1.35 Georgia,serif;max-height:70px;overflow:auto;color:#d6dadb;border-top:1px solid #445469;padding-top:7px}.combatlog div{padding:2px}.combatlog .important{color:#ffdf9f}.exp{font:11px Arial,sans-serif;color:#96a9bc;letter-spacing:1px}.mobilepad{display:none;justify-content:space-between;gap:12px;align-items:center;margin-top:10px}.pad-dirs{text-align:center}.pad-dirs button,.actionkey{min-width:47px;min-height:38px;margin:2px;touch-action:manipulation}.actionkey{border-radius:50%;width:54px;height:54px;color:#ffe4ad}.actionkey.muted{color:#a9c2cb}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}.sidepane{display:grid;grid-template-columns:1fr 1fr;min-height:0}.sidebar-section{border-right:1px solid #384354}.event-section{grid-column:1}.sidebar-footer{align-self:end;flex-direction:column;gap:10px}.chapter{display:none}}@media(max-width:600px){body{padding:5px}.topbar{flex-wrap:wrap;gap:7px;padding:8px 1px}.brand h1{font-size:18px;letter-spacing:1.4px}.crest{font-size:24px}.kicker{font-size:7px}.topactions{width:100%}.topactions button{flex:1;padding:7px}.gameframe{border-width:2px}.frame-label{font-size:7px;letter-spacing:1px;top:4px;left:4px}.guide{display:none}.mobilepad{display:flex}.sidepane{grid-template-columns:1fr 1fr}.sidebar-section{padding:12px}.sidebar-section h2{font-size:9px}.sidebar-section:nth-child(3),.event-section{grid-column:1/-1}.sidebar-footer{grid-column:1/-1;flex-direction:row}.modal{padding:11px 12px}.modal h2{font-size:17px}.modal p{font-size:12px}.modal .choices button{padding:8px}.modal .statgrid{grid-template-columns:repeat(3,1fr)}.overlay{padding:5px}.modal .scroll{max-height:110px}}
 
-.battlepanel{position:absolute;bottom:0;left:0;right:0;z-index:4;background:linear-gradient(90deg,#09121ef4,#0e192af6);border-top:2px solid #b58c58;min-height:110px;padding:8px 12px;color:#eee4d1}.battlepanel.hidden{display:none}.battlepanel .turntext{color:#f3d39c;letter-spacing:1px;font-size:14px;margin-bottom:6px}.battlepanel .actionrow,.battlepanel .targetrow{display:flex;gap:6px;flex-wrap:wrap}.battlepanel button{padding:6px 9px;font-size:12px}.battlepanel .battlehistory{color:#c8d4d5;font-size:11px;line-height:1.3;height:27px;overflow:hidden;margin-top:6px}.battlepanel .back{color:#e4ad98}.battlepanel button:disabled{opacity:.3}@media(max-width:600px){.battlepanel{padding:5px 6px;min-height:83px}.battlepanel .turntext{font-size:10px;margin-bottom:3px}.battlepanel button{font-size:9px;padding:4px 5px}.battlepanel .battlehistory{font-size:9px;margin-top:3px;height:20px}}
-
 /* Chapter I v0.2: visible character progression and explicit 4d6 stat builder */
 .memberline{align-items:flex-start;gap:10px}.memberinfo{padding-top:1px}
 .memberhead{align-items:baseline}.memberhead span{font-weight:bold;color:#f3e7ca}.memberhead small{color:#f4d59d;font:9px Arial,sans-serif;white-space:nowrap}
@@ -200,17 +198,10 @@ canvas#game{image-rendering:auto}
 .lan-section.hidden-panel{display:none!important}
 .quickactions{grid-template-columns:repeat(2,minmax(0,1fr))}
 .quickactions button{min-height:36px}
-.battlepanel{min-height:106px;padding:9px 13px;background:linear-gradient(180deg,#090f1cfa,#0b1929fc);border-top:2px solid #d6ad72}
-.battlepanel .turntext{font:700 12px Georgia,serif;color:#ffdfa5;letter-spacing:.4px}
-.battlepanel .actionrow{gap:6px;overflow-y:auto;max-height:73px}
-.battlepanel .actionrow button{border-color:#7a6957;background:linear-gradient(165deg,#253548,#101f30);border-radius:5px;color:#f5ecdd;min-height:29px;padding:6px 10px;font:700 11px Georgia,serif}
-.battlepanel .actionrow button:hover{border-color:#ffdd9d;background:#32485d}
-.battlepanel .actionrow button small{display:block;font:8px Arial,sans-serif;letter-spacing:.3px;color:#9dc6d6;margin-top:3px}
-.battlepanel .battlehistory{max-height:31px;height:auto;margin-top:6px;color:#c8d2d7;font-size:11px;line-height:1.4}
 .dotsep{color:#edbc7a;padding:0 7px}.compact-stats{font:11px/1.5 Arial,sans-serif;margin-top:6px;color:#b6c9d2}
 .gameframe{box-shadow:0 15px 62px #000a,0 0 0 3px #1a2a3b}
 .modal .shoprow button:disabled{opacity:.45}
-@media(max-width:620px){.battlepanel .actionrow{max-height:75px}.battlepanel .actionrow button{padding:5px 6px;font-size:9px}.battlepanel .battlehistory{font-size:9px}.battlepanel .turntext{font-size:10px}.quickactions button{font-size:10px}}
+@media(max-width:620px){.quickactions button{font-size:10px}}
 
 /* Avoid the previous giant empty column below the playfield. */
 .mainpane{display:block;align-self:start}
@@ -225,46 +216,6 @@ canvas#game{image-rendering:auto}
 /* v0.8 toolbar and battle-actor polish */
 .topactions button{min-width:74px}
 #soundBtn{min-width:92px;white-space:nowrap}
-
-/* v0.9 — immersive, full-viewport fantasy combat; exploration retains its existing layout */
-html.cinematic-battle,html.cinematic-battle body{overflow:hidden}
-html.cinematic-battle .gameframe:not(.none){position:fixed;inset:0;width:100vw;height:100dvh;max-height:none;aspect-ratio:auto;z-index:110;border:0;border-radius:0;box-shadow:none;background:#070d15}
-html.cinematic-battle .gameframe:after{box-shadow:inset 0 0 50px #03061299}
-html.cinematic-battle .frame-label,html.cinematic-battle .proximity{display:none!important}
-html.cinematic-battle .battlepanel{left:clamp(12px,18vw,270px);right:18px;bottom:13px;min-height:132px;padding:15px 20px;border:1px solid #cfab77;border-radius:11px;background:linear-gradient(135deg,#06101bf2,#14243ae9);backdrop-filter:blur(18px);box-shadow:0 14px 40px #000a;z-index:7}
-html.cinematic-battle .battlepanel .turntext{font-size:16px;margin-bottom:10px}
-html.cinematic-battle .battlepanel .actionrow button{font-size:13px;min-height:37px;padding:9px 16px;border-radius:6px}
-html.cinematic-battle .battlepanel .battlehistory{margin-top:10px;font-size:13px;max-height:45px}
-.cinema-hud{display:none}
-html.cinematic-battle .cinema-hud{display:block;position:absolute;inset:0;z-index:6;pointer-events:none;color:#f7e6cc}
-.cinema-hud button{pointer-events:auto}
-.cinema-title{position:absolute;top:11px;left:50%;transform:translateX(-50%);padding:8px 32px 10px;border:1px solid #ae90638a;border-radius:9px;background:#06101dd4;text-align:center;box-shadow:0 8px 25px #0008;white-space:nowrap}
-.cinema-title span{display:block;font:24px Georgia,serif;letter-spacing:3px;color:#f7dcae}
-.cinema-title small{display:block;margin-top:3px;font:10px Arial,sans-serif;color:#b6c1c8;letter-spacing:1.9px}
-.cinema-party{position:absolute;top:100px;left:16px;width:clamp(185px,16vw,250px);display:grid;gap:9px}
-.cinema-member{display:flex;gap:9px;align-items:center;background:#07111edc;border:1px solid #7f695348;border-radius:9px;padding:7px;box-shadow:0 4px 15px #0005}
-.cinema-member.active{border-color:#edc07a;box-shadow:0 0 22px #dba75e3b}
-.cinema-member img{width:49px;height:58px;object-fit:cover;object-position:center 18%;border:1px solid #bca17b;border-radius:5px}
-.cinema-member-info{min-width:0;flex:1;font:11px Arial,sans-serif}.cinema-member b{display:block;font:15px Georgia,serif}.cinema-member small{display:block;color:#c6b28f;margin:3px 0 7px}.cinema-stat{display:flex;gap:5px;align-items:center;margin-top:4px;font:10px Arial,sans-serif;white-space:nowrap}.cinema-stat i{height:6px;flex:1;background:#1b2734;border-radius:6px;overflow:hidden}.cinema-stat em{display:block;height:100%;background:#db746c}.cinema-stat.mana em{background:#67add8}
-.cinema-foes{position:absolute;right:17px;top:85px;max-width:220px;display:grid;gap:6px}.cinema-foe{display:flex;justify-content:space-between;gap:12px;background:#07111ec9;border:1px solid #695d55b8;border-radius:5px;padding:7px 9px;font:12px Georgia,serif}.cinema-foe b{color:#e3a09b;white-space:nowrap;font:11px Arial,sans-serif}
-#cinemaMinimize{position:absolute;right:16px;top:17px;border:1px solid #aa9268;background:#0a1722d8;color:#f4dfbb;border-radius:6px;padding:10px 12px;font:11px Arial,sans-serif;letter-spacing:1px}
-html.cinema-compact.cinematic-battle .gameframe{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:5/3;z-index:auto;border:2px solid #a99069;border-radius:9px}
-html.cinema-compact.cinematic-battle,html.cinema-compact.cinematic-battle body{overflow:auto}
-html.cinema-compact.cinematic-battle .battlepanel{left:10px;right:10px;bottom:0;min-height:95px;padding:8px}
-html.cinema-compact.cinematic-battle .cinema-party,html.cinema-compact.cinematic-battle .cinema-foes{display:none}
-html.cinema-compact.cinematic-battle .cinema-title{top:6px;left:10px;transform:none;padding:4px 7px}.cinema-compact .cinema-title span{font-size:13px}.cinema-compact .cinema-title small{font-size:7px}
-html.cinema-compact.cinematic-battle #cinemaMinimize{top:6px;right:7px;padding:5px}
-@media(max-width:800px){.cinema-party{top:65px;width:156px}.cinema-member{padding:3px;gap:5px}.cinema-member img{width:30px;height:37px}.cinema-member b{font-size:11px}.cinema-member small{font-size:8px;margin:0}.cinema-stat{font-size:8px;margin-top:1px}.cinema-foes{display:none}.cinema-title{top:5px;padding:4px 12px}.cinema-title span{font-size:16px}.cinema-title small{font-size:8px}.cinematic-battle #cinemaMinimize{padding:5px;font-size:9px}.cinematic-battle .battlepanel{left:8px;right:8px;bottom:4px;min-height:98px;padding:8px}.cinematic-battle .battlepanel .actionrow button{font-size:10px;padding:6px 8px;min-height:27px}.cinematic-battle .battlepanel .turntext{font-size:12px}}
-
-/* v1.0: animated sprite battle staging; keep foe list separate from character silhouettes */
-html.cinematic-battle .cinema-party{top:9%;left:12px;width:clamp(185px,15.4vw,242px)}
-html.cinematic-battle .cinema-foes{right:18px;top:10%;width:clamp(150px,12vw,205px)}
-html.cinematic-battle .cinema-title{z-index:2;top:8px}
-html.cinematic-battle .battlepanel{left:clamp(12px,17vw,255px);min-height:116px;bottom:12px}
-html.cinematic-battle .battlepanel .actionrow{max-height:100px}
-@media(max-width:850px){html.cinematic-battle .cinema-party{width:152px;top:48px}html.cinematic-battle .battlepanel{left:8px}}
-
-html.cinematic-battle #toast{display:none!important}
 
 /* ============================================================
    ASHEN REALMS v1.1 — IMMERSIVE EDITION
@@ -340,16 +291,6 @@ html.title-screen .modal .choices button{text-align:center}
 .hero-preview-copy p{margin:5px 0!important;font:12px/1.5 Georgia,serif;color:#e5dbc8!important}
 .hero-preview-copy .ancestry-line{color:#b4c7d3!important}
 .hero-preview-copy>span{font:10px Arial,sans-serif;color:#d6af73}
-/* Battle HUD rebalances itself around the figures and overlays, rather than covering actors. */
-html.cinematic-battle .cinema-title{left:50%;min-width:260px;background:#07111de5;border-color:#b6986a;border-radius:3px;box-shadow:0 6px 25px #0009;padding:10px 22px}
-html.cinematic-battle .cinema-title span{font-size:22px;letter-spacing:2.7px}
-html.cinematic-battle .cinema-party{top:79px;left:15px;width:clamp(180px,16vw,225px)}
-html.cinematic-battle .cinema-foes{top:85px;right:15px;width:clamp(150px,14vw,200px)}
-html.cinematic-battle .battlepanel{left:max(16px,17vw);right:16px;bottom:16px;min-height:105px;padding:12px 18px;box-shadow:0 7px 35px #000e;border-radius:4px;background:linear-gradient(125deg,#07101df5,#132334e9);border-color:#bda074;backdrop-filter:blur(18px)}
-html.cinematic-battle .battlepanel .turntext{font:16px Georgia,serif;letter-spacing:.4px;color:#ffdf9f;margin-bottom:7px}
-html.cinematic-battle .battlepanel .actionrow button{font:12px Arial,sans-serif;letter-spacing:.5px;min-height:35px;padding:8px 12px;border-radius:3px}
-html.cinematic-battle .cinema-member{border-radius:4px;background:#071320e9}
-html.cinematic-battle #cinemaMinimize{border-radius:3px}
 @media(max-width:880px){
  .world-topline{left:9px;top:8px;padding:8px}.world-topline strong{font-size:13px;letter-spacing:1px}.world-crest{font-size:21px}
  .world-topactions{top:8px;right:8px;gap:4px}.world-topactions button{min-width:49px;padding:8px 5px;font-size:9px;letter-spacing:.2px}
@@ -359,10 +300,6 @@ html.cinematic-battle #cinemaMinimize{border-radius:3px}
  .world-hero{left:9px;bottom:13px;width:234px;padding:6px;gap:8px;min-height:80px}.world-hero img{width:44px;height:60px}.world-hero-content>strong{font-size:15px}.world-hero-content>small{font-size:8px;margin-bottom:5px}.world-resource{margin:3px 0;font-size:8px}.world-resource b{width:35px}
  .world-actions{right:8px;bottom:11px;gap:3px}.world-actions button{font-size:9px;min-width:62px;padding:6px 5px}.world-actions button span{display:none}
  .world-keyhelp{display:none}
- html.cinematic-battle .cinema-title{padding:5px 10px;min-width:160px}.cinematic-battle .cinema-title span{font-size:14px!important}
- html.cinematic-battle .battlepanel{left:8px;right:8px;bottom:8px;max-height:33vh;overflow:auto;padding:8px}
- html.cinematic-battle .cinema-party{left:6px;top:53px;width:142px}
- html.cinematic-battle .cinema-foes{display:none}
  html.world-explore #hudToggle{right:8px;top:43px}
 }
 @media(max-width:560px){
@@ -450,38 +387,10 @@ html.world-explore #hudToggle{top:51px;right:15px;opacity:.65}
  html.world-explore #hudToggle{right:5px;top:39px}
 }
 
-/* v1.3 battle tactics: scene remains primary, commands do not overlap characters. */
-html.cinematic-battle .battlepanel{left:clamp(210px,17vw,260px);right:clamp(10px,3vw,55px);bottom:12px;min-height:126px;padding:12px 15px;max-height:min(42vh,270px);overflow-y:auto;background:linear-gradient(135deg,#06111bed,#111f2eeb);border:1px solid #b39a72bf;backdrop-filter:blur(15px)}
-.battlepanel .battle-topline{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.battlepanel .battle-round{font:9px Arial,sans-serif;color:#bdab8c;letter-spacing:1.5px;white-space:nowrap}
-.battlepanel .tactics{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
-.battlepanel .tactics button{border-radius:5px;flex:0 1 auto;padding:7px 11px!important;min-height:28px!important;font:700 10px Arial,sans-serif!important;letter-spacing:.5px;color:#aabac2;background:#101e2a;border:1px solid #536274;white-space:nowrap}
-.battlepanel .tactics button.tactic-current{border-color:#e6b971;color:#fff2d6;background:linear-gradient(155deg,#665137,#24384a);box-shadow:inset 0 0 0 1px #d1a86a44}
-.battlepanel .tactics button:focus-visible{outline:2px solid #f8d791;outline-offset:2px}
-.battlepanel .auto-running{color:#f3d7a7;font:11px Arial,sans-serif;letter-spacing:.7px;padding:7px 0}
-.battlepanel .auto-pulse{display:inline-block;background:#e9bb6e;width:6px;height:6px;border-radius:50%;box-shadow:0 0 9px #edb765;margin-right:5px;vertical-align:middle}
-html.cinematic-battle .battlepanel .actionrow{max-height:76px}
-html.cinematic-battle .cinema-party{width:clamp(165px,14vw,218px);left:12px;top:10%}
-html.cinematic-battle .cinema-foes{width:clamp(160px,13vw,200px);top:11%}
-html.cinematic-battle .cinema-title span{font-size:clamp(13px,1.4vw,21px);letter-spacing:2px}
-html.cinematic-battle .cinema-member{padding:5px}
-html.cinematic-battle .cinema-member img{height:43px;width:37px}
-html.cinematic-battle .cinema-member b{font-size:12px}
-html.cinematic-battle .cinema-member small{font-size:9px;margin:1px 0}
-@media(max-width:800px){
- html.cinematic-battle .battlepanel{left:7px;right:7px;bottom:6px;max-height:45vh;min-height:110px;padding:8px}
- .battlepanel .tactics{gap:3px;margin:5px 0}
- .battlepanel .tactics button{padding:6px 5px!important;font-size:8px!important;letter-spacing:0}
- html.cinematic-battle .cinema-party{top:48px;width:147px}
- html.cinematic-battle .cinema-foes{display:none}
- html.cinematic-battle .cinema-title{top:5px}
-}
-@media(max-height:590px){html.cinematic-battle .cinema-party{top:47px}html.cinematic-battle .battlepanel{bottom:5px;padding:7px;max-height:47vh}.battlepanel .tactics{margin:4px 0}}
-
 /* v1.4: non-intrusive district reveal instead of signs placed in every street. */
 .district-notice{position:absolute;z-index:8;top:22%;left:50%;transform:translate(-50%,-6px);padding:9px 24px;color:#f3dfb5;background:#07111bce;border:1px solid #a892695e;border-radius:4px;letter-spacing:3px;font:small-caps 14px Georgia,serif;box-shadow:0 8px 28px #0008;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s}
 .district-notice.visible{opacity:1;transform:translate(-50%,0)}
-html.cinematic-battle .district-notice,html.world-explore.hud-minimal .district-notice{display:none}
+html.world-explore.hud-minimal .district-notice{display:none}
 @media(max-width:700px){.district-notice{top:25%;font-size:11px;padding:6px 13px;letter-spacing:1px}}
 
 /* v1.5 — the entire party stays visible in exploration without covering the street */
@@ -504,14 +413,6 @@ html.cinematic-battle .district-notice,html.world-explore.hud-minimal .district-
 .party-mini-bar.mp>i>em{background:linear-gradient(90deg,#337da2,#87d3eb)}
 .party-mini-bar>b{min-width:43px;text-align:right;color:#e7e4dc;font-weight:400}
 .world-roster-action{text-align:right;color:#bea47b;font:8px Arial,sans-serif;letter-spacing:1px}
-/* Enemy health: always shown, including on smaller laptop displays. */
-html.cinematic-battle .cinema-foes,html.cinema-compact.cinematic-battle .cinema-foes{display:grid;position:absolute;top:72px;right:12px;width:clamp(142px,14vw,214px);max-height:36vh;overflow:auto;gap:5px;pointer-events:none}
-.cinema-foe{display:block!important;padding:7px 8px!important;background:#081522ef!important;border:1px solid #b78d7780!important;box-shadow:0 4px 13px #0009!important}
-.foe-line{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
-.foe-line span{font:11px Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.foe-line b{font:10px Arial,sans-serif;color:#ffd0b7!important;white-space:nowrap}
-.foe-track{height:7px;margin-top:6px;overflow:hidden;border-radius:3px;background:#32282e;border:1px solid #78656a80}
-.foe-track i{display:block;height:100%;background:linear-gradient(90deg,#933c46,#e97862);box-shadow:0 0 8px #e85e5a55}
 /* Character training and spellbook use the available viewport without tiny scroll lists. */
 .gameframe .modal:has(.train-screen),.gameframe .modal:has(.roster-screen),.gameframe .modal:has(.grimoire-screen){width:min(850px,96vw);max-height:min(88dvh,850px);padding:19px 23px;background:linear-gradient(145deg,#1a2939f7,#0b1623fb);border:1px solid #c8a777;border-radius:7px;box-shadow:0 24px 80px #000d}
 .train-title,.grimoire-header{text-align:center;border-bottom:1px solid #8a74554b;padding-bottom:12px;margin-bottom:15px}
@@ -582,8 +483,6 @@ html.cinematic-battle .cinema-foes,html.cinema-compact.cinematic-battle .cinema-
 .field-targets button small{color:#b7c9d5}
 @media(max-width:850px){
  html.world-explore .world-hero.world-roster{bottom:56px;left:7px;width:218px;max-height:36vh;padding:5px}
- html.cinematic-battle .cinema-foes{display:grid!important;top:61px;right:5px;width:135px;max-height:29vh;gap:3px}
- .cinema-foe{padding:4px!important}.foe-line span{font-size:9px}.foe-line b{font-size:8px}.foe-track{height:5px;margin-top:3px}
  .gameframe .modal:has(.train-screen),.gameframe .modal:has(.roster-screen),.gameframe .modal:has(.grimoire-screen){max-height:93dvh;width:97vw;padding:12px}
  .train-grid{grid-template-columns:1fr}.train-hero{grid-template-columns:70px minmax(0,1fr) 55px;gap:8px;padding:7px}
  .train-hero>img{width:70px;height:95px}.train-points b{font-size:26px}
@@ -597,166 +496,3 @@ html.cinematic-battle .cinema-foes,html.cinema-compact.cinematic-battle .cinema-
 /* v1.6 keep merchant content inside the modal */
 .modal:has(.trade-screen){width:min(820px,96vw);max-width:min(820px,96vw)}
 .modal .trade-screen{width:100%}
-
-/* Combat interface: reserved layout regions keep all HUD panels off the battlefield. */
-html.cinematic-battle .gameframe:not(.none){
-  --combat-border:#9f866047;--combat-gold:#e6c58f;--combat-ink:#e8e9e7;
-  display:grid;grid-template-columns:208px minmax(0,1fr) 208px;
-  grid-template-rows:58px minmax(0,1fr) 232px;gap:0;
-  padding:0;background:radial-gradient(ellipse at 50% 35%,#1c2b36,#080f18 75%);
-}
-html.cinematic-battle .gameframe:after{display:none}
-html.cinematic-battle #game{grid-column:2;grid-row:2;width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;align-self:center;image-rendering:auto}
-html.cinematic-battle .cinema-hud{display:contents;pointer-events:none}
-html.cinematic-battle .cinema-title{grid-column:1/-1;grid-row:1;position:static;transform:none;min-width:0;display:flex;align-items:center;justify-content:space-between;text-align:left;white-space:normal;padding:10px 20px;border:0;border-bottom:1px solid var(--combat-border);border-radius:0;background:#0a141eea;box-shadow:none}
-html.cinematic-battle .cinema-title span{font:17px Georgia,serif;letter-spacing:2px;color:var(--combat-gold)}
-html.cinematic-battle .cinema-title small{font:9px Arial,sans-serif;letter-spacing:1.5px;color:#91a2ad;margin-top:5px}
-html.cinematic-battle #cinemaMinimize{position:static;padding:8px 12px;border:1px solid var(--combat-border);border-radius:4px;background:#16232e;color:#d7c7aa;font:10px Arial,sans-serif;letter-spacing:1px;pointer-events:auto}
-html.cinematic-battle .cinema-party,html.cinematic-battle .cinema-foes{position:static;grid-row:2;display:flex!important;flex-direction:column;width:auto;max-width:none;max-height:none;min-height:0;gap:0;padding:18px 12px;overflow:hidden;background:#0b151dc2;border:0;pointer-events:auto}
-html.cinematic-battle .cinema-party{grid-column:1;border-right:1px solid var(--combat-border)}
-html.cinematic-battle .cinema-foes{grid-column:3;border-left:1px solid var(--combat-border)}
-html.cinematic-battle .combat-section-title{margin:0 0 12px;font:10px Arial,sans-serif;letter-spacing:2px;color:#a89577;font-weight:600}
-html.cinematic-battle .combat-status-list{display:grid;align-content:start;gap:9px;overflow:auto;min-height:0;scrollbar-width:thin}
-html.cinematic-battle .cinema-member,html.cinematic-battle .cinema-foe{display:flex!important;align-items:center;gap:9px;margin:0;padding:10px!important;background:#14212bdd!important;border:1px solid #40515d80!important;border-radius:5px;box-shadow:none!important;color:var(--combat-ink)}
-html.cinematic-battle .cinema-member.active,html.cinematic-battle .cinema-foe.active{border-color:#d9b47a!important;background:#263038!important;box-shadow:inset 3px 0 #d9b47a!important}
-html.cinematic-battle .cinema-member.fallen{opacity:.5}
-html.cinematic-battle .cinema-member img{width:30px;height:38px;flex:0 0 30px;object-fit:cover;border-radius:3px;border:1px solid #826c4c66}
-html.cinematic-battle .cinema-member-info{min-width:0;flex:1}
-html.cinematic-battle .cinema-member b{font:13px Georgia,serif;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-html.cinematic-battle .cinema-member small{font:9px Arial,sans-serif;color:#9babaf;margin:4px 0 8px;display:block}
-html.cinematic-battle .cinema-stat{display:flex;gap:5px;margin:5px 0 0;font:9px Arial,sans-serif;white-space:nowrap;color:#c9d3d7}
-html.cinematic-battle .cinema-stat>span:first-child{width:16px;color:#acb5bb}
-html.cinematic-battle .cinema-stat>span:last-child{min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
-html.cinematic-battle .cinema-stat i{height:5px;min-width:20px;background:#070e17;border-radius:2px}
-html.cinematic-battle .cinema-stat em{background:linear-gradient(90deg,#9c4b52,#d98778)}
-html.cinematic-battle .cinema-stat.mana em{background:linear-gradient(90deg,#3a7198,#87b6cd)}
-html.cinematic-battle .combat-condition{display:block;font:9px Arial,sans-serif;color:#e4c184;margin-top:7px}
-html.cinematic-battle .cinema-foe{display:block!important}
-html.cinematic-battle .foe-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
-html.cinematic-battle .foe-line span{font:13px Georgia,serif;white-space:normal;color:#e2e2de}
-html.cinematic-battle .foe-line b{font:9px Arial,sans-serif;color:#d5a59b!important;font-variant-numeric:tabular-nums}
-html.cinematic-battle .foe-track{height:5px;margin-top:9px;border:0;border-radius:2px;background:#070e17}
-html.cinematic-battle .foe-track i{background:linear-gradient(90deg,#87444d,#d58776);box-shadow:none}
-html.cinematic-battle .battlepanel{grid-column:1/-1;grid-row:3;position:static;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);min-height:0;max-height:none;padding:0;margin:0;overflow:hidden;z-index:auto;border:0;border-top:1px solid var(--combat-border);border-radius:0;background:#0b1621;box-shadow:none;backdrop-filter:none}
-html.cinematic-battle .battlepanel.hidden{display:none}
-html.cinematic-battle .battle-controls{display:flex;flex-direction:column;min-height:0;min-width:0;padding:16px 20px;gap:12px}
-html.cinematic-battle .battle-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}
-html.cinematic-battle .battlepanel .turntext{margin:0;min-width:0;line-height:1.2;font:16px Georgia,serif;letter-spacing:0;color:var(--combat-ink)}
-html.cinematic-battle .battle-eyebrow{display:block;font:9px Arial,sans-serif;letter-spacing:1.7px;color:#a69272;margin-bottom:5px}
-html.cinematic-battle .turntext strong{font-weight:400}
-html.cinematic-battle .battle-round{font:10px Arial,sans-serif;letter-spacing:1.5px;color:var(--combat-gold);border:1px solid var(--combat-border);padding:7px 9px;border-radius:3px}
-html.cinematic-battle .battlepanel .tactics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:0;border:1px solid #364653;border-radius:4px;overflow:hidden;flex-shrink:0}
-html.cinematic-battle .battlepanel .tactics button{margin:0;border:0;border-right:1px solid #364653;border-radius:0;padding:7px 5px!important;min-height:30px!important;font:9px Arial,sans-serif!important;letter-spacing:.3px;color:#a7b7c0;background:#13212d;white-space:normal}
-html.cinematic-battle .battlepanel .tactics button:last-child{border-right:0}
-html.cinematic-battle .battlepanel .tactics button.tactic-current{background:#3a382e;color:#f2d7ab;box-shadow:inset 0 -2px #d7b17a}
-html.cinematic-battle .command-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;font:11px Arial,sans-serif;color:#b7c4cb}
-html.cinematic-battle .command-heading span{font:8px Arial,sans-serif;letter-spacing:1px;color:#718692}
-html.cinematic-battle .battlepanel .actionrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;min-height:0;max-height:none;overflow:auto;align-content:start;scrollbar-width:thin}
-html.cinematic-battle .battlepanel .actionrow button{margin:0;padding:9px 7px;min-height:42px;font:11px Arial,sans-serif;letter-spacing:.5px;text-align:center;border:1px solid #63705e87;border-radius:4px;background:linear-gradient(#263441,#1b2834);color:#eee6d7;box-shadow:none;white-space:normal}
-html.cinematic-battle .battlepanel .actionrow button:hover:not(:disabled){border-color:#d7b17a;background:#34434b}
-html.cinematic-battle .battlepanel .actionrow button:focus-visible,html.cinematic-battle #cinemaMinimize:focus-visible{outline:2px solid #e5c38f;outline-offset:-3px}
-html.cinematic-battle .battlepanel .actionrow button small{font:9px Arial,sans-serif;letter-spacing:0;color:#a1b7c4;margin-top:5px}
-html.cinematic-battle .auto-running,html.cinematic-battle .battle-wait{grid-column:1/-1;align-self:center;font:12px Arial,sans-serif;line-height:1.4;color:#c8baa1;padding:8px 0}
-html.cinematic-battle .battle-events{display:flex;flex-direction:column;min-width:0;min-height:0;padding:16px 20px;border-left:1px solid var(--combat-border);background:#09131dc9}
-html.cinematic-battle .events-heading{display:flex;justify-content:space-between;gap:8px;font:10px Arial,sans-serif;letter-spacing:1.7px;color:#bda985;padding-bottom:10px;border-bottom:1px solid #35434d75}
-html.cinematic-battle .events-heading small{font:9px Arial,sans-serif;letter-spacing:0;color:#738794}
-html.cinematic-battle .battlepanel .battlehistory{list-style:none;margin:0;padding:0;min-height:0;max-height:none;height:auto;flex:1;overflow:auto;scrollbar-width:thin;color:#bdcbd1;font:11px/1.55 Arial,sans-serif}
-html.cinematic-battle .battlehistory li{padding:8px 0;border-bottom:1px solid #31414d66;overflow-wrap:anywhere}
-html.cinematic-battle .battlehistory li:last-child{border-bottom:0}
-html.cinematic-battle .battlehistory .event-important{color:#ead2aa}
-html.cinema-compact.cinematic-battle .gameframe:not(.none){position:relative;inset:auto;width:100%;height:660px;max-height:none;aspect-ratio:auto;grid-template-columns:170px minmax(0,1fr) 170px;grid-template-rows:50px minmax(0,1fr) 222px;z-index:auto;border:1px solid var(--combat-border);border-radius:6px;overflow:hidden}
-@media(max-width:1000px){
-  html.cinematic-battle .gameframe:not(.none){grid-template-columns:164px minmax(0,1fr) 164px;grid-template-rows:50px minmax(0,1fr) 222px}
-  html.cinematic-battle .cinema-party,html.cinematic-battle .cinema-foes{padding:12px 8px}
-  html.cinematic-battle .cinema-member{padding:8px!important;gap:6px}
-  html.cinematic-battle .cinema-member img{display:none}
-  html.cinematic-battle .battle-controls,html.cinematic-battle .battle-events{padding:12px 14px}
-  html.cinematic-battle .battlepanel{grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr)}
-}
-@media(max-width:700px){
-  html.cinematic-battle .gameframe:not(.none),html.cinema-compact.cinematic-battle .gameframe:not(.none){grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:46px 142px minmax(150px,1fr) 264px}
-  html.cinematic-battle #game{grid-column:1/-1;grid-row:3}
-  html.cinematic-battle .cinema-title{padding:8px 10px}
-  html.cinematic-battle .cinema-title span{font-size:12px!important;letter-spacing:1px}
-  html.cinematic-battle .cinema-title small{font-size:7px;letter-spacing:.8px;margin-top:3px}
-  html.cinematic-battle #cinemaMinimize{font-size:8px;padding:6px 7px}
-  html.cinematic-battle .cinema-party,html.cinematic-battle .cinema-foes{grid-row:2;padding:9px 8px}
-  html.cinematic-battle .cinema-foes{grid-column:2;border-left:0}
-  html.cinematic-battle .combat-section-title{font-size:8px;margin-bottom:7px;letter-spacing:1.3px}
-  html.cinematic-battle .combat-status-list{gap:4px}
-  html.cinematic-battle .cinema-member,html.cinematic-battle .cinema-foe{padding:5px 7px!important}
-  html.cinematic-battle .cinema-member b,html.cinematic-battle .foe-line span{font-size:11px}
-  html.cinematic-battle .cinema-member small{display:none}
-  html.cinematic-battle .cinema-stat{font-size:8px;margin-top:3px}
-  html.cinematic-battle .foe-line{gap:3px}
-  html.cinematic-battle .foe-line b{font-size:8px}
-  html.cinematic-battle .foe-track{margin-top:5px;height:4px}
-  html.cinematic-battle .combat-condition{font-size:8px;margin-top:3px}
-  html.cinematic-battle .battlepanel{grid-row:4;grid-template-columns:1fr;grid-template-rows:180px minmax(0,1fr)}
-  html.cinematic-battle .battle-controls{padding:10px 10px;gap:8px}
-  html.cinematic-battle .battle-events{padding:8px 10px;border-left:0;border-top:1px solid var(--combat-border)}
-  html.cinematic-battle .battle-eyebrow{font-size:8px;margin-bottom:3px}
-  html.cinematic-battle .battlepanel .turntext{font-size:14px}
-  html.cinematic-battle .battle-round{font-size:8px;padding:5px 7px}
-  html.cinematic-battle .battlepanel .tactics button{font-size:8px!important;min-height:27px!important;padding:5px 3px!important}
-  html.cinematic-battle .command-heading{font-size:10px}
-  html.cinematic-battle .command-heading span{display:none}
-  html.cinematic-battle .battlepanel .actionrow{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-  html.cinematic-battle .battlepanel .actionrow button{font-size:10px;padding:7px 5px;min-height:33px;letter-spacing:0}
-  html.cinematic-battle .events-heading{font-size:8px;letter-spacing:1px;padding-bottom:5px}
-  html.cinematic-battle .battlepanel .battlehistory{font-size:10px;line-height:1.4}
-  html.cinematic-battle .battlehistory li{padding:5px 0}
-}
-@media(max-height:550px) and (min-width:701px){
-  html.cinematic-battle .gameframe:not(.none){grid-template-columns:146px minmax(0,1fr) 146px;grid-template-rows:38px minmax(130px,1fr) 150px}
-  html.cinematic-battle .cinema-title{padding:5px 10px}
-  html.cinematic-battle .cinema-title span{font-size:12px!important;letter-spacing:1px}
-  html.cinematic-battle .cinema-title small{font-size:7px;margin-top:2px}
-  html.cinematic-battle .cinema-party,html.cinematic-battle .cinema-foes{padding:9px 7px}
-  html.cinematic-battle .combat-section-title{font-size:8px;margin-bottom:6px}
-  html.cinematic-battle .cinema-member,html.cinematic-battle .cinema-foe{padding:7px!important}
-  html.cinematic-battle .cinema-member b,html.cinematic-battle .foe-line span{font-size:11px}
-  html.cinematic-battle .battle-controls,html.cinematic-battle .battle-events{padding:9px 12px;gap:6px}
-  html.cinematic-battle .battle-eyebrow{font-size:7px;margin-bottom:2px}
-  html.cinematic-battle .battlepanel .turntext{font-size:12px}
-  html.cinematic-battle .battlepanel .tactics button{min-height:24px!important;font-size:8px!important;padding:4px 3px!important}
-  html.cinematic-battle .command-heading{font-size:9px}
-  html.cinematic-battle .command-heading span{display:none}
-  html.cinematic-battle .battlepanel .actionrow button{min-height:30px;font-size:9px;padding:6px 4px}
-  html.cinematic-battle .battlepanel .battlehistory{font-size:10px}
-}
-@media(max-width:700px) and (max-height:650px){
-  html.cinematic-battle .gameframe:not(.none){grid-template-rows:38px 104px minmax(120px,1fr) 230px}
-  html.cinematic-battle .battlepanel{grid-template-rows:166px minmax(0,1fr)}
-}
-
-/* Windowed mode shares the same reserved regions; portrait uses the canvas ratio. */
-html.cinema-compact.cinematic-battle .cinema-party,html.cinema-compact.cinematic-battle .cinema-foes{position:static;top:auto;right:auto;left:auto;width:auto;max-height:none;max-width:none;grid-row:2;display:flex!important;overflow:hidden}
-html.cinema-compact.cinematic-battle .cinema-party{grid-column:1}
-html.cinema-compact.cinematic-battle .cinema-foes{grid-column:3}
-@media(max-width:700px){
-  html.cinematic-battle .gameframe:not(.none),html.cinema-compact.cinematic-battle .gameframe:not(.none){grid-template-rows:46px auto calc(100vw * .6) minmax(0,1fr)}
-  html.cinematic-battle .cinema-party,html.cinematic-battle .cinema-foes,html.cinema-compact.cinematic-battle .cinema-party,html.cinema-compact.cinematic-battle .cinema-foes{max-height:180px}
-  html.cinematic-battle .cinema-foes,html.cinema-compact.cinematic-battle .cinema-foes{grid-column:2}
-  html.cinematic-battle .battlepanel{grid-template-rows:204px minmax(0,1fr)}
-  html.cinematic-battle .battlepanel .actionrow button{min-height:44px}
-}
-@media(max-width:700px) and (min-height:551px) and (max-height:650px){
-  html.cinematic-battle .gameframe:not(.none){grid-template-rows:38px auto calc(100vw * .6) minmax(0,1fr)}
-  html.cinematic-battle .battlepanel{grid-template-rows:166px minmax(0,1fr)}
-  html.cinematic-battle .battlepanel .actionrow button{min-height:33px}
-}
-@media(max-width:700px) and (max-height:550px){
-  html.cinematic-battle .gameframe:not(.none){grid-template-columns:110px minmax(0,1fr) 110px;grid-template-rows:36px minmax(80px,1fr) 170px}
-  html.cinematic-battle #game{grid-column:2;grid-row:2}
-  html.cinematic-battle .cinema-party,html.cinematic-battle .cinema-foes{grid-row:2;max-height:none;padding:7px 5px}
-  html.cinematic-battle .cinema-party{grid-column:1}
-  html.cinematic-battle .cinema-foes{grid-column:3}
-  html.cinematic-battle .battlepanel{grid-row:3;grid-template-columns:minmax(0,1.6fr) minmax(150px,1fr);grid-template-rows:1fr}
-  html.cinematic-battle .battle-controls,html.cinematic-battle .battle-events{padding:8px;gap:5px}
-  html.cinematic-battle .battle-events{border-top:0;border-left:1px solid var(--combat-border)}
-  html.cinematic-battle .battlepanel .actionrow button{min-height:30px;font-size:9px;padding:5px 3px}
-  html.cinematic-battle .cinema-stat{gap:3px;font-size:7px}
-  html.cinematic-battle .cinema-stat i{min-width:8px}
-  html.cinematic-battle .events-heading small{display:none}
-}

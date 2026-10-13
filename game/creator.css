@@ -1,0 +1,163 @@
+/* The tavern is illustrated artwork. CSS supplies legibility, material-backed UI and atmosphere only. */
+#tavernScene{display:none}
+html.tavern-creation-open #titleScene{display:none!important}
+html.title-screen.tavern-creation-open #tavernScene{display:block;position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none;background:#21140d}
+.tavern-art{position:absolute;inset:0;background:url('assets/tavern_creation/tavern.png') center center/cover no-repeat}
+#tavernScene::after{content:'';position:absolute;inset:0;background:#08060540;box-shadow:inset 0 0 130px #0704038c}
+.tavern-firelight{position:absolute;inset:20% 0 0 60%;background:#e47b2120;mix-blend-mode:screen;filter:blur(70px);animation:tavern-flame 3.8s ease-in-out infinite alternate}
+.tavern-smoke{position:absolute;inset:0 10% 45%;background:radial-gradient(ellipse at 75% 70%,#cec3a714,transparent 55%);animation:tavern-smoke 24s ease-in-out infinite alternate}
+.tavern-dust{position:absolute;inset:0}
+.tavern-dust i{position:absolute;left:var(--x);top:55%;width:2px;height:2px;border-radius:50%;background:#e9cf9a80;box-shadow:0 0 4px #d99c49;animation:tavern-dust 21s linear infinite;animation-delay:var(--delay);opacity:0}
+@keyframes tavern-flame{from{opacity:.5}to{opacity:1}}
+@keyframes tavern-smoke{from{transform:translate(-2%,2%)}to{transform:translate(3%,-2%)}}
+@keyframes tavern-dust{0%{transform:translate(0,30px);opacity:0}20%{opacity:.5}100%{transform:translate(30px,-180px);opacity:0}}
+html.title-screen.tavern-creation-open #overlay{padding:0;background:transparent;backdrop-filter:none;align-items:stretch}
+html.title-screen #modal[data-screen='tavern-create']{width:100%;height:100dvh;min-height:0;max-height:none;padding:0;border:0;box-shadow:none;background:transparent;backdrop-filter:none;overflow:hidden}
+.tavern-shell{height:100%;display:flex;flex-direction:column;padding:24px clamp(22px,5vw,95px) 18px;color:#f0dfbc;min-height:0;--ink:#30251a;--paper-muted:#64543b}
+.tavern-header{display:flex;align-items:center;justify-content:space-between;gap:25px;width:min(1320px,100%);margin:0 auto 16px;flex-shrink:0;text-shadow:0 2px 12px #000}
+.tavern-header>div>span{font:10px Arial,sans-serif;letter-spacing:2.7px;color:#d5b786}
+html.title-screen .tavern-header h2{font:normal clamp(24px,2.6vw,39px)/1.25 Georgia,serif;color:#f5dfb2;margin:10px 0 0;letter-spacing:.4px;text-align:left}
+.tavern-stages{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.tavern-shell .tavern-stages button{display:grid;justify-items:center;gap:6px;background:none;border:0;border-radius:0;color:#b8a88d;padding:5px;min-height:48px;font:11px Georgia,serif}
+.tavern-stages button b{font:15px Georgia,serif;width:30px;height:30px;border:1px solid #caa86c50;border-radius:50%;display:grid;place-items:center;box-shadow:0 2px 8px #0005;background:#160f08a6}
+.tavern-stages button[aria-current] b{color:#ffe6b6;border-color:#ecd093;background:#775122b5;box-shadow:0 0 16px #cb9a4442}
+.tavern-stages button[aria-current] span{color:#f1dcae}
+.tavern-stages button:disabled{opacity:.6}
+.tavern-body{width:min(1240px,100%);margin:0 auto;min-height:0;flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#aa8b53 #20160c;overscroll-behavior:contain;display:flex;flex-direction:column;justify-content:safe center;gap:20px;padding:8px 14px 14px}
+.ancestry-gallery,.class-gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(16px,3vw,45px);max-width:1080px;width:100%;margin:0 auto;flex-shrink:0}
+.tavern-shell .illustrated-choice{border:0;padding:0;background:none!important;text-align:center;color:#f5dfb3;border-radius:0;min-width:0;display:flex;flex-direction:column;align-items:center;box-shadow:none;transition:transform .15s}
+.illustrated-choice>img{display:block;width:100%;max-width:230px;height:clamp(145px,24vh,260px);object-fit:cover;object-position:center 25%;border-radius:45% 45% 8px 8px;border:3px solid #716048;outline:1px solid #252017;box-shadow:0 7px 22px #0009;image-rendering:auto;filter:saturate(.8) brightness(.85)}
+.illustrated-choice[aria-pressed='true']>img{border-color:#e0b96e;outline:1px solid #b28443;box-shadow:0 0 0 4px #c69b4c27,0 8px 28px #000a;filter:none}
+.illustrated-choice:hover>img{filter:none}
+.choice-caption{display:flex;flex-direction:column;gap:7px;align-items:center;position:relative;width:100%;max-width:250px;padding:13px 10px 12px;margin-top:-3px;color:#332617;background:#dac293 url('assets/tavern_creation/parchment.png') center/cover;border-radius:1px 1px 8px 3px;box-shadow:0 5px 14px #0007;min-height:86px}
+.choice-caption strong{font:normal 21px Georgia,serif;color:#312015;letter-spacing:.4px}
+.choice-caption>small{font:11px Georgia,serif;color:#67553b}
+.choice-bonuses{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 10px;font:12px Georgia,serif;line-height:1.4}
+.bonus-positive{color:#285733!important}.bonus-negative{color:#9a2e27!important}.bonus-neutral{color:#665940!important}.bonus-class{color:#695224!important}
+.parchment{color:var(--ink);background:#d6be8b url('assets/tavern_creation/parchment.png') center/cover;padding:24px 30px;border-radius:3px 8px 3px 7px;box-shadow:0 9px 30px #08040199;border:1px solid #94734380}
+.tavern-shell .parchment h3{font:normal 28px Georgia,serif;color:#392719;margin:0 0 10px}
+.tavern-shell .parchment h3 small{font:12px Georgia,serif;color:#695538;display:block;margin-top:8px}
+.tavern-shell .parchment p{font:14px/1.6 Georgia,serif;color:#51412d;margin:8px 0}
+.tavern-shell .parchment small{color:#625236;font:11px/1.5 Arial,sans-serif}
+.lineage-story,.calling-notes{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr);gap:40px;max-width:1080px;width:100%;margin:0 auto;flex-shrink:0}
+.lineage-story .lineage-strength{font-size:13px;color:#705533}
+.ledger-name{border-left:1px solid #7d5c383b;padding-left:25px}
+.tavern-shell .ledger-name label{font:9px Arial,sans-serif;letter-spacing:1.6px;color:#705b3c;margin:0 0 5px}
+.tavern-shell .ledger-name input{font:22px Georgia,serif;background:transparent;border:0;border-bottom:1px solid #826d465e;border-radius:0;padding:5px 0 7px;color:#302115;min-height:42px}
+.ledger-name>span{display:block;font:11px Georgia,serif;color:#716043;margin-top:8px}
+.tavern-vitals{display:flex;gap:24px;align-items:center;margin:10px 0 4px}
+.tavern-vitals>span{display:flex;align-items:baseline;gap:7px}
+.tavern-vitals small{font:10px Arial,sans-serif;color:#736044}
+.tavern-vitals b{font:normal 25px Georgia,serif;color:#3c271a}
+.tavern-shell .estimate-note{display:block;font:10px/1.5 Arial,sans-serif;color:#736044}
+.class-choice>img{max-width:210px;object-position:center;height:clamp(145px,23vh,245px)}
+.class-choice .choice-caption{min-height:70px}
+.calling-notes{gap:32px;padding:20px 28px}
+.calling-notes>div+div{border-left:1px solid #7d5c383b;padding-left:25px}
+.calling-notes .choice-bonuses,.calling-recommend .bonus-positive{font-size:12px;display:inline}
+.tavern-ability{display:block;font:14px Georgia,serif;color:#3c2d1e;margin-top:10px}
+.tavern-shell .tavern-ability small{display:block;font:11px/1.5 Georgia,serif;color:#665336;margin-top:5px}
+.tavern-shell .starter-equipment{font-size:11px;line-height:1.5;color:#6d593b}
+.dice-layout{display:grid;grid-template-columns:minmax(0,1fr) 275px;align-items:center;gap:30px;width:100%}
+.physical-dice-table{min-width:0;position:relative;text-align:center;color:#f4dfba}
+.dice-table-heading>span{font:10px Arial,sans-serif;letter-spacing:2.4px;color:#e0bd80;text-shadow:0 2px 5px #000}
+.tavern-shell .dice-table-heading p{font:italic 18px Georgia,serif;color:#e9d5b5;text-shadow:0 2px 10px #000;margin:12px 0 0}
+#diceTable{width:100%;height:clamp(210px,36vh,420px);image-rendering:auto;display:block}
+.dice-outcome{font:18px/1.5 Georgia,serif;color:#ffe2a3;min-height:30px;text-shadow:0 2px 8px #000}
+.dice-outcome.result-settled{animation:ink-result .35s ease-out}
+@keyframes ink-result{from{transform:translateY(5px);opacity:.3}to{transform:translateY(0);opacity:1}}
+.tavern-shell .dice-notice{font:12px/1.5 Arial,sans-serif;color:#e7c492;margin:6px auto;max-width:500px}
+.dice-tools{display:flex;justify-content:center;gap:12px;margin-top:12px}
+.tavern-shell .dice-tools button,.tavern-shell .tavern-footer button{background:#362618 url('assets/tavern_creation/tabletop.png') center/cover;color:#f6ddb0;border:1px solid #b89b63a0;border-radius:2px;box-shadow:0 3px 10px #0502008a,inset 0 0 0 2px #21190d7a;min-height:46px;padding:12px 22px;font:11px Georgia,serif;letter-spacing:1.1px;text-shadow:0 1px 4px #000}
+.dice-ledger{padding:25px 20px;transform:rotate(1deg)}
+.tavern-shell .dice-ledger h3{font-size:25px;margin-bottom:18px}
+.tavern-shell .dice-ledger p{font:12px/1.7 Georgia,serif;margin-top:16px}
+.tavern-shell .dice-receipt{display:grid;grid-template-columns:25px 1fr 28px;width:100%;gap:12px;align-items:center;min-height:46px;padding:8px 0;background:transparent;border:0;border-bottom:1px solid #8d6d3c40;border-radius:0;text-align:left;color:#44301c}
+.dice-receipt>span:first-child{font:10px Arial,sans-serif;color:#7c653f}
+.receipt-dice{display:flex;gap:12px;font:16px Georgia,serif}.receipt-dice i{font-style:normal}
+.discarded-value{text-decoration:line-through;text-decoration-thickness:2px;color:#a13b2d}
+.dice-receipt b{font:23px Georgia,serif;color:#382517}.dice-receipt:disabled{opacity:.7}
+.assignment-journal{max-width:1100px;margin:0 auto;width:100%;padding:26px 32px;flex-shrink:0}
+.assignment-intro{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.tavern-shell .assignment-intro h3{font-size:25px;margin:0 0 7px}
+.tavern-shell .assignment-intro p{font:12px/1.5 Georgia,serif;margin:0}
+.tavern-shell .ink-button{background:none;border:1px solid #856a407a;border-radius:2px;font:10px Arial,sans-serif;color:#614523;letter-spacing:1px;min-height:42px;padding:10px 14px;white-space:nowrap}
+.roll-token-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:20px 0 23px}
+.tavern-shell .roll-token{background:#a4834530;border:1px solid #80603340;border-radius:50% 50% 3px 3px;padding:9px 5px;text-align:center;color:#4c351e}
+.roll-token small,.roll-token span{display:block;font:9px Arial,sans-serif;color:#755936}
+.roll-token b{display:block;font:27px Georgia,serif;margin:5px 0;color:#362619}
+.tavern-shell .roll-token[aria-pressed='true']{background:#62411b27;border-color:#55401d;box-shadow:0 0 0 2px #79602a44}
+.assignment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 25px}
+.assignment-entry{display:grid;grid-template-columns:minmax(80px,1fr) 107px 87px 50px;gap:9px;align-items:center;border-bottom:1px solid #8e6d3a45;padding:10px 0}
+.tavern-shell .assignment-entry label{margin:0;font:14px Georgia,serif;color:#403019}
+.assignment-entry>div>small{display:block;font:9px Arial,sans-serif;color:#796341;margin-top:6px}
+.tavern-shell .assignment-entry select{font:12px Georgia,serif;min-height:42px;padding:6px;color:#49321b;background:#bda16a23;border:0;border-bottom:1px solid #80623577;border-radius:0;width:100%}
+.attribute-bonuses{display:grid;gap:6px;font:10px Georgia,serif}.attribute-bonuses i{font-style:normal}
+.tavern-shell .ink-score{padding:5px 2px;min-height:48px;background:transparent;border:0;border-bottom:1px solid #8e70375c;border-radius:0;display:grid;gap:4px;justify-items:center;color:#3e2b17}
+.ink-score b{font:26px Georgia,serif}.ink-score small{font:10px Georgia,serif}.ink-score:disabled{opacity:1;cursor:default}
+.assignment-footnote{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;margin-top:15px;padding-top:6px;font:13px Georgia,serif;color:#5d462b}
+.assignment-footnote .tavern-vitals{margin:0}
+.tavern-shell .assignment-footnote p{font:11px Georgia,serif;color:#6a5334;width:100%;margin:0}
+.final-ledger{display:grid;grid-template-columns:240px minmax(0,1fr);gap:35px;max-width:1100px;width:100%;margin:0 auto;flex-shrink:0}
+.lineage-portrait{position:relative;width:170px;height:190px;margin:0 auto 15px}
+.lineage-portrait>img:first-child{width:100%;height:100%;object-fit:cover;object-position:center 25%;border:3px solid #95733f;border-radius:40% 40% 3px 3px;box-shadow:0 4px 12px #4d31134a;image-rendering:auto}
+.lineage-portrait .calling-seal{position:absolute;bottom:-7px;right:-13px;width:59px;height:59px;border-radius:50%;border:3px solid #bca060;object-fit:cover;image-rendering:auto;box-shadow:0 3px 8px #51351766}
+.final-ledger>aside{text-align:center;border-right:1px solid #8e6d3a40;padding-right:25px}
+.tavern-shell .final-ledger aside h3{font-size:26px;margin:10px 0;overflow-wrap:anywhere}
+.final-identity{font:10px Arial,sans-serif;letter-spacing:.7px;color:#705a3a}
+.final-ledger .tavern-vitals{justify-content:center;gap:15px;margin:13px 0}
+.tavern-shell .final-ledger aside p{font:12px/1.8 Georgia,serif;color:#655031;text-align:left;margin:15px 0 8px}
+.final-attributes{width:100%;border-collapse:collapse;font:14px Georgia,serif;color:#4f371e}
+.final-attributes caption{text-align:left;font:12px Georgia,serif;color:#79603b;padding:0 0 15px}
+.final-attributes th,.final-attributes td{text-align:center;padding:10px 6px;border-bottom:1px solid #8e6d3a36}
+.final-attributes th:first-child{text-align:left}.final-attributes thead th{font:10px Arial,sans-serif;color:#6a5231;font-weight:normal}.final-attributes tbody th{font-weight:normal}.final-attributes td b{font:22px Georgia,serif;color:#3d2817}
+.final-kit{display:grid;grid-template-columns:1fr 1.2fr;gap:25px;margin-top:15px}
+.tavern-shell .final-kit h4{font:10px Arial,sans-serif;color:#7b5c32;letter-spacing:1px;margin:10px 0 8px}.tavern-shell .final-kit p{font:12px/1.7 Georgia,serif}.final-kit .tavern-ability{font-size:13px}
+.tavern-shell .final-message{font:italic 12px Georgia,serif;color:#7b5e37;margin-top:16px}
+.tavern-footer{display:flex;justify-content:space-between;align-items:center;gap:16px;width:min(1240px,100%);margin:14px auto 0;flex-shrink:0}
+.tavern-footer>span{font:italic 12px Georgia,serif;color:#e0c59a;text-shadow:0 1px 5px #000}
+.tavern-shell .tavern-footer .tavern-primary{color:#ffe7b0;border-color:#edc47b;box-shadow:0 0 0 2px #33230f9c,0 5px 16px #0008}
+.tavern-shell button:focus-visible,.tavern-shell input:focus-visible,.tavern-shell select:focus-visible{outline:2px solid #f2cc89;outline-offset:4px}.parchment button:focus-visible,.parchment input:focus-visible,.parchment select:focus-visible{outline-color:#76552d}
+.tavern-shell button:hover:not(:disabled){transform:translateY(-2px)}.parchment button:hover:not(:disabled){background:#9f7b3330}
+@media(max-width:1100px){
+ .tavern-shell{padding:18px 25px 14px}.tavern-header{gap:18px}.tavern-stages{gap:8px}.tavern-stages button{font-size:10px}.tavern-header>div>span{font-size:9px;letter-spacing:1.6px}
+ .tavern-body{padding:5px 8px 10px;gap:17px}.ancestry-gallery,.class-gallery{gap:18px}.illustrated-choice>img{height:clamp(140px,22vh,220px)}
+ .lineage-story,.calling-notes{gap:22px;padding:20px 24px}.lineage-story .parchment p{font-size:13px}
+ .assignment-journal{padding:22px}.assignment-entry{grid-template-columns:minmax(65px,1fr) 93px 74px 42px;gap:6px}.assignment-entry label{font-size:12px!important}.attribute-bonuses{font-size:9px}
+ .dice-layout{grid-template-columns:minmax(0,1fr) 235px;gap:15px}.dice-ledger{padding:20px 16px}
+ .final-ledger{grid-template-columns:200px minmax(0,1fr);gap:24px;padding:22px}.final-ledger>aside{padding-right:20px}.final-kit{gap:16px}
+}
+@media(max-width:700px){
+ .tavern-art{background-position:58% center}.tavern-shell{padding:14px 12px 12px}
+ .tavern-header{display:block;margin-bottom:10px}.tavern-header>div>span{font-size:8px;letter-spacing:1.5px}
+ html.title-screen .tavern-header h2{font-size:25px;margin:7px 0 10px}.tavern-stages{justify-content:space-between;gap:6px}.tavern-shell .tavern-stages button{padding:2px;min-height:42px;font-size:9px;gap:4px}.tavern-stages button b{width:24px;height:24px;font-size:12px}
+ .tavern-body{gap:14px;padding:4px 5px 8px;justify-content:flex-start}.ancestry-gallery,.class-gallery{grid-template-columns:repeat(2,1fr);gap:16px 20px;max-width:420px}
+ .illustrated-choice>img{height:145px;max-width:155px}.choice-caption{min-height:78px;padding:10px 6px;gap:5px}.choice-caption strong{font-size:18px}.choice-bonuses{font-size:11px;gap:3px 7px}.class-choice .choice-caption{min-height:65px}.choice-caption>small{font-size:10px}
+ .lineage-story,.calling-notes{grid-template-columns:1fr;gap:15px;padding:22px}.tavern-shell .parchment h3{font-size:25px}.tavern-shell .parchment p{font-size:13px}
+ .ledger-name,.calling-notes>div+div{border-left:0;border-top:1px solid #83623540;padding:15px 0 0}
+ .tavern-footer{margin-top:8px;gap:10px}.tavern-footer>span{display:none}.tavern-shell .tavern-footer button{font-size:10px;letter-spacing:.5px;padding:11px 13px;min-height:46px;max-width:66%}
+ .dice-layout{grid-template-columns:1fr;gap:15px}.dice-table-heading>span{font-size:9px}.tavern-shell .dice-table-heading p{font-size:16px}#diceTable{height:245px}.dice-outcome{font-size:15px}.dice-tools{gap:9px}.tavern-shell .dice-tools button{font-size:10px;letter-spacing:.5px;padding:11px 15px}
+ .dice-ledger{transform:none;padding:20px}.dice-ledger #diceReceipts{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}.tavern-shell .dice-ledger h3{font-size:23px;margin-bottom:8px}.tavern-shell .dice-receipt{grid-template-columns:15px 1fr 22px;gap:7px;min-height:43px}.receipt-dice{gap:7px;font-size:13px}.dice-receipt b{font-size:21px}.tavern-shell .dice-ledger p{font-size:12px}
+ .assignment-journal{padding:20px 16px}.assignment-intro{gap:10px}.tavern-shell .assignment-intro h3{font-size:22px}.tavern-shell .assignment-intro p{font-size:11px}.tavern-shell .ink-button{font-size:9px;padding:9px;min-height:42px}
+ .roll-token-strip{gap:6px;margin:17px 0}.roll-token b{font-size:24px}.roll-token small,.roll-token span{font-size:8px}.tavern-shell .roll-token{padding:8px 3px}
+ .assignment-grid{grid-template-columns:1fr;gap:5px}.assignment-entry{grid-template-columns:minmax(74px,1fr) 95px 77px 40px;gap:6px}.assignment-entry label{font-size:12px!important}
+ .assignment-footnote{gap:10px 18px;font-size:12px}.assignment-footnote .tavern-vitals{gap:15px}.tavern-shell .assignment-footnote p{line-height:1.5}
+ .final-ledger{grid-template-columns:1fr;gap:18px;padding:22px 16px}.final-ledger>aside{border-right:0;border-bottom:1px solid #8e6d3a40;padding:0 0 18px;display:grid;grid-template-columns:115px 1fr;gap:7px 18px;align-items:start;text-align:left}
+ .lineage-portrait{width:108px;height:130px;grid-column:1;grid-row:1/5;margin:0}.lineage-portrait .calling-seal{width:42px;height:42px;right:-9px}
+ .tavern-shell .final-ledger aside h3{font-size:25px;grid-column:2;margin:5px 0;align-self:end}.final-identity{grid-column:2;font-size:9px;line-height:1.5}.final-ledger .tavern-vitals{grid-column:2;gap:12px;margin:3px 0;justify-content:flex-start}.tavern-vitals b{font-size:23px}.tavern-vitals small{font-size:9px}
+ .tavern-shell .final-ledger aside p{grid-column:1/3;margin:6px 0;font-size:12px;columns:2}.final-ledger aside>small{grid-column:1/3;font-size:10px}
+ .final-attributes{font-size:13px}.final-attributes th,.final-attributes td{padding:9px 3px}.final-attributes thead th{font-size:8px}.final-attributes caption{font-size:11px;line-height:1.5}.final-attributes td b{font-size:22px}.final-kit{grid-template-columns:1fr;gap:8px}.final-kit .tavern-ability{font-size:13px}.tavern-shell .final-kit p{font-size:12px}
+}
+@media(max-height:600px) and (min-width:701px){
+ .tavern-shell{padding-top:12px}.tavern-header{margin-bottom:8px}.tavern-header>div>span{display:none}html.title-screen .tavern-header h2{font-size:26px;margin:0}.tavern-stages button span{display:none}
+ .tavern-body{gap:12px}.illustrated-choice>img{height:120px}.choice-caption{min-height:70px;padding:9px}.choice-caption strong{font-size:19px}.choice-bonuses{font-size:11px}
+ .lineage-story,.calling-notes{padding:16px 20px}.tavern-shell .parchment p{font-size:12px}.tavern-shell .parchment h3{font-size:22px}.tavern-vitals{margin:6px 0;gap:15px}
+ #diceTable{height:195px}.dice-table-heading{display:none}.dice-ledger{padding:16px}.tavern-shell .dice-receipt{min-height:33px;padding:5px 0}.dice-ledger p,.dice-ledger>small{display:none}.dice-tools{margin-top:6px}
+ .tavern-footer{margin-top:8px}.tavern-footer>span{display:none}.tavern-shell .tavern-footer button{padding:10px 17px;min-height:44px}.assignment-journal{padding:17px}.final-ledger{padding:17px}
+}
+@media(prefers-reduced-motion:reduce){.tavern-firelight,.tavern-smoke,.tavern-dust i,.dice-outcome.result-settled{animation:none!important}.tavern-shell button{transition:none}}
+html.title-motion-paused .tavern-firelight,html.title-motion-paused .tavern-smoke,html.title-motion-paused .tavern-dust i{animation:none!important}
+
+.lineage-portrait .calling-seal{display:grid;place-items:center;background:#352615 url('assets/tavern_creation/tabletop.png') center/cover;font:25px Georgia,serif;color:#f3d595}
+
+html.title-motion-paused .dice-outcome.result-settled{animation:none!important}

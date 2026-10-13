@@ -25,8 +25,8 @@ function createHarness(role='Wizard',level=5){
     requestAnimationFrame:noop,setTimeout:(fn,ms)=>{const id=++nextTimer;pending.set(id,{fn,at:clock+ms});return id},clearTimeout:id=>pending.delete(id),
     performance:{now:()=>clock},Math:math};
   const end=gameSource.lastIndexOf('})();');assert.ok(end>=0);
-  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,abilities:ABILITIES};';
-  vm.createContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
+  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
+  vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
   const api=sandbox.window.AshenRealms,engine=sandbox.window.__engine;
   api.newGame('Audit','Human',role);api.closeModal();
   const hero=engine.getGame().party[0];hero.stats=[10,10,10,10,10,10];hero.level=level;hero.hp=hero.maxHp=100;hero.mp=hero.maxMp=100;
@@ -230,4 +230,110 @@ test('Frost Lance does not claim to weaken an enemy already at minimum attack',(
   const h=createHarness(),foe=h.enemy({atk:1});h.battle([foe]);h.random([.5]);
   h.api.performAbility(h.hero,h.ability('frost'),[foe]);h.advance(480);assert.equal(foe.atk,1);
   assert.ok(!h.engine.getCombat().log.some(entry=>entry.s.includes('attack reduced')));
+});
+
+test('structured attack events retain target, dice and critical outcome',()=>{
+  const h=createHarness('Fighter'),foe=h.enemy();h.battle([foe]);h.random([.999]);
+  const amount=h.engine.hitAttack(h.hero,foe);
+  const event=h.engine.getCombat().log[0];
+  assert.equal(event.type,'critical');assert.equal(event.actor,h.hero.name);assert.equal(event.target,foe.name);
+  assert.equal(event.amount,amount);assert.equal(event.roll,20);assert.equal(event.round,1);
+  assert.equal(event.total,20+event.attackBonus);assert.equal(event.armor,foe.ac);
+  h.random([0]);h.engine.hitAttack(h.hero,foe);
+  assert.equal(h.engine.getCombat().log[0].type,'miss');
+});
+
+test('area knockouts record deaths and consumables record actual healing',()=>{
+  const h=createHarness(),foe=h.enemy({hp:1});h.battle([foe]);h.random();
+  h.engine.aoeDamage(h.hero,[foe],h.ability('fireball'));
+  assert.equal(h.engine.getCombat().log[0].type,'death');
+  assert.equal(h.engine.getCombat().log[1].type,'hit');
+  const item=createHarness(),c=item.battle();item.hero.hp=98;item.engine.getGame().bag.potion=1;
+  item.api.battleAction('item:potion');item.api.battleAction('ally:'+item.hero.id);
+  const healed=c.log.find(e=>e.type==='heal');assert.equal(healed.amount,2);assert.equal(c.turn,1);
+});
+
+test('combat event history stays bounded without entering persistent saves',()=>{
+  const h=createHarness(),foe=h.enemy({hp:10000});h.battle([foe]);h.random([0]);
+  for(let i=0;i<120;i++)h.engine.hitAttack(h.hero,foe);
+  const c=h.engine.getCombat();assert.equal(c.log.length,100);assert.equal(c.eventSequence,120);
+  assert.equal(c.log[0].id,120);assert.equal(c.log[99].id,21);
+  assert.equal(Object.hasOwn(h.api.getState(),'combat'),false);
+});
+
+test('4d6 drops exactly one lowest die even when the lowest values tie',()=>{
+ const h=createHarness();h.random([0,0,.999,.999]);const roll=h.api.roll4d6();
+ assert.deepEqual(Array.from(roll.dice),[1,1,6,6]);assert.equal(roll.drop,0);assert.equal(roll.score,13);
+ h.random();assert.equal(h.api.roll4d6().score,3);h.random([], .999);assert.equal(h.api.roll4d6().score,18);
+});
+
+test('class auto-assignment is a stable permutation, including tied scores',()=>{
+ const h=createHarness(),rolls=[12,18,8,15,12,3].map(score=>({score}));
+ for(const role of Object.keys(h.engine.classes)){
+  const assignment=h.api.autoAssign(rolls,role),priority=h.engine.training[role].priority;
+  assert.deepEqual(Array.from(assignment).sort((a,b)=>a-b),[0,1,2,3,4,5]);
+  assert.deepEqual(Array.from(priority,i=>assignment[i]),[1,3,0,4,2,5]);
+ }
+});
+
+for(const ancestry of ['Human','Elf','Dwarf','Halfling'])test(`creation preview preserves formulas and generated heroes for ${ancestry}`,()=>{
+ const h=createHarness(),rolls=[3,18,10,15,8,12].map(score=>({score,dice:[6,6,6,6],drop:0}));
+ for(const role of Object.keys(h.engine.classes)){
+  const assigned=h.api.autoAssign(rolls,role),preview=h.engine.creationStats(ancestry,role,assigned,rolls);
+  const expected=Array.from(assigned,(roll,i)=>rolls[roll].score+h.engine.ancestries[ancestry].stats[i]+h.engine.training[role].stats[i]);
+  assert.deepEqual(Array.from(preview.stats),expected);
+  assert.equal(preview.maxHp,Math.max(9,h.engine.classes[role].hp+h.api.mod(expected[2])*2));
+  assert.equal(preview.maxMp,Math.max(1,h.engine.classes[role].mp+Math.max(0,h.api.mod(expected[3]))));
+  const hero=h.api.createHero('Arden',ancestry,role,1,assigned,rolls);assert.deepEqual(hero.stats,preview.stats);assert.equal(hero.maxHp,preview.maxHp);assert.equal(hero.maxMp,preview.maxMp);
+ }
+});
+
+test('preview updates neither consume random numbers nor alter the supplied rolls',()=>{
+ const h=createHarness(),rolls=[3,6,9,12,15,18].map(score=>({score})),assigned=[0,1,2,3,4,5],before=JSON.stringify(rolls);
+ h.random([.999]);for(let i=0;i<20;i++)h.engine.creationStats('Human','Wizard',assigned,rolls);
+ assert.equal(h.api.roll4d6().dice[0],6);assert.equal(JSON.stringify(rolls),before);
+});
+
+test('central ancestry configuration exactly matches the tavern balance',()=>{
+ const h=createHarness();const expected={Human:[0,0,0,0,0,0],Elf:[-1,2,-1,1,0,0],Dwarf:[1,-1,2,0,0,-1],Halfling:[-1,2,-1,0,0,1]};
+ for(const [name,values] of Object.entries(expected))assert.deepEqual(Array.from(h.engine.ancestries[name].stats),values);
+ const rolls=Array.from({length:6},()=>({score:12})),hero=h.api.createHero('Arden','Human','Fighter',1,[0,1,2,3,4,5],rolls);
+ assert.deepEqual(Array.from(hero.stats),[13,12,13,12,12,12]);assert.deepEqual(Array.from(hero.ancestryModifiers),expected.Human);assert.deepEqual(Array.from(hero.classModifiers),[1,0,1,0,0,0]);assert.equal(hero.ancestryRuleSet,'tavern-v2');
+});
+
+for(const version of [2,3,4,5])test(`legacy version ${version} attributes, vitals and equipment survive rule migration twice`,()=>{
+ const h=createHarness(),saved=JSON.parse(h.storage.get(SAVE_KEY)),hero=saved.party[0];saved.version=version;
+ delete hero.ancestryRuleSet;delete hero.ancestryModifiers;delete hero.classModifiers;
+ hero.ancestry='Human';hero.role='Fighter';hero.stats=[14,13,14,13,13,13];hero.maxHp=31;hero.hp=17;hero.maxMp=5;hero.mp=2;hero.gear={weapon:'iron',armor:'chain'};
+ const expected=JSON.stringify({stats:hero.stats,hp:hero.hp,maxHp:hero.maxHp,mp:hero.mp,maxMp:hero.maxMp,gear:hero.gear});
+ h.storage.set(SAVE_KEY,JSON.stringify(saved));h.api.load();h.api.save();h.api.load();
+ const restored=h.api.getState().party[0];assert.equal(JSON.stringify({stats:restored.stats,hp:restored.hp,maxHp:restored.maxHp,mp:restored.mp,maxMp:restored.maxMp,gear:restored.gear}),expected);
+ assert.equal(restored.ancestryRuleSet,'legacy-v1');assert.deepEqual(Array.from(restored.ancestryModifiers),[1,1,1,1,1,1]);
+});
+
+test('invalid or duplicate creation assignments cannot create characters',()=>{
+ const h=createHarness(),rolls=Array.from({length:6},()=>({score:12}));
+ for(const assignment of [[0,0,2,3,4,5],[0,1,2,3,4,6],[0,1,2,3,4],[0,1,2,3,4,1.2]])assert.throws(()=>h.api.createHero('Invalid','Human','Fighter',1,assignment,rolls));
+});
+
+test('all 1296 four-die combinations retain the highest three dice without a tie bias',()=>{
+ const h=createHarness();for(let a=1;a<=6;a++)for(let b=1;b<=6;b++)for(let c=1;c<=6;c++)for(let d=1;d<=6;d++){
+  const values=[a,b,c,d];h.random(values.map(v=>(v-.5)/6));const rolled=h.api.roll4d6();assert.deepEqual(Array.from(rolled.dice),values);assert.equal(rolled.drop,values.indexOf(Math.min(...values)));assert.equal(rolled.score,values.reduce((sum,v)=>sum+v,0)-Math.min(...values));
+ }
+});
+
+test('legacy Elf, Dwarf and Halfling bonuses remain saved facts rather than new modifiers',()=>{
+ const legacy={Elf:[0,2,0,1,0,0],Dwarf:[1,0,2,0,0,0],Halfling:[0,2,0,0,0,1]};
+ for(const [ancestry,mods] of Object.entries(legacy)){
+  const h=createHarness(),saved=JSON.parse(h.storage.get(SAVE_KEY)),hero=saved.party[0];hero.ancestry=ancestry;delete hero.ancestryRuleSet;delete hero.ancestryModifiers;delete hero.classModifiers;
+  hero.baseStats=[12,12,12,12,12,12];hero.stats=mods.map((v,i)=>12+v+h.engine.training[hero.role].stats[i]);hero.maxHp=hero.hp=37;hero.maxMp=hero.mp=21;
+  const before=hero.stats.slice();h.storage.set(SAVE_KEY,JSON.stringify(saved));h.api.load();h.api.save();h.api.load();const restored=h.api.getState().party[0];
+  assert.deepEqual(Array.from(restored.stats),before);assert.deepEqual(Array.from(restored.ancestryModifiers),mods);assert.equal(restored.maxHp,37);assert.equal(restored.maxMp,21);assert.equal(restored.ancestryRuleSet,'legacy-v1');
+ }
+});
+
+test('a newly created Elf Rogue uses final ancestry/class stats once in real combat',()=>{
+ const h=createHarness('Rogue'),rolls=Array.from({length:6},()=>({score:12})),hero=h.api.createHero('Rook','Elf','Rogue',1,[0,1,2,3,4,5],rolls);
+ h.engine.getGame().party[0]=hero;const foe=h.enemy({ac:15});h.battle([foe],[{side:'ally',id:hero.id},{side:'enemy',id:foe.id}]);h.random([.5]);
+ assert.equal(hero.stats[1],15);assert.equal(h.engine.hitAttack(hero,foe),3);assert.equal(foe.hp,97);assert.equal(h.engine.getCombat().log[0].attackBonus,4);
 });

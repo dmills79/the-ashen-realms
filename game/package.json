@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs",
-    "test": "node --test tests/p0.test.mjs",
+    "test": "node --test tests/p0.test.mjs tests/characters.test.mjs tests/environment.test.mjs tests/title.test.mjs tests/dice.test.mjs",
+    "assets:build": "node tools/character-assets.mjs",
+    "assets:validate": "node tools/character-assets.mjs --check",
     "browser:install": "node tools/playwright.mjs install chromium",
     "test:browser": "node tools/playwright.mjs test",
     "test:browser:ui": "node tools/playwright.mjs test --ui"

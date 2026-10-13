@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#111521" />
   <meta name="description" content="The Ashen Realms: Chapter I — The Hollow Bell. A playable d20 fantasy browser RPG." />
-  <title>The Ashen Realms v1.7 — LPC Character Preview</title>
+  <title>The Ashen Realms — The Hollow Bell</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="combat.css" />
+  <link rel="stylesheet" href="title.css" />
+  <link rel="stylesheet" href="creator.css" />
 </head>
 <body>
 <div id="shell">
@@ -28,6 +31,8 @@
     <main class="mainpane">
       <div class="gameframe">
         <canvas id="game" width="480" height="288" aria-label="The Ashen Realms game canvas"></canvas>
+        <div id="titleScene" aria-hidden="true"><div class="title-art"></div><div class="title-mist"></div><div class="title-embers"><i style="--x:8%;--delay:-0s"></i><i style="--x:18%;--delay:-2s"></i><i style="--x:31%;--delay:-4s"></i><i style="--x:43%;--delay:-6s"></i><i style="--x:54%;--delay:-8s"></i><i style="--x:65%;--delay:-10s"></i><i style="--x:77%;--delay:-12s"></i><i style="--x:89%;--delay:-14s"></i></div></div>
+        <div id="tavernScene" aria-hidden="true"><div class="tavern-art"></div><div class="tavern-firelight"></div><div class="tavern-smoke"></div><div class="tavern-dust"><i style="--x:12%;--delay:-0s"></i><i style="--x:27%;--delay:-3s"></i><i style="--x:39%;--delay:-6s"></i><i style="--x:54%;--delay:-9s"></i><i style="--x:67%;--delay:-12s"></i><i style="--x:81%;--delay:-15s"></i><i style="--x:92%;--delay:-18s"></i></div></div>
         <div class="frame-label" id="regionLabel">HAVENMERE • THE LOWLANDS</div>
         <div class="proximity" id="proximityHint">EXPLORE · DISCOVER · CONQUER</div>
         <div id="districtNotice" class="district-notice" aria-live="polite"></div>
@@ -80,6 +85,13 @@
   </div>
   <footer>THE ASHEN REALMS · v1.7 · LPC CHARACTER PREVIEW · LAN OPTIONAL · PROGRESS SAVES LOCALLY IN YOUR BROWSER</footer>
 </div>
+<script src="character-assets.js"></script>
+<script src="sprites.js"></script>
+<script src="environment.js"></script>
+<script src="title-ui.js"></script>
+<script src="character-config.js"></script>
+<script src="dice-3d.js"></script>
+<script src="tavern-creator.js"></script>
 <script src="game.js"></script>
 <script src="network.js"></script>
 </body>

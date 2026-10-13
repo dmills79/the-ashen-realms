@@ -1,0 +1,18 @@
+{
+  "tool": "Built-in image_gen, transparent outputs preserved without raster editing",
+  "created": "2026-10-13",
+  "assets": [
+    {
+      "file": "ancient_oak.png",
+      "prompt": "Use case: stylized-concept. Asset type: single transparent environment sprite for The Ashen Realms dark fantasy 2D RPG. Subject: one mature ancient oak tree, complete from spreading roots and gnarled brown trunk to lush irregular moss-green canopy. View: elevated three-quarter RPG perspective, frontal silhouette, trunk base centered at bottom. Style: detailed hand-painted premium fantasy game illustration, realistic foliage clusters, textured bark, restrained olive emerald and muted gold highlights, cool navy shadows, soft upper-left daylight. Composition: one isolated tree filling the canvas with 6 percent transparent margin, no other objects. Genuine transparent background, no ground plane, no scene, no text, no watermark, no border, no checkerboard. Keep trunk visible and crown asymmetric and organic, avoid cartoon circles and pixel art."
+    },
+    {
+      "file": "woodland_ground.png",
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable terrain texture for The Ashen Realms premium dark fantasy 2D RPG. Primary request: orthographic straight-down painted woodland ground texture, a naturally varied tapestry of dark moss, muted sage grass, rich soil, scattered tiny ochre fallen leaves, fine roots and sparse gravel. Soft diffuse daylight, restrained deep green teal and earthy olive palette, enough midtone detail to read under atmospheric shade. Detailed hand-painted realistic fantasy game materials rather than photographic grass. Ground only, no trees, no objects, no characters, no horizon, no perspective, no borders, no text. Seamless edges in both axes, no dominant recurring feature, no checkerboard or tile pattern, no large stones or flowers, subtle broad irregular patches, no baked directional shadows."
+    },
+    {
+      "file": "havenmere_gate.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent settlement landmark sprite for The Ashen Realms dark fantasy 2D RPG world map. Subject: the front gatehouse of Havenmere, a weathered medieval stone gate flanked by two squat defensive towers, iron-bound open oak doors, dark slate roof caps, restrained burgundy pennants and warm lanterns, a few slate rooftops peeking behind. Detailed realistic hand-painted fantasy game illustration, matching illustrated dark fantasy RPG characters, cool daylight from upper left, gray mossy stone with muted ochre highlights. Elevated three-quarter frontal view suitable for top-down 2D exploration. Composition: compact broad gatehouse silhouette, open central arch at bottom center, complete stone foundations, fully isolated on genuine transparent background. No ground plane, no landscape, no road, no characters, no text or lettering, no border, no checkerboard, no cartoon outlines or exaggerated toy castle proportions. 6 percent transparent margin."
+    }
+  ]
+}

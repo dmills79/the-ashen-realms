@@ -25,7 +25,7 @@ const ROLE_ACCENT={Fighter:'#cf9a66',Rogue:'#7da88a',Wizard:'#7391d9',Cleric:'#d
 const ROLE_PORTRAIT={Fighter:'portrait_fighter.png',Rogue:'portrait_rogue.png',Wizard:'portrait_wizard.png',Cleric:'portrait_cleric.png'};
 
 const ABILS=['STR','DEX','CON','INT','WIS','CHA'];
-const ANCESTRIES={Human:{stats:[1,1,1,1,1,1],flavor:'Versatile and determined.'},Elf:{stats:[0,2,0,1,0,0],flavor:'Keen-eyed children of the elder woods.'},Dwarf:{stats:[1,0,2,0,0,0],flavor:'Unyielding descendants of the deep halls.'},Halfling:{stats:[0,2,0,0,0,1],flavor:'Small, swift and improbably brave.'}};
+const ANCESTRIES=window.AshenCharacterRules.ancestries;
 const CLASSES={
  Fighter:{stats:[16,12,14,9,10,11],hp:27,mp:4,attack:'Iron Cleave',spellCost:2,desc:'A frontline warrior with powerful weapon attacks.',symbol:'⚔'},
  Rogue:{stats:[11,16,12,12,11,11],hp:22,mp:6,attack:'Shadowstep',spellCost:2,desc:'A nimble skirmisher skilled at critical strikes.',symbol:'✦'},
@@ -43,7 +43,7 @@ const CLASS_TRAINING={
 const roll4d6=()=>{const dice=Array.from({length:4},()=>rand(6));const drop=dice.indexOf(Math.min(...dice));return {dice,drop,score:dice.reduce((a,b)=>a+b,0)-dice[drop]}};
 const rollStatSet=()=>Array.from({length:6},roll4d6);
 function autoAssign(rolls,role){const ranking=rolls.map((r,i)=>i).sort((a,b)=>rolls[b].score-rolls[a].score||a-b);const assignments=Array(6);CLASS_TRAINING[role].priority.forEach((ability,rank)=>{assignments[ability]=ranking[rank]});return assignments}
-const bonusSummary=(values)=>ABILS.map((a,i)=>values[i]?`${a} +${values[i]}`:null).filter(Boolean).join(' · ');
+const bonusSummary=(values)=>ABILS.map((a,i)=>values[i]?`${a} ${values[i]>0?'+':''}${values[i]}`:null).filter(Boolean).join(' · ')||'No modifiers';
 // RPG abilities unlock on level milestones; talents are elective upgrades purchased with level-up points.
 const ABILITIES={
  Fighter:[
@@ -151,6 +151,8 @@ let G=null, mode='title', maps={}, keyboard=new Set(), lastMove=0, stepCounter=0
 let modalCallback=null, toastTimeout=null, combat=null, battleMenu='commands', currentTargetAction=null, enemyTimer=null;
 let fx=[];
 let battleFX=null, battleNumbers=[], combatAnimating=false;
+let battleWidth=W, highlightedTarget=null;
+let lastSpriteStepAt=0;
 // Per-encounter auto tactics: the same rules, MP and initiative apply as for manual turns.
 const COMBAT_TACTICS={manual:'MANUAL',attack:'ATTACK ONLY',conserve:'LIMITED MAGIC',assault:'ALL-OUT OFFENSE'};
 let combatTactic='manual',autoBattleTimer=null,combatSession=0;
@@ -211,47 +213,49 @@ const objective=()=>!G?'Awaiting your adventure':G.flags.warboss?'The Gromclaw w
 const questTitle=()=>!G?'The road awaits':G.flags.warboss?'Chapter II — Warband Defeated':G.flags.ending?'Chapter II — The Broken Banner':G.flags.boss?'A Shard of Embers':G.flags.elder?'The Hollow Bell':'An Unquiet Morning';
 const uiLog=(s)=>{if(!G)return;G.log.unshift(s);G.log=G.log.slice(0,10);refreshHud()};
 function toast(s){const el=$('toast');el.textContent=s;el.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>el.classList.remove('show'),2300)}
-function newHero(name,ancestry,role,level=1,assigned=null,rolls=null){
+function creationStats(ancestry,role,assigned,rolls){
  const c=CLASSES[role],a=ANCESTRIES[ancestry],training=CLASS_TRAINING[role];
- rolls=rolls||rollStatSet();assigned=assigned||autoAssign(rolls,role);
+ if(!c||!a||!Array.isArray(rolls)||rolls.length!==6||!Array.isArray(assigned)||assigned.length!==6||new Set(assigned).size!==6||assigned.some(i=>!Number.isInteger(i)||i<0||i>5)||rolls.some(r=>!Number.isInteger(r.score)||r.score<3||r.score>18))throw Error('Invalid ability assignment');
  const baseStats=assigned.map(i=>rolls[i].score),stats=baseStats.map((v,i)=>v+a.stats[i]+training.stats[i]);
- const baseHp=Math.max(9,c.hp+mod(stats[2])*2),baseMp=Math.max(1,c.mp+Math.max(0,mod(stats[3])));
- return {id:Math.random().toString(36).slice(2,8),name,ancestry,role,level,talentPoints:0,talents:{might:0,focus:0,vigor:0,ward:0},xp:0,xpTotal:0,rolls,assigned:assigned.slice(),baseStats,stats,hp:baseHp,maxHp:baseHp,mp:baseMp,maxMp:baseMp,gear:{weapon:null,armor:null},poison:0,defending:false};
+ return {baseStats,stats,maxHp:Math.max(9,c.hp+mod(stats[2])*2),maxMp:Math.max(1,c.mp+Math.max(0,mod(stats[3])))};
+}
+function newHero(name,ancestry,role,level=1,assigned=null,rolls=null){
+ rolls=rolls||rollStatSet();assigned=assigned||autoAssign(rolls,role);
+ const derived=creationStats(ancestry,role,assigned,rolls);
+ return {id:Math.random().toString(36).slice(2,8),name,ancestry,role,level,talentPoints:0,talents:{might:0,focus:0,vigor:0,ward:0},xp:0,xpTotal:0,ancestryRuleSet:window.AshenCharacterRules.version,ancestryModifiers:ANCESTRIES[ancestry].stats.slice(),classModifiers:CLASS_TRAINING[role].stats.slice(),rolls,assigned:assigned.slice(),...derived,hp:derived.maxHp,mp:derived.maxMp,gear:{weapon:null,armor:null},poison:0,defending:false};
 }
 function startGame(name,ancestry,role,assigned=null,rolls=null){G={version:5,location:'town',x:15,y:11,dir:'up',party:[newHero(name||'Wanderer',ancestry,role,1,assigned,rolls)],bag:{potion:4,ether:2,salve:2,ration:3},gold:45,flags:{elder:false,ritual:false,leverA:false,leverB:false,gate:false,boss:false,ending:null,satchelFound:false,satchelReturned:false,shrine:false,starterChest:false,cryptChestA:false,cryptChestB:false,trial:false},log:[],steps:0,battles:0,jobs:{goblin:{state:'none',count:0},orc:{state:'none',count:0}}};mode='explore';closeModal();trail=[];lastTownDistrict='';uiLog('A new adventurer arrives in Havenmere.');uiLog('Enter the northern Great Hall and speak to Elder Maelin.');refreshHud();saveGame(true);toast('Chapter I · The Hollow Bell');SFX.play('start')}
-function showModal(html,onChoice){modalCallback=onChoice;$('modal').innerHTML=html;$('overlay').classList.remove('hidden');$('modal').scrollTop=0;$('modal').querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.action;modalCallback?.(action,btn)}))}
-function closeModal(){$('overlay').classList.add('hidden');$('modal').innerHTML='';modalCallback=null}
+function showModal(html,onChoice){document.documentElement.classList.remove('title-menu-open','tavern-creation-open');$('modal').setAttribute('data-screen','dialog');modalCallback=onChoice;$('modal').innerHTML=html;$('overlay').classList.remove('hidden');$('modal').scrollTop=0;$('modal').querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.action;modalCallback?.(action,btn)}))}
+function closeModal(){window.AshenTavern?.close();document.documentElement.classList.remove('title-menu-open');$('overlay').classList.add('hidden');$('modal').innerHTML='';modalCallback=null}
 function dialog(title,body,choices=[['Continue','close']],callback=null){showModal(`<h2>${title}</h2><p class="narrative">${body}</p><div class="choices">${choices.map(([label,id])=>`<button data-action="${id}">${label}</button>`).join('')}</div>`,(a)=>{closeModal();if(a!=='close')callback?.(a);else callback?.('close')})}
-function mainMenu(){let hasSave=false;try{hasSave=!!localStorage.getItem(SAVE_KEY)}catch(e){/* Restricted file/document origin: new game still works. */}showModal(`<h2>THE ASHEN REALMS</h2><p class="narrative" style="text-align:center">Chapter I — The Hollow Bell</p><p>Beyond the lamps of Havenmere, an ancient bell tolls beneath the earth. The living dream of ash. The dead begin to stir.</p><div class="choices"><button class="primary" data-action="new">Begin a New Adventure</button><button data-action="continue" ${hasSave?'':'disabled'}>Continue Saved Journey</button><button data-action="help">How to Play</button></div>`,a=>{if(a==='new')characterCreate();if(a==='continue')loadGame();if(a==='help')helpMenu(true)})}
+function mainMenu(focus=null){
+ window.AshenTavern?.close();
+ let hasSave=false;try{hasSave=!!localStorage.getItem(SAVE_KEY)}catch(e){/* New game remains available without storage. */}
+ showModal(`<section class="title-menu" aria-label="Main menu"><div class="title-content"><header class="title-intro"><div class="title-eyebrow">A DARK FANTASY ADVENTURE</div><h2><small>THE</small><span>ASHEN</span><span>REALMS</span></h2><div class="title-chapter">CHAPTER I · THE HOLLOW BELL</div><p class="title-story">Beyond the lamps of Havenmere, an ancient bell tolls beneath the earth.<br>The living dream of ash. The dead begin to stir.</p></header><nav class="title-actions" aria-label="Choose your journey"><button class="primary" data-action="new" aria-label="Begin a New Adventure"><span><strong>NEW GAME</strong><small>Forge your adventurer</small></span><span aria-hidden="true">→</span></button><button data-action="continue" aria-label="Continue Saved Journey" ${hasSave?'':'disabled'}><span><strong>CONTINUE</strong><small>${hasSave?'Return to your saved journey':'No saved journey in this browser'}</small></span><span aria-hidden="true">◇</span></button><button data-action="settings"><span><strong>SETTINGS</strong><small>Sound, atmosphere & world view</small></span><span aria-hidden="true">⚙</span></button></nav><button class="title-help" data-action="help">HOW TO PLAY</button><div class="title-footer"><span>AN ADVENTURE BEGINS WITH A SINGLE STEP.</span>PROGRESS SAVES LOCALLY IN THIS BROWSER.</div></div></section>`,a=>{
+  if(a==='new')characterCreate();if(a==='continue')loadGame();if(a==='help')helpMenu(true);if(a==='settings')titleSettings();
+ });
+ $('modal').setAttribute('data-screen','title-menu');document.documentElement.classList.add('title-menu-open');
+ $('modal').querySelector(`[data-action="${focus||(hasSave?'continue':'new')}"]`)?.focus({preventScroll:true});
+}
+function titleSettings(focus=null){
+ const paused=window.AshenTitle?.preferences().motionPaused||false;
+ showModal(`<section class="title-settings" aria-label="Presentation settings"><span class="settings-eyebrow">THE ASHEN REALMS</span><h2>SETTINGS</h2><div class="settings-row"><div><strong>Sound & music</strong><small>Battle effects and music during your journey.</small></div><button data-action="sound" role="switch" aria-label="Sound and music" aria-checked="${audioEnabled}">${audioEnabled?'ON':'OFF'}</button></div><div class="settings-row"><div><strong>Title atmosphere</strong><small>Slow camera drift, mist and embers. Your device’s reduced-motion preference is always respected.</small></div><button data-action="motion" role="switch" aria-label="Title atmosphere" aria-checked="${!paused}">${paused?'PAUSED':'AUTO'}</button></div><div class="settings-row"><div><strong>World zoom</strong><small>Choose the exploration view. Combat keeps its own framing.</small></div><button data-action="zoom" aria-label="World zoom ${Math.round(cameraZoom*100)} percent">${Math.round(cameraZoom*100)}%</button></div><button class="settings-return" data-action="back">← RETURN TO TITLE</button></section>`,a=>{
+  if(a==='back'){mainMenu('settings');return}
+  if(a==='sound')SFX.toggle();
+  if(a==='motion')window.AshenTitle?.save({motionPaused:!paused});
+  if(a==='zoom')$('zoomBtn').click();
+  titleSettings(a);
+ });
+ $('modal').setAttribute('data-screen','title-settings');
+ $('modal').querySelector(`[data-action="${focus||'sound'}"]`)?.focus({preventScroll:true});
+}
 function characterCreate(){
- let name='Arden',ancestry='Human',role='Fighter',rolls=rollStatSet(),assigned=autoAssign(rolls,role);
- const render=()=>{
-  const racial=ANCESTRIES[ancestry].stats,training=CLASS_TRAINING[role].stats;
-  const attrs=assigned.map((index,i)=>rolls[index].score+racial[i]+training[i]);
-  showModal(`<h2>FORGE YOUR ADVENTURER</h2><p class="narrative">Roll six sets of <b>4d6, discard the lowest</b>. Assign each total once, then apply ancestry and class training bonuses.</p>
-   <label for="heroName">Your name</label><input id="heroName" maxlength="18" value="${escapeHtml(name)}" placeholder="Hero name"/>
-   <div class="detail-grid"><div><label for="heroAncestry">Ancestry</label><select id="heroAncestry">${Object.keys(ANCESTRIES).map(a=>`<option ${ancestry===a?'selected':''}>${a}</option>`).join('')}</select></div>
-   <div><label for="heroClass">Class</label><select id="heroClass">${Object.keys(CLASSES).map(a=>`<option ${role===a?'selected':''}>${a}</option>`).join('')}</select></div></div>
-   <div class="hero-preview"><div class="hero-preview-art"><img src="${imagePath(ROLE_PORTRAIT[role])}" alt="${role} character portrait" /></div><div class="hero-preview-copy"><small>YOUR PATH</small><strong>${role.toUpperCase()}</strong><p>${CLASSES[role].desc}</p><p class="ancestry-line">${ancestry}: ${ANCESTRIES[ancestry].flavor}</p><span>Choose your ancestry, class & six ability rolls.</span></div></div>
-   <div class="rollhead"><b>YOUR DICE ROLLS</b><button data-action="reroll" type="button">⚄ REROLL ALL SIX</button></div>
-   <div class="dicepool">${rolls.map((r,i)=>`<div class="rollcard"><span class="rollno">${i+1}</span><span class="rolled-dice">${r.dice.map((d,j)=>`<i class="${r.drop===j?'discarded':''}">${d}</i>`).join('')}</span><strong>${r.score}</strong></div>`).join('')}</div>
-   <div class="allocation-heading">ASSIGN YOUR SCORES <small>Changing a slot swaps the two values.</small></div>
-   <div class="allocation">${ABILS.map((a,i)=>`<div class="abilityrow"><label for="assign${i}">${a}</label><select id="assign${i}" data-assign="${i}">${rolls.map((r,j)=>`<option value="${j}" ${assigned[i]===j?'selected':''}>Roll ${j+1}: ${r.score}</option>`).join('')}</select><span class="modifiers">+${racial[i]} ancestry / +${training[i]} class</span><strong>${attrs[i]} <small>(${mod(attrs[i])>=0?'+':''}${mod(attrs[i])})</small></strong></div>`).join('')}</div>
-   <p class="house-rule"><b>Ashen Realms house rule:</b> Ancestry (${bonusSummary(racial)}) and class training (${bonusSummary(training)}) modify your 4d6 rolls. These class increases are a deliberate JRPG/D&D hybrid, not an official D&D 5e rule.</p>
-   <div class="choices horizontal"><button data-action="back">Back</button><button class="primary" data-action="begin">ENTER THE REALM →</button></div>`,a=>{
-   if(a==='back'){mainMenu();return}
-   if(a==='reroll'){name=$('heroName').value;rolls=rollStatSet();assigned=autoAssign(rolls,role);SFX.play('menu');render();return}
-   if(a==='begin'){startGame($('heroName').value.trim().slice(0,18)||'Wanderer',ancestry,role,assigned,rolls);return}
-  });
-  $('heroName').addEventListener('input',e=>name=e.target.value);
-  $('heroAncestry').addEventListener('change',e=>{name=$('heroName').value;ancestry=e.target.value;render()});
-  $('heroClass').addEventListener('change',e=>{name=$('heroName').value;role=e.target.value;assigned=autoAssign(rolls,role);render()});
-  for(const selector of $('modal').querySelectorAll('[data-assign]'))selector.addEventListener('change',e=>{
-   name=$('heroName').value;const at=Number(e.target.dataset.assign),value=Number(e.target.value),previous=assigned[at],other=assigned.indexOf(value);
-   if(other!==-1&&other!==at)assigned[other]=previous;assigned[at]=value;render();
-  });
- };
- render();
+ window.AshenTavern.open({
+  attrs:ABILS,classes:CLASSES,training:CLASS_TRAINING,escape:escapeHtml,portrait:role=>imagePath(ROLE_PORTRAIT[role]),
+  preview:creationStats,roll:roll4d6,auto:autoAssign,abilities:role=>knownAbilities({role,level:1}),
+  combatStats:hero=>({ac:armorClass(hero),attack:prof(hero)+attackMod(hero),spell:prof(hero)+attackMod(hero,true),dc:10+prof(hero)+mod(hero.stats[CLASS_TRAINING[hero.role].priority[0]]),initiative:mod(hero.stats[1])}),
+  show:showModal,title:mainMenu,begin:startGame,prepareSound:()=>SFX.ensure(),sound:impact=>SFX.dice(impact)
+ });
 }
 function saveGame(silent=false){if(!G){if(!silent)toast('Begin an adventure before saving.');return}if(mode==='combat'){if(!silent)toast('Finish the battle before saving.');return}try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));if(!silent){toast('Adventure saved');SFX.play('menu')}}catch(e){toast('Save failed: browser storage is unavailable.')}}
 function normalizeSave(data){
@@ -266,6 +270,12 @@ function normalizeSave(data){
     requireValid(record(h)&&typeof h.id==='string'&&h.id.length>0&&!ids.has(h.id));ids.add(h.id);
     requireValid(typeof h.name==='string'&&Object.hasOwn(CLASSES,h.role)&&Object.hasOwn(ANCESTRIES,h.ancestry));
     requireValid(Array.isArray(h.stats)&&h.stats.length===6&&h.stats.every(v=>integer(v,1)));
+    // Stored final stats are authoritative. Legacy saves gain provenance, never recalculated bonuses.
+    h.ancestryRuleSet??='legacy-v1';
+    requireValid(['legacy-v1',window.AshenCharacterRules.version].includes(h.ancestryRuleSet));
+    h.ancestryModifiers??=(h.ancestryRuleSet==='legacy-v1'?window.AshenCharacterRules.legacy[h.ancestry]:ANCESTRIES[h.ancestry].stats).slice();
+    h.classModifiers??=CLASS_TRAINING[h.role].stats.slice();
+    for(const values of [h.ancestryModifiers,h.classModifiers])requireValid(Array.isArray(values)&&values.length===6&&values.every(v=>Number.isSafeInteger(v)&&v>=-2&&v<=2));
     requireValid(integer(h.level,1)&&integer(h.xp)&&integer(h.maxHp,1)&&integer(h.maxMp));
     requireValid(integer(h.hp)&&h.hp<=h.maxHp&&integer(h.mp)&&h.mp<=h.maxMp);
     if(h.gear===undefined)h.gear={weapon:null,armor:null};requireValid(record(h.gear));
@@ -514,7 +524,7 @@ function entities(){if(!G)return[];
  ];
 }
 function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(loc==='town'&&maps.town.props&&['trees','market','cart','well'].some(k=>maps.town.props[k].some(p=>p[0]===x&&p[1]===y)))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
-function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}G.x=x;G.y=y;G.steps++;stepCounter++;updateTownDistrict();
+function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}lastSpriteStepAt=performance.now();G.x=x;G.y=y;G.steps++;stepCounter++;updateTownDistrict();
  if(G.location==='town'){
   const entrance=maps.town.buildings.find(b=>b.doorX===x&&b.doorY===y);
   if(entrance){enterBuilding(entrance.room);return}
@@ -626,7 +636,7 @@ function pickMember(id,inBattle){const item=ITEMS[id];if(!item||!G.bag[id]){toas
 function applyItem(hero,id){if(!hero||!Object.hasOwn(ITEMS,id))return false;if(hero.hp<=0){toast('Unconscious allies cannot use this item.');return false}const item=ITEMS[id];if(item.kind==='gear'){const old=hero.gear[item.slot];if(old){G.bag[old]=(G.bag[old]||0)+1}hero.gear[item.slot]=id;toast(`${hero.name} equipped ${item.name}`);return true}if(id==='ration'){const targets=G.party.filter(h=>h.hp>0&&h.hp<h.maxHp);if(!targets.length){toast('Your party is already healthy.');return false}targets.forEach(h=>h.hp=Math.min(h.maxHp,h.hp+7));toast('Your party shares travel rations (+7 HP).');return true}if(id==='elixir'){if(hero.hp===hero.maxHp){toast('HP is already full.');return false}hero.hp=Math.min(hero.maxHp,hero.hp+35);toast(`${hero.name} recovered 35 HP`);return true}if(id==='potion'){if(hero.hp===hero.maxHp){toast('HP is already full.');return false}hero.hp=Math.min(hero.maxHp,hero.hp+17);toast(`${hero.name} recovered HP`);return true}if(id==='ether'){if(hero.mp===hero.maxMp){toast('MP is already full.');return false}hero.mp=Math.min(hero.maxMp,hero.mp+9);toast(`${hero.name} recovered MP`);return true}if(id==='salve'){if(!hero.poison&&hero.hp===hero.maxHp){toast('No treatment needed.');return false}hero.poison=0;hero.hp=Math.min(hero.maxHp,hero.hp+4);toast(`${hero.name} recovered`);return true}return false}
 function partyMenu(){
  if(!G)return;G.party.forEach(ensureProgress);
- const cards=G.party.map(h=>`<article class="roster-card"><img src="${imagePath(ROLE_PORTRAIT[h.role])}" alt="${escapeHtml(h.role)} portrait"><div class="roster-detail"><span class="roster-class">LV ${h.level} · ${h.ancestry.toUpperCase()} ${h.role.toUpperCase()}</span><h3>${escapeHtml(h.name)}</h3><div class="roster-meters"><span>HP ${h.hp}/${h.maxHp}</span><span>MP ${h.mp}/${h.maxMp}</span><span>AC ${armorClass(h)}</span></div><p>${knownAbilities(h).map(a=>a.name).join(' · ')}</p><div class="roster-xp"><i style="width:${clamp(100*h.xp/levelThreshold(h.level),0,100)}%"></i></div><small>XP ${h.xp} / ${levelThreshold(h.level)} · ${h.talentPoints} TRAINING POINT${h.talentPoints===1?'':'S'}</small></div><button data-action="train:${h.id}">TRAIN →</button></article>`).join('');
+ const cards=G.party.map(h=>`<article class="roster-card"><img src="${imagePath(ROLE_PORTRAIT[h.role])}" alt="${escapeHtml(h.role)} portrait"><div class="roster-detail"><span class="roster-class">LV ${h.level} · ${h.ancestry.toUpperCase()} ${h.role.toUpperCase()}</span><h3>${escapeHtml(h.name)}</h3><div class="roster-meters"><span>HP ${h.hp}/${h.maxHp}</span><span>MP ${h.mp}/${h.maxMp}</span><span>AC ${armorClass(h)}</span></div><p>${knownAbilities(h).map(a=>a.name).join(' · ')}</p><small>${ABILS.map((a,i)=>a+' '+h.stats[i]).join(' · ')}</small><small>${h.ancestryRuleSet==='legacy-v1'?'Ancestry (legacy)':'Ancestry'}: ${bonusSummary(h.ancestryModifiers||ANCESTRIES[h.ancestry].stats)} · Class: ${bonusSummary(h.classModifiers||CLASS_TRAINING[h.role].stats)}</small><div class="roster-xp"><i style="width:${clamp(100*h.xp/levelThreshold(h.level),0,100)}%"></i></div><small>XP ${h.xp} / ${levelThreshold(h.level)} · ${h.talentPoints} TRAINING POINT${h.talentPoints===1?'':'S'}</small></div><button data-action="train:${h.id}">TRAIN →</button></article>`).join('');
  showModal(`<div class="roster-screen"><header class="train-title"><span>THE ADVENTURER'S GUILD</span><h2>YOUR PARTY</h2><p>Develop each adventurer, learn new techniques, and prepare for the next encounter.</p></header><div class="roster-list">${cards}</div><footer class="train-footer"><span>Select TRAIN to invest level-up points.</span><div><button data-action="spells">OPEN GRIMOIRE</button><button data-action="close">RETURN TO GAME</button></div></footer></div>`,a=>{if(a==='close'){closeModal();return}if(a==='spells'){spellbook();return}if(a.startsWith('train:'))talentMenu(a.slice(6))});
 }
 
@@ -640,19 +650,30 @@ function spellDamageBonus(hero){return (ITEMS[hero.gear.weapon]?.spellBonus||0)+
 function isDefending(unit){return !!unit.defending||!!(combat&&unit.protectedThroughRound>=combat.round)}
 function clearCombatProtection(){for(const h of G?.party||[]){h.defending=false;delete h.protectedThroughRound}}
 function endCombat(){
+  window.AshenSprites?.clear();
   cancelAutoTurn();combatSession++;clearTimeout(enemyTimer);enemyTimer=null;
   mode='explore';combat=null;combatAnimating=false;battleFX=null;battleNumbers=[];
-  battleMenu='commands';currentTargetAction=null;clearCombatProtection();renderCombatMenu();
+  battleMenu='commands';currentTargetAction=null;highlightedTarget=null;clearCombatProtection();renderCombatMenu();
 }
 function attackMod(hero,magic=false){return mod(hero.stats[magic?(hero.role==='Cleric'?4:3):(hero.role==='Rogue'?1:0)])}
 function beginCombat(types){
  if(!G||mode!=='explore'||!Array.isArray(types)||!types.length)return;
+ window.AshenSprites?.clear();
+ window.AshenSprites?.prepare(types);
+ clearTimeout(toastTimeout);$('toast').classList.remove('show');
  clearCombatProtection();mode='combat';closeModal();combatSession++;cancelAutoTurn();combatTactic='manual';combatAnimating=false;battleFX=null;battleNumbers=[];battleMenu='commands';
  combat={enemies:types.map((type,i)=>({...BESTIARY[type],id:'e'+i,original:type,maxHp:BESTIARY[type].hp,hp:BESTIARY[type].hp})),queue:[],turn:0,round:0,log:[],isBoss:types.includes('boss')||types.includes('warboss'),bossType:types.includes('warboss')?'warboss':types.includes('boss')?'boss':null};
  G.battles++;uiLog(`Encountered ${types.map(t=>BESTIARY[t].name).join(' and ')}.`);SFX.play('battle');startRound();refreshHud();
 }
-function combatLog(s,important=false){if(!combat)return;combat.log.unshift({s,important});combat.log=combat.log.slice(0,12);renderCombatMenu();refreshHud()}
-function startRound(){if(!combat||mode!=='combat')return;combat.round++;for(const h of G.party){if(h.protectedThroughRound<combat.round)delete h.protectedThroughRound}combat.queue=[...alive().map(a=>({side:'ally',id:a.id,roll:dice(20)+mod(a.stats[1])})),...combat.enemies.filter(e=>e.hp>0).map(e=>({side:'enemy',id:e.id,roll:dice(20)+e.dex}))].sort((a,b)=>b.roll-a.roll);combat.turn=0;if(combat.round===1)combatLog('Initiative rolled! Choose actions when your character is ready.',true);else combatLog(`Round ${combat.round} begins.`);processTurn()}
+const COMBAT_EVENT_TYPES={info:'Encounter',round:'Round',action:'Ability',hit:'Hit',miss:'Miss',critical:'Critical',heal:'Healing',status:'Status',death:'Fallen',item:'Item'};
+function combatLog(s,important=false,event={}){
+  if(!combat)return;
+  const type=Object.hasOwn(COMBAT_EVENT_TYPES,event.type)?event.type:'info';
+  combat.eventSequence=(combat.eventSequence||0)+1;
+  combat.log.unshift({...event,s,important,type,id:combat.eventSequence,round:combat.round});
+  combat.log=combat.log.slice(0,100);renderCombatMenu();refreshHud();
+}
+function startRound(){if(!combat||mode!=='combat')return;combat.round++;for(const h of G.party){if(h.protectedThroughRound<combat.round)delete h.protectedThroughRound}combat.queue=[...alive().map(a=>({side:'ally',id:a.id,roll:dice(20)+mod(a.stats[1])})),...combat.enemies.filter(e=>e.hp>0).map(e=>({side:'enemy',id:e.id,roll:dice(20)+e.dex}))].sort((a,b)=>b.roll-a.roll);combat.turn=0;if(combat.round===1)combatLog('Initiative rolled! Choose actions when your character is ready.',true,{type:'round'});else combatLog(`Round ${combat.round} begins.`,false,{type:'round'});processTurn()}
 function activeUnit(){if(!combat)return null;const q=combat.queue[combat.turn];if(!q)return null;return q.side==='ally'?G.party.find(h=>h.id===q.id):combat.enemies.find(e=>e.id===q.id)}
 function processTurn(){
   if(mode!=='combat'||!combat)return;
@@ -667,14 +688,55 @@ function processTurn(){
     unit.defending=false;
     if(unit.poison>0){
       unit.poison--;unit.hp=Math.max(0,unit.hp-2);
-      combatLog(`${unit.name} suffers 2 poison damage (${unit.poison} turn(s) remaining).`);
-      if(unit.hp<=0){combat.turn++;processTurn();return}
+      markDamage(unit,2,'ally');
+      combatLog(`${unit.name} suffers 2 poison damage (${unit.poison} turn(s) remaining).`,false,{type:'status',target:unit.name,amount:2});
+      if(unit.hp<=0){combatLog(`${unit.name} falls!`,true,{type:'death',target:unit.name});combat.turn++;processTurn();return}
     }
     renderCombatMenu();scheduleAutoTurn();
   }else{cancelAutoTurn();renderCombatMenu();clearTimeout(enemyTimer);enemyTimer=setTimeout(enemyAct,700)}
 }
 function nextTurn(){if(mode!=='combat')return;combat.turn++;refreshHud();processTurn()}
-function battlePanel(html){$('battlePanel').classList.remove('hidden');$('battlePanel').innerHTML=html;$('battlePanel').querySelectorAll('[data-c]').forEach(btn=>btn.onclick=()=>battleAction(btn.dataset.c));$('battlePanel').querySelectorAll('[data-tactic]').forEach(btn=>btn.onclick=()=>setCombatTactic(btn.dataset.tactic))}
+function battlePanel(html){
+  const panel=$('battlePanel'),history=panel.querySelector('.battlehistory');
+  const focused=document.activeElement;
+  const focusCommand=panel.contains?.(focused)?focused?.dataset?.c:null;
+  const focusTactic=panel.contains?.(focused)?focused?.dataset?.tactic:null;
+  const focusHistory=!!history&&focused===history;
+  panel.classList.remove('hidden');panel.innerHTML=html;
+  // Keep the live log node and its scroll position when commands/turns change.
+  if(history)panel.querySelector('.battlehistory').replaceWith(history);
+  if(focusHistory)history.focus({preventScroll:true});
+  panel.querySelectorAll('[data-c]').forEach(btn=>{
+    btn.onclick=()=>battleAction(btn.dataset.c);
+    const target=btn.dataset.c.startsWith('target:')||btn.dataset.c.startsWith('ally:')?btn.dataset.c.split(':')[1]:null;
+    btn.onpointerenter=btn.onfocus=()=>{highlightedTarget=target};
+    btn.onpointerleave=btn.onblur=()=>{highlightedTarget=null};
+  });
+  panel.querySelectorAll('[data-tactic]').forEach(btn=>btn.onclick=()=>setCombatTactic(btn.dataset.tactic));
+  if(focusCommand||focusTactic){
+    const buttons=Array.from(panel.querySelectorAll('button'));
+    const next=buttons.find(b=>focusCommand?b.dataset.c===focusCommand:b.dataset.tactic===focusTactic);
+    (next&&!next.disabled?next:buttons.find(b=>b.dataset.c&&!b.disabled))?.focus({preventScroll:true});
+  }
+}
+function renderCombatEvents(){
+  const history=$('battlePanel').querySelector('.battlehistory');if(!history)return;
+  const following=!history.dataset.session||history.dataset.session!==String(combatSession)||history.scrollHeight-history.scrollTop-history.clientHeight<24;
+  if(history.dataset.session!==String(combatSession)){history.replaceChildren();history.dataset.session=String(combatSession);history.dataset.lastEvent='0'}
+  const last=Number(history.dataset.lastEvent||0);
+  for(const event of combat.log.slice().reverse().filter(e=>e.id>last)){
+    const label=COMBAT_EVENT_TYPES[event.type]||COMBAT_EVENT_TYPES.info;
+    const outcome=event.actor&&event.target&&['hit','critical','miss'].includes(event.type)
+      ?`${event.actor} → ${event.target}${event.amount!==undefined?' · '+event.amount+' damage':''}`:event.s;
+    const detail=event.actor&&event.target&&event.roll!==undefined?`d20 ${event.roll}${event.advantage?' · advantage':''} + ${event.attackBonus} = ${event.total} vs AC ${event.armor}`:event.detail;
+    history.insertAdjacentHTML('beforeend',`<li class="combat-event event-${event.type}${event.important?' event-important':''}" data-event-id="${event.id}"><span class="event-kind">${label}</span><div class="event-copy"><span>${escapeHtml(outcome)}</span>${detail?`<small>${escapeHtml(detail)}</small>`:''}</div><span class="event-round" title="Round ${event.round}">R${event.round}</span></li>`);
+  }
+  while(history.children.length>100)history.firstElementChild.remove();
+  history.dataset.lastEvent=String(combat.eventSequence||0);
+  if(following)history.scrollTop=history.scrollHeight;
+  const follow=$('battlePanel').querySelector('[data-log-follow]');
+  if(follow)follow.onclick=()=>{history.scrollTop=history.scrollHeight};
+}
 function renderCombatMenu(){if(mode!=='combat'||!combat){$('battlePanel').classList.add('hidden');return}const q=combat.queue[combat.turn],who=activeUnit();if(!who||!q)return;
  let buttons='';if(q.side==='ally'&&!combatAnimating&&combatTactic==='manual'){
   if(battleMenu==='commands')buttons=[['attack','⚔ ATTACK'],['skills','✦ SKILLS / SPELLS'],['item','✚ ITEM'],['guard','◈ GUARD'],['flee','↩ FLEE']].map(([id,label])=>`<button data-c="${id}">${label}</button>`).join('');
@@ -686,28 +748,29 @@ function renderCombatMenu(){if(mode!=='combat'||!combat){$('battlePanel').classL
  const tactics=`<div class="tactics" role="group" aria-label="Battle automation">${Object.entries(COMBAT_TACTICS).map(([id,label])=>`<button type="button" data-tactic="${id}" aria-pressed="${id===combatTactic}" class="${id===combatTactic?'tactic-current':''}" title="${id==='manual'?'Command each ally':id==='attack'?'Physical attacks only':id==='conserve'?'Only emergency heals or multi-enemy spells while preserving 45% MP':'Spend MP on offensive spells whenever possible'}">${label}</button>`).join('')}</div>`;
  const modeDescription=combatTactic==='manual'?'':`<div class="auto-running"><span class="auto-pulse"></span> AUTO: ${COMBAT_TACTICS[combatTactic]} · Select MANUAL to take control</div>`;
  const labels={commands:'Choose an action',abilities:'Skills & spells',enemy:'Choose an enemy',ally:'Choose an ally',items:'Use a consumable'};
- const events=combat.log.slice().reverse().map(x=>`<li class="${x.important?'event-important':''}">${escapeHtml(x.s)}</li>`).join('');
- battlePanel(`<section class="battle-controls" aria-label="Combat commands"><div class="battle-topline"><div class="turntext"><span class="battle-eyebrow">${combatAnimating?'ACTION IN PROGRESS':q.side==='ally'?'YOUR TURN':'ENEMY TURN'}</span><strong>${escapeHtml(who.name)}</strong></div><span class="battle-round">ROUND ${combat.round}</span></div>${tactics}<div class="command-heading">${combatAnimating?'Resolving action…':q.side==='enemy'?'Awaiting the enemy':labels[battleMenu]||labels.commands}<span>1–9 SELECT · ESC BACK</span></div><div class="actionrow">${buttons||modeDescription||'<span class="battle-wait">The next action will begin shortly.</span>'}</div></section><section class="battle-events" aria-label="Combat events"><div class="events-heading"><span>COMBAT EVENTS</span><small>Latest events below</small></div><ol class="battlehistory" role="log" aria-live="polite" aria-relevant="additions text">${events}</ol></section>`);
- const history=$('battlePanel').querySelector('.battlehistory');if(history)history.scrollTop=history.scrollHeight;
+ battlePanel(`<section class="battle-controls" aria-label="Combat commands"><div class="battle-topline"><div class="turntext"><span class="battle-eyebrow">${combatAnimating?'ACTION IN PROGRESS':q.side==='ally'?'YOUR TURN':'ENEMY TURN'}</span><strong>${escapeHtml(who.name)}</strong></div><span class="battle-round">ROUND ${combat.round}</span></div>${tactics}<div class="command-heading">${combatAnimating?'Resolving action…':q.side==='enemy'?'Awaiting the enemy':labels[battleMenu]||labels.commands}<span>1–9 SELECT · ESC BACK</span></div><div class="actionrow">${buttons||modeDescription||'<span class="battle-wait">The next action will begin shortly.</span>'}</div></section><section class="battle-events" aria-label="Combat events"><div class="events-heading"><span>COMBAT EVENTS</span><button type="button" data-log-follow title="Scroll to the latest combat event">LATEST ↓</button></div><ol class="battlehistory" tabindex="0" aria-label="Combat event history" role="log" aria-live="polite" aria-relevant="additions"></ol></section>`);
+ renderCombatEvents();
 
 }
 function battleAction(a){
  if(mode!=='combat'||!combat||combatTactic!=='manual'||combatAnimating||!combat.queue[combat.turn]||combat.queue[combat.turn].side!=='ally')return;
+ highlightedTarget=null;
  const hero=activeUnit();if(a==='back'){battleMenu='commands';renderCombatMenu();return}
  if(a==='attack'){currentTargetAction='attack';battleMenu='enemy';renderCombatMenu();return}
  if(a==='skills'){battleMenu='abilities';renderCombatMenu();return}
  if(a.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===a.slice(8));if(!ability||hero.mp<ability.mp)return;if(ability.kind==='aoe'||ability.kind==='allies'||ability.kind==='buff'){performAbility(hero,ability,ability.kind==='aoe'?combat.enemies.filter(e=>e.hp>0):G.party.filter(h=>h.hp>0));return}currentTargetAction='ability:'+ability.id;battleMenu=ability.kind==='ally'?'ally':'enemy';renderCombatMenu();return}
  if(a==='item'){battleMenu='items';renderCombatMenu();return}
  if(a.startsWith('item:')){const id=a.slice(5);if(!Object.hasOwn(ITEMS,id)||ITEMS[id].kind!=='consumable'||!G.bag[id])return;if(ITEMS[id].target==='party'){combatUseItem(G.party.indexOf(hero),id);return}currentTargetAction=a;battleMenu='ally';renderCombatMenu();return}
- if(a==='guard'){hero.defending=true;hero.mp=Math.min(hero.maxMp,hero.mp+1);combatLog(`${hero.name} guards until their next turn and recovers 1 MP.`);SFX.play('guard');battleMenu='commands';nextTurn();return}
+ if(a==='guard'){hero.defending=true;hero.mp=Math.min(hero.maxMp,hero.mp+1);combatLog(`${hero.name} guards until their next turn and recovers 1 MP.`,false,{type:'status',actor:hero.name});SFX.play('guard');battleMenu='commands';nextTurn();return}
  if(a==='flee'){if(combat.isBoss){combatLog('The warleader blocks your escape!',true);SFX.play('bump');nextTurn();return}if(rand(100)<=75){combatLog('The party escapes!');endCombat();SFX.play('warp');stepCounter=0;saveGame(true);return}combatLog('Escape failed!');nextTurn();return}
  if(a.startsWith('target:')){const enemy=combat.enemies.find(e=>e.id===a.slice(7));if(enemy&&enemy.hp>0){if(currentTargetAction==='attack')queueCinematic('slash',hero,[enemy],()=>hitAttack(hero,enemy),'ally');else if(currentTargetAction?.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===currentTargetAction.slice(8));if(ability)performAbility(hero,ability,[enemy])}}return}
  if(a.startsWith('ally:')){const target=G.party.find(h=>h.id===a.slice(5));if(!target)return;if(currentTargetAction?.startsWith('item:'))combatUseItem(G.party.indexOf(target),currentTargetAction.split(':')[1]);else if(currentTargetAction?.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===currentTargetAction.slice(8));if(ability)performAbility(hero,ability,[target])}return}
 }
 function markDamage(unit,amount,side=null,color='#fff3c5'){
+ if(amount>0&&color!=='#97ffd7')window.AshenSprites?.react(unit.id,unit.hp<=0?'death':'hit');
  const isHero=side?side==='ally':!!unit.stats;
  const point=isHero?battleHeroPoint(G.party.indexOf(unit)):battleEnemyPoint(combat?.enemies.indexOf(unit)??0);
- if(point&&amount>0)battleNumbers.push({x:point.x,y:point.y-85,text:(color==='#97ffd7'?'+':'−')+amount,start:performance.now(),color});
+ if(point&&amount>0)battleNumbers.push({x:point.x,xFraction:point.x/battleWidth,y:point.y-85,text:(color==='#97ffd7'?'+':'−')+amount,start:performance.now(),color});
 }
 function queueCinematic(kind,actor,targets,resolve,side=null){
  if(combatAnimating||mode!=='combat')return;
@@ -715,7 +778,7 @@ function queueCinematic(kind,actor,targets,resolve,side=null){
  combatAnimating=true;battleMenu='commands';const started=performance.now(),session=combatSession;
  const start=actorSide==='ally'?battleHeroPoint(G.party.indexOf(actor)):battleEnemyPoint(combat.enemies.indexOf(actor));
  const ends=targets.map(t=>t.stats?battleHeroPoint(G.party.indexOf(t)):battleEnemyPoint(combat.enemies.indexOf(t)));
- battleFX={kind,startTime:started,duration:850,source:start,targets:ends,actorSide,targetSide,actorId:actor.id};
+ battleFX={kind,startTime:started,duration:850,source:start,targets:ends,actorSide,targetSide,actorId:actor.id,targetIds:targets.map(t=>t.id)};
  renderCombatMenu();
  setTimeout(()=>{if(mode==='combat'&&combat&&session===combatSession){resolve();refreshHud()}},480);
  setTimeout(()=>{if(session!==combatSession)return;battleFX=null;combatAnimating=false;if(mode==='combat'&&combat)nextTurn()},900)
@@ -723,25 +786,32 @@ function queueCinematic(kind,actor,targets,resolve,side=null){
 function combatUseItem(index,id){
   if(mode!=='combat'||!combat||combatAnimating||combat.queue[combat.turn]?.side!=='ally')return;
   const hero=activeUnit(),target=G.party[index],item=ITEMS[id];
+  const before=G.party.map(h=>({id:h.id,hp:h.hp,mp:h.mp,poison:h.poison}));
   if(!target||!Object.hasOwn(ITEMS,id)||item.kind!=='consumable'||!(G.bag[id]>0)||!applyItem(target,id)){battleMenu='commands';renderCombatMenu();return}
   G.bag[id]--;if(!G.bag[id])delete G.bag[id];
-  combatLog(`${hero.name} used ${item.name} on ${item.target==='party'?'the party':target.name}.`,true);
+  combatLog(`${hero.name} used ${item.name} on ${item.target==='party'?'the party':target.name}.`,true,{type:'item',actor:hero.name,target:target.name});
+  for(const previous of before){
+    const ally=G.party.find(h=>h.id===previous.id);
+    if(ally.hp>previous.hp)combatLog(`${ally.name} recovers ${ally.hp-previous.hp} HP.`,false,{type:'heal',actor:hero.name,target:ally.name,amount:ally.hp-previous.hp});
+    if(ally.mp>previous.mp)combatLog(`${ally.name} recovers ${ally.mp-previous.mp} MP.`,false,{type:'status',target:ally.name});
+    if(previous.poison>0&&!ally.poison)combatLog(`${ally.name} is no longer poisoned.`,false,{type:'status',target:ally.name});
+  }
   battleMenu='commands';nextTurn();
 }
 function hitAttack(actor,target,{spell=false,power=false,advantage=false,bonusDmg=0}={}){
  const attackerHero=!!actor.stats,modifier=attackerHero?attackMod(actor,spell):actor.atk;let d20=dice(20),second=advantage?dice(20):null;if(second!==null)d20=Math.max(d20,second);const toHit=d20+modifier+(attackerHero?prof(actor):0),armor=target.stats?armorClass(target):target.ac,success=d20===20||(d20!==1&&toHit>=armor),critical=d20===20;
- if(!success){combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — MISS.`);SFX.play('miss');return 0}
+ if(!success){combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — MISS.`,false,{type:'miss',actor:actor.name,target:target.name,roll:d20,attackBonus:toHit-d20,total:toHit,armor,advantage});SFX.play('miss');return 0}
  const base=attackerHero?6:actor.dmg,dieCount=power?2:1,rolled=dice(base,critical?dieCount*2:dieCount);let dealt=Math.max(1,rolled+modifier+(attackerHero?(spell?spellDamageBonus(actor):weaponBonus(actor)):0)+bonusDmg);if(isDefending(target))dealt=Math.ceil(dealt/2);target.hp=Math.max(0,target.hp-dealt);
- combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — ${critical?'CRITICAL! ':'HIT! '}${dealt} damage.`,critical);markDamage(target,dealt,null,critical?'#ffe89b':spell?'#bddefe':'#fff0ce');
- SFX.play(critical?'critical':spell?'magic':'hit');if(target.hp<=0)combatLog(`${target.name} falls!`,true);
- if(!attackerHero&&target.hp>0&&['slime','bat'].includes(actor.original)&&rand(100)<=13){target.poison=2;combatLog(`${target.name} is poisoned for the next 2 turns!`)}return dealt
+ combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — ${critical?'CRITICAL! ':'HIT! '}${dealt} damage.`,critical,{type:critical?'critical':'hit',actor:actor.name,target:target.name,amount:dealt,roll:d20,attackBonus:toHit-d20,total:toHit,armor,advantage});markDamage(target,dealt,null,critical?'#ffe89b':spell?'#bddefe':'#fff0ce');
+ SFX.play(critical?'critical':spell?'magic':'hit');if(target.hp<=0)combatLog(`${target.name} falls!`,true,{type:'death',target:target.name});
+ if(!attackerHero&&target.hp>0&&['slime','bat'].includes(actor.original)&&rand(100)<=13){target.poison=2;combatLog(`${target.name} is poisoned for the next 2 turns!`,false,{type:'status',target:target.name})}return dealt
 }
 function aoeDamage(actor,targets,spell){
  const abilityIndex=actor.role==='Fighter'?0:actor.role==='Rogue'?1:actor.role==='Cleric'?4:3;const dc=10+prof(actor)+mod(actor.stats[abilityIndex]);
  for(const foe of targets.filter(t=>t.hp>0)){
   const roll=dice(20)+(foe.stats?mod(foe.stats[1]):foe.dex),damageDice=spell.id==='meteor'?4:spell.id==='sunburst'?3:2;
   let amount=dice(6,damageDice)+Math.max(0,mod(actor.stats[abilityIndex]))+(actor.role==='Fighter'||actor.role==='Rogue'?weaponBonus(actor):spellDamageBonus(actor));
-  if(roll>=dc)amount=Math.ceil(amount/2);if(isDefending(foe))amount=Math.ceil(amount/2);foe.hp=Math.max(0,foe.hp-amount);combatLog(`${foe.name}: DEX save ${roll} vs DC ${dc} · ${amount} ${spell.fx} damage${roll>=dc?' (half)':''}.`);markDamage(foe,amount);
+  if(roll>=dc)amount=Math.ceil(amount/2);if(isDefending(foe))amount=Math.ceil(amount/2);foe.hp=Math.max(0,foe.hp-amount);combatLog(`${foe.name}: DEX save ${roll} vs DC ${dc} · ${amount} ${spell.fx} damage${roll>=dc?' (half)':''}.`,false,{type:'hit',actor:actor.name,target:foe.name,amount,detail:`DEX save ${roll} vs DC ${dc}${roll>=dc?' · half damage':''}`});if(foe.hp<=0)combatLog(`${foe.name} falls!`,true,{type:'death',target:foe.name});markDamage(foe,amount);
  }
  SFX.play('magic')
 }
@@ -753,24 +823,24 @@ function performAbility(hero,ability,targets){
  hero.mp-=ability.mp;
  const kind=ability.fx;
  queueCinematic(kind,hero,targets,()=>{
-  combatLog(`${hero.name} uses ${ability.name}!`,true);
+  combatLog(`${hero.name} uses ${ability.name}!`,true,{type:'action',actor:hero.name});
   if(ability.kind==='aoe')aoeDamage(hero,targets,ability);
-  else if(ability.id==='purify'){for(const target of targets){target.poison=0;const gain=Math.max(0,Math.min(4,target.maxHp-target.hp));target.hp+=gain;combatLog(`${target.name} is purified and recovers ${gain} HP.`);markDamage(target,gain,'ally','#97ffd7')}SFX.play('heal')}
+  else if(ability.id==='purify'){for(const target of targets){target.poison=0;const gain=Math.max(0,Math.min(4,target.maxHp-target.hp));target.hp+=gain;combatLog(`${target.name} is purified and recovers ${gain} HP.`,false,{type:'status',actor:hero.name,target:target.name,amount:gain});markDamage(target,gain,'ally','#97ffd7')}SFX.play('heal')}
   else if(ability.kind==='ally'||ability.kind==='allies'){
-   for(const target of targets){let amount=dice(8,ability.kind==='allies'?1:2)+Math.max(0,mod(hero.stats[4]))+2+(hero.talents?.focus||0);let actual=Math.min(target.maxHp-target.hp,amount);target.hp+=actual;combatLog(`${target.name} recovers ${actual} HP.`);markDamage(target,actual,'ally','#97ffd7')}SFX.play('heal')
+   for(const target of targets){let amount=dice(8,ability.kind==='allies'?1:2)+Math.max(0,mod(hero.stats[4]))+2+(hero.talents?.focus||0);let actual=Math.min(target.maxHp-target.hp,amount);target.hp+=actual;combatLog(`${target.name} recovers ${actual} HP.`,false,{type:'heal',actor:hero.name,target:target.name,amount:actual});markDamage(target,actual,'ally','#97ffd7')}SFX.play('heal')
   }else if(ability.kind==='buff'){
-   for(const target of targets){target.protectedThroughRound=combat.round+1;if(ability.id==='rally')target.hp=Math.min(target.maxHp,target.hp+6)}combatLog(`The party gains defensive protection through round ${combat.round+1}!`);SFX.play('guard')
+   for(const target of targets){target.protectedThroughRound=combat.round+1;if(ability.id==='rally')target.hp=Math.min(target.maxHp,target.hp+6)}combatLog(`The party gains defensive protection through round ${combat.round+1}!`,false,{type:'status',actor:hero.name});SFX.play('guard')
   }else if(ability.id==='shadow')hitAttack(hero,targets[0],{advantage:true,power:true,bonusDmg:3});
   else if(ability.id==='power')hitAttack(hero,targets[0],{power:true,bonusDmg:2});
   else if(ability.id==='bolt')hitAttack(hero,targets[0],{spell:true,power:true,bonusDmg:1});
-  else if(ability.id==='frost'){const damage=hitAttack(hero,targets[0],{spell:true,power:true,bonusDmg:3});if(damage>0&&targets[0].hp>0&&targets[0].atk>1&&rand(100)<=50){targets[0].atk=Math.max(1,targets[0].atk-1);combatLog(`${targets[0].name} is chilled: attack reduced by 1.`)}}
+  else if(ability.id==='frost'){const damage=hitAttack(hero,targets[0],{spell:true,power:true,bonusDmg:3});if(damage>0&&targets[0].hp>0&&targets[0].atk>1&&rand(100)<=50){targets[0].atk=Math.max(1,targets[0].atk-1);combatLog(`${targets[0].name} is chilled: attack reduced by 1.`,false,{type:'status',actor:hero.name,target:targets[0].name})}}
   else hitAttack(hero,targets[0],{spell:true,power:true,bonusDmg:3});
  },'ally')
 }
 function enemyAct(){if(mode!=='combat'||combatAnimating)return;const enemy=activeUnit();if(!enemy||enemy.hp<=0){nextTurn();return}const options=alive();if(!options.length){loseCombat();return}const target=options[rand(options.length)-1];
  const doAOE=(enemy.original==='boss'&&combat.round%4===0)||(enemy.original==='warboss'&&combat.round%3===0)||(enemy.original==='shaman'&&combat.round%3===0);
  if(doAOE){const name=enemy.original==='warboss'?'Crushing Warcry':enemy.original==='shaman'?'Cinder Hex':'Toll of Ash';
-  queueCinematic(enemy.original==='shaman'?'fire':'shadow',enemy,options,()=>{combatLog(`${enemy.name} casts ${name} against the entire party!`,true);for(const ally of options.filter(h=>h.hp>0)){const roll=dice(20)+mod(ally.stats[1]);let amount=dice(6)+(enemy.original==='warboss'?4:2);if(roll>=13)amount=Math.ceil(amount/2);if(isDefending(ally))amount=Math.ceil(amount/2);ally.hp=Math.max(0,ally.hp-amount);combatLog(`${ally.name}: DEX save ${roll} vs DC 13, ${amount} damage.`);markDamage(ally,amount)}SFX.play('magic')},'enemy')}
+  queueCinematic(enemy.original==='shaman'?'fire':'shadow',enemy,options,()=>{combatLog(`${enemy.name} casts ${name} against the entire party!`,true,{type:'action',actor:enemy.name});for(const ally of options.filter(h=>h.hp>0)){const roll=dice(20)+mod(ally.stats[1]);let amount=dice(6)+(enemy.original==='warboss'?4:2);if(roll>=13)amount=Math.ceil(amount/2);if(isDefending(ally))amount=Math.ceil(amount/2);ally.hp=Math.max(0,ally.hp-amount);combatLog(`${ally.name}: DEX save ${roll} vs DC 13, ${amount} damage.`,false,{type:'hit',actor:enemy.name,target:ally.name,amount,detail:`DEX save ${roll} vs DC 13${roll>=13?' · half damage':''}`});if(ally.hp<=0)combatLog(`${ally.name} falls!`,true,{type:'death',target:ally.name});markDamage(ally,amount)}SFX.play('magic')},'enemy')}
  else queueCinematic('slash',enemy,[target],()=>hitAttack(enemy,target),'enemy');
 }
 
@@ -1026,7 +1096,9 @@ function drawVillageLife(scrollX,scrollY){
 function drawGloamwoodOutskirts(scrollX,scrollY){
  // World-map settlement has a proper silhouette, fortified gate and rooftops.
  const tx=7*T-scrollX,ty=16*T-scrollY;
- if(imageReady('havenmere/outskirts.png')){
+ if(window.AshenEnvironment?.gate(ctx,tx+12,ty)){
+  // Painted landmark uses the same entrance coordinates as the original map.
+ }else if(imageReady('havenmere/outskirts.png')){
   ctx.drawImage(ART['havenmere/outskirts.png'],tx-69,ty-116,137,98);
  }else{
   ctx.fillStyle='#b9a583';ctx.fillRect(tx-48,ty-34,96,43);textDraw('HAVENMERE',tx,ty-39,14,'#e4c792','center');
@@ -1076,6 +1148,7 @@ function drawTownDecor(scrollX,scrollY){
   for(let xx of [-11,11]){ctx.fillStyle='#252c32';ctx.beginPath();ctx.arc(x+xx,y+11,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#c2a57d';ctx.stroke()}}
  // Orchard trees in residential plots and at the border.
  for(const [tx,ty] of props.trees||[]){const [x,y]=z(tx,ty),n=hash(tx,ty,8);
+  if(window.AshenEnvironment?.tree(ctx,x,y+10,55))continue;
   ctx.fillStyle='#132c2477';ctx.beginPath();ctx.ellipse(x+6,y+11,17,6,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#76573e';ctx.fillRect(x-3,y-5,7,17);
   const circles=[[-10,-17,12],[5,-21,15],[-2,-30,15],[13,-15,11]];
@@ -1134,8 +1207,14 @@ function drawLPC(name,x,y,direction='down',animation='idle',size=60,fade=1){
  ctx.drawImage(img,frame*64,row*64,64,64,x-size*.5,y-size*.91,size,size);
  ctx.restore();return true;
 }
-function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1){
+function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1,hero=null){
  const lpcName=role.toLowerCase();
+ const asset=window.AshenSprites?.manifest.characters[lpcName];
+ if(asset&&window.AshenSprites.ready(lpcName)){
+  const walking=mode==='explore'&&(palette==='hero'||hero)&&performance.now()-lastSpriteStepAt<180;
+  const stature=hero?.ancestry==='Halfling'?.82:hero?.ancestry==='Dwarf'?.9:1;
+  if(window.AshenSprites.draw(ctx,lpcName,x,y,{state:walking?'walk':'idle',height:asset.heightInWorld*scale*stature,facing:direction==='left'?'left':'right'}))return;
+ }
  if(imageReady('lpc/'+lpcName+'.png')){
   const walking=mode==='explore' && palette==='hero' && keyboard.size>0;
   if(drawLPC(lpcName,x,y,direction,walking?'walk':'idle',58*scale))return;
@@ -1283,7 +1362,8 @@ function drawLocation(){const m=maps[G.location],interior=['hall','smith','inn',
  if(['hall','smith','inn','tavern','chapel','cottage','bakery'].includes(G.location)&&imageReady(interiorFile)){
   ctx.drawImage(ART[interiorFile],-scrollX,-scrollY,m.w*T,m.h*T);
  }else{
- for(let y=startY;y<=Math.min(m.h-1,startY+Math.ceil(viewH/T)+1);y++)for(let x=startX;x<=Math.min(m.w-1,startX+Math.ceil(viewW/T)+1);x++){drawTile(m.tiles[y][x],Math.floor(x*T-scrollX),Math.floor(y*T-scrollY),x,y,G.location)}
+ const landscape=window.AshenEnvironment?.draw(ctx,m,G.location,scrollX,scrollY,viewW,viewH);
+ for(let y=startY;y<=Math.min(m.h-1,startY+Math.ceil(viewH/T)+1);y++)for(let x=startX;x<=Math.min(m.w-1,startX+Math.ceil(viewW/T)+1);x++){const tile=m.tiles[y][x];if(landscape&&window.AshenEnvironment.handles(tile)&&tile!=='fence')continue;drawTile(tile,Math.floor(x*T-scrollX),Math.floor(y*T-scrollY),x,y,G.location)}
  }
  if(G.location==='town'){
   // True transparent architectural illustrations: gables, doors, mullioned windows,
@@ -1318,21 +1398,36 @@ function drawLocation(){const m=maps[G.location],interior=['hall','smith','inn',
  if(G.location==='camp')drawCampDecor(scrollX,scrollY);
  if(G.location==='crypt'){drawCryptDecor(scrollX,scrollY);const pulses=[{x:8,y:5},{x:8,y:25},{x:32,y:23}];for(const p of pulses){const sx=p.x*T-scrollX+12,sy=p.y*T-scrollY+12;const r=13+Math.sin(animTick/12)*4;const gr=ctx.createRadialGradient(sx,sy,0,sx,sy,r*3);gr.addColorStop(0,'#b4748050');gr.addColorStop(1,'#b4748000');ctx.fillStyle=gr;ctx.fillRect(sx-r*3,sy-r*3,r*6,r*6)}}
  if(G.location==='town')drawVillageLife(scrollX,scrollY);
- const drawables=entities().map(e=>({...e,sx:e.x*T-scrollX,sy:e.y*T-scrollY}));drawables.sort((a,b)=>a.y-b.y).forEach(e=>drawEntity(e,e.sx,e.sy));
- // Followers trace the leader's recent footsteps.
- if(trail.length>2)G.party.slice(1).forEach((h,i)=>{const t=trail[Math.min(trail.length-1,(i+1)*3)];if(!t||t.loc!==G.location)return;drawSprite(t.x*T-scrollX+12,t.y*T-scrollY+22,h.role,h.role==='Rogue'?'#93ba9c':'#cfb99e',G.dir)});
- pix(G.x*T-scrollX+6,G.y*T-scrollY+20,12,3,'#172625');drawSprite(G.x*T-scrollX+12,G.y*T-scrollY+22,G.party[0].role,'hero',G.dir);
- // LAN preview: render remote players in the same area; local gameplay is unchanged.
- const remotes=window.AshenNetwork?.getOthers?.()||[];
- for(const peer of remotes){if(peer.loc!==G.location||!Number.isFinite(peer.x)||!Number.isFinite(peer.y))continue;
-  const sx=peer.x*T-scrollX+12,sy=peer.y*T-scrollY+22;
-  if(sx< -40||sy< -40||sx>viewW+40||sy>viewH+40)continue;
+ // Every actor shares one ground-depth pass; walking behind an NPC no longer paints over them.
+ const drawables=entities().map(entity=>({type:'entity',x:entity.x,y:entity.y,entity}));
+ drawables.push(...(window.AshenEnvironment?.getDecorations(m,G.location)||[]));
+ if(trail.length>2)G.party.slice(1).forEach((hero,i)=>{
+  const step=trail[Math.min(trail.length-1,(i+1)*3)];
+  if(step?.loc===G.location)drawables.push({type:'follower',x:step.x,y:step.y,hero});
+ });
+ drawables.push({type:'leader',x:G.x,y:G.y,hero:G.party[0]});
+ for(const peer of window.AshenNetwork?.getOthers?.()||[]){
+  if(peer.loc===G.location&&Number.isFinite(peer.x)&&Number.isFinite(peer.y))drawables.push({type:'peer',x:peer.x,y:peer.y,peer});
+ }
+ drawables.sort((a,b)=>a.y-b.y||a.x-b.x);
+ for(const actor of drawables){
+  const sx=actor.x*T-scrollX+12,sy=actor.y*T-scrollY+22;
+  if(sx< -60||sy< -60||sx>viewW+60||sy>viewH+60)continue;
+  if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1);continue}
+  if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-22);continue}
+  if(actor.hero){
+   if(!window.AshenSprites?.ready(actor.hero.role.toLowerCase())&&actor.type==='leader')pix(sx-6,sy-2,12,3,'#172625');
+   drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',G.dir,1,actor.hero);
+   continue;
+  }
+  const peer=actor.peer;
   ctx.save();ctx.fillStyle='#70c6c599';ctx.beginPath();ctx.ellipse(sx,sy,10,4,0,0,Math.PI*2);ctx.fill();
   drawSprite(sx,sy,['Fighter','Rogue','Wizard','Cleric'].includes(peer.role)?peer.role:'Fighter','npc',peer.dir||'down');
   const tag=String(peer.name||'Adventurer').slice(0,20);
-  ctx.font='bold 8px Arial';const tw=ctx.measureText(tag).width;ctx.fillStyle='#081321d9';ctx.fillRect(sx-tw/2-4,sy-36,tw+8,13);ctx.fillStyle='#b3eee8';ctx.textAlign='center';ctx.fillText(tag,sx,sy-27);ctx.restore();
+  ctx.font='bold 8px Arial';const tw=ctx.measureText(tag).width;ctx.fillStyle='#081321d9';ctx.fillRect(sx-tw/2-4,sy-46,tw+8,13);ctx.fillStyle='#b3eee8';ctx.textAlign='center';ctx.fillText(tag,sx,sy-37);ctx.restore();
  }
 
+ window.AshenEnvironment?.animate(ctx,m,G.location,scrollX,scrollY,viewW,viewH,animTick);
  // Art/lighting layer, separate from tiles, actors and encounter logic.
  paintSceneLights(G.location,scrollX,scrollY,viewW,viewH);
  drawAtmosphericEmbers(G.location,viewW,viewH);
@@ -1356,15 +1451,31 @@ function actorSpriteFrame(actor,kind='ally'){
  if(actor.hp<=0)return SPRITE_FRAMES.hurt;
  return Math.floor(animTick/26)%2===0?SPRITE_FRAMES.idleA:SPRITE_FRAMES.idleB;
 }
+function illustratedActorState(actor){
+ const reaction=window.AshenSprites?.reaction(actor.id),now=performance.now();
+ if(actor.hp<=0)return {state:'death',time:reaction?now-reaction.startedAt:700};
+ if(reaction)return {state:reaction.state,time:now-reaction.startedAt};
+ if(battleFX&&battleFX.actorId===actor.id)return {state:battleFX.kind==='slash'?'attack':'cast',time:now-battleFX.startTime};
+ return {state:'idle',time:now+hash((actor.id||'').length,actor.role?.length||actor.type?.length||0)*1500};
+}
+function drawIllustratedActor(actor,x,y,kind='ally',scale=1){
+ const name=kind==='ally'?actor.role.toLowerCase():actor.type;
+ const state=illustratedActorState(actor);
+ const asset=window.AshenSprites?.manifest.characters[name];
+ if(!asset)return false;
+ const stature=actor.ancestry==='Halfling'?.82:actor.ancestry==='Dwarf'?.9:1;
+ const height=mode==='explore'?asset.heightInWorld:asset.heightInBattle*scale;
+ return window.AshenSprites.draw(ctx,name,x,y,{...state,height:height*stature,facing:kind==='ally'?'right':'left',alpha:actor.hp<=0?.65:1})||false;
+}
 function drawActorSprite(type,x,y,scale=1,frame=0,fade=1){
  const name=SPRITE_NAMES.includes(type)?type:'fighter';const key='sprites/'+name+'.png';
- if(!imageReady(key))return false;
  // Replace home-drawn humanoids with LPC sprites; non-humanoid monsters retain original art until matched sets are available.
  if(imageReady('lpc/'+name+'.png')){
   const actorAnimation=frame===SPRITE_FRAMES.attack?'slash':'idle';
   const faceDirection=['goblin','shaman','orc','warboss','bandit','sentinel'].includes(name)?'left':'right';
   return drawLPC(name,x,y,faceDirection,actorAnimation,scale*1.04,fade);
  }
+ if(!imageReady(key))return false;
  const img=ART[key],wid=SPRITE_FRAMES.width,hei=SPRITE_FRAMES.height;
  const destH=scale, destW=scale*wid/hei;
  ctx.save();ctx.globalAlpha=fade;
@@ -1374,6 +1485,7 @@ function drawActorSprite(type,x,y,scale=1,frame=0,fade=1){
 }
 function drawEnemy(enemy,x,y,scale=1){
  const type=enemy.type;
+ if(drawIllustratedActor(enemy,x,y,'enemy',scale))return;
  // Common monsters have matched sprites rather than photo cutouts or blocky atlases.
  const size=(type==='warboss'||type==='boss'?104:type==='orc'||type==='sentinel'?85:type==='wolf'?81:81)*scale;
  if(drawActorSprite(type,x,y,size,actorSpriteFrame(enemy,'enemy'),enemy.hp>0?1:.25))return;
@@ -1383,18 +1495,25 @@ function drawEnemy(enemy,x,y,scale=1){
  }
 }
 function battleHeroPoint(index){
- const count=Math.max(1,G?.party?.length||1);
- return {x:(count>3?109:136)+index*(count>3?44:54),y:214-(index%2)*7};
+ const count=Math.max(1,G?.party?.length||1),spacing=Math.min(54,battleWidth*.115);
+ return {x:battleWidth*.27+(index-(count-1)/2)*spacing,y:232-(index%2)*14};
 }
 function battleEnemyPoint(index){
- const n=combat?.enemies.length||1;
- if(n===1)return{x:366,y:211};
- if(n===2)return[{x:332,y:212},{x:414,y:208}][index];
- if(n===3)return[{x:307,y:214},{x:370,y:205},{x:434,y:214}][index];
- return[{x:293,y:212},{x:344,y:199},{x:396,y:201},{x:449,y:212}][index]||{x:350,y:205};
+ const count=Math.max(1,combat?.enemies.length||1),spacing=Math.min(61,battleWidth*.12);
+ return {x:battleWidth*.73+(index-(count-1)/2)*spacing,y:232-(index%2)*14};
+}
+function drawBattleMarker(unit,point){
+ const active=activeUnit()?.id===unit.id,selected=highlightedTarget===unit.id;
+ if(unit.hp<=0||(!active&&!selected))return;
+ ctx.save();ctx.strokeStyle=selected?'#ffe5a4':'#d1b782';ctx.lineWidth=1.2;
+ ctx.globalAlpha=selected?.9:.5;
+ ctx.beginPath();ctx.ellipse(point.x,point.y+2,20,5,0,0,Math.PI*2);ctx.stroke();
+ textDraw(selected?'TARGET':unit.name,point.x,point.y+19,7,selected?'#ffe5a4':'#dacaa7','center');
+ ctx.restore();
 }
 function drawBattleHero(hero,x,y,index){
  const type=(hero.role||'fighter').toLowerCase(),frame=actorSpriteFrame(hero,'ally');
+ if(drawIllustratedActor(hero,x,y,'ally'))return;
  ctx.save();ctx.globalAlpha=hero.hp>0?1:.35;
  ctx.fillStyle='#060b1399';ctx.beginPath();ctx.ellipse(x,y+3,15,4,0,0,Math.PI*2);ctx.fill();
  drawActorSprite(type,x,y+Math.sin(animTick/33+index)*.6,85,frame);
@@ -1425,7 +1544,7 @@ function drawBattleFX(){
   if(e.kind==='slash'&&p<.55){const t=e.targets[0];if(t){ctx.save();ctx.globalAlpha=.8*(1-p/.55);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(e.source.x,e.source.y-35);ctx.lineTo(t.x,t.y-48);ctx.stroke();ctx.restore();}}
  }
  battleNumbers=battleNumbers.filter(n=>now-n.start<1300);
- for(const n of battleNumbers){const p=(now-n.start)/1300;ctx.save();ctx.globalAlpha=Math.min(1,(1-p)*1.4);ctx.font='bold 17px Georgia,serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#181d2d';ctx.strokeText(n.text,n.x,n.y-32*p);ctx.fillStyle=n.color;ctx.fillText(n.text,n.x,n.y-32*p);ctx.restore()}
+ for(const n of battleNumbers){const p=(now-n.start)/1300,x=n.xFraction*battleWidth;ctx.save();ctx.globalAlpha=Math.min(1,(1-p)*1.4);ctx.font='bold 17px Georgia,serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#181d2d';ctx.strokeText(n.text,x,n.y-32*p);ctx.fillStyle=n.color;ctx.fillText(n.text,x,n.y-32*p);ctx.restore()}
 }
 function battleScene(){
  if(!G)return 'wild';
@@ -1434,44 +1553,58 @@ function battleScene(){
  if(G.location==='camp'||combat?.bossType==='warboss')return 'camp';
  return 'wild';
 }
+function drawCombatBackdrop(name){
+ if(!imageReady(name))return false;
+ const img=ART[name],scale=Math.max(battleWidth/img.naturalWidth,H/img.naturalHeight);
+ const width=img.naturalWidth*scale,height=img.naturalHeight*scale;
+ ctx.drawImage(img,(battleWidth-width)/2,(H-height)/2,width,height);return true;
+}
 function drawBackdropTown(){
- if(imageReady('battle_town.jpg'))ctx.drawImage(ART['battle_town.jpg'],0,0,W,H);
- else {ctx.fillStyle='#6e8f9a';ctx.fillRect(0,0,W,H)}
+ if(!drawCombatBackdrop('battle_town.jpg')){ctx.fillStyle='#6e8f9a';ctx.fillRect(0,0,battleWidth,H)}
  const shade=ctx.createLinearGradient(0,0,0,H);
  shade.addColorStop(0,'#fff8d316');shade.addColorStop(.55,'#101c2218');shade.addColorStop(1,'#09111ed0');
- ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
 }
 function drawBackdropWild(){
  const backdrop='battle_forest.jpg';
- if(imageReady(backdrop)){ctx.drawImage(ART[backdrop],0,0,W,H)} else {ctx.fillStyle='#1b2336';ctx.fillRect(0,0,W,H)}
- const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#10152516');shade.addColorStop(.45,'#101b2834');shade.addColorStop(1,'#10131ae0');ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+ if(!drawCombatBackdrop(backdrop)){ctx.fillStyle='#1b2336';ctx.fillRect(0,0,battleWidth,H)}
+ const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#10152516');shade.addColorStop(.45,'#101b2834');shade.addColorStop(1,'#10131ae0');ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
 }
 function drawBackdropCamp(){
  const backdrop='gromclaw_battle.jpg';
- if(imageReady(backdrop)){ctx.drawImage(ART[backdrop],0,0,W,H)} else {drawBackdropWild()}
- const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#10152516');shade.addColorStop(.45,'#1b1b2824');shade.addColorStop(1,'#10131ae0');ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+ if(!drawCombatBackdrop(backdrop))drawBackdropWild();
+ const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#10152516');shade.addColorStop(.45,'#1b1b2824');shade.addColorStop(1,'#10131ae0');ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
 }
 function drawBackdropCrypt(){
- if(imageReady('battle_crypt.jpg')){ctx.drawImage(ART['battle_crypt.jpg'],0,0,W,H);const veil=ctx.createLinearGradient(0,0,0,H);veil.addColorStop(0,'#01050b10');veil.addColorStop(.65,'#03091814');veil.addColorStop(1,'#010611d1');ctx.fillStyle=veil;ctx.fillRect(0,0,W,H);return}
- const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1f2737');bg.addColorStop(.45,'#131c2b');bg.addColorStop(1,'#090d16');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ if(drawCombatBackdrop('battle_crypt.jpg')){const veil=ctx.createLinearGradient(0,0,0,H);veil.addColorStop(0,'#01050b10');veil.addColorStop(.65,'#03091814');veil.addColorStop(1,'#010611d1');ctx.fillStyle=veil;ctx.fillRect(0,0,battleWidth,H);return}
+ const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1f2737');bg.addColorStop(.45,'#131c2b');bg.addColorStop(1,'#090d16');ctx.fillStyle=bg;ctx.fillRect(0,0,battleWidth,H);
  for(let i=0;i<6;i++){const x=24+i*78;ctx.fillStyle='#293547';ctx.fillRect(x,52,18,155);ctx.fillStyle='#1a2534';ctx.fillRect(x+18,52,6,155);ctx.fillStyle='#55637b';ctx.fillRect(x-3,45,26,10);} 
  ctx.fillStyle='#182335';ctx.beginPath();ctx.moveTo(140,185);ctx.lineTo(240,102);ctx.lineTo(340,185);ctx.closePath();ctx.fill();
  ctx.strokeStyle='#8da5cf55';ctx.lineWidth=2;ctx.beginPath();ctx.arc(240,138,29,0,Math.PI*2);ctx.stroke();
  for(let i=0;i<4;i++){const x=60+i*110, y=146+Math.sin(animTick/25+i)*2;const glow=ctx.createRadialGradient(x,y,0,x,y,26);glow.addColorStop(0,'#f8bd7875');glow.addColorStop(1,'#f8bd7800');ctx.fillStyle=glow;ctx.fillRect(x-28,y-28,56,56);ctx.fillStyle='#3a2014';ctx.fillRect(x-2,y-8,4,36);ctx.fillStyle='#f4b36c';ctx.beginPath();ctx.arc(x,y-10,5,0,Math.PI*2);ctx.fill();}
- const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#d8e2ff0a');shade.addColorStop(.38,'#00000010');shade.addColorStop(1,'#030710db');ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+ const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#d8e2ff0a');shade.addColorStop(.38,'#00000010');shade.addColorStop(1,'#030710db');ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
 }
 function drawBattle(){
+ const bounds=canvas.getBoundingClientRect();
+ battleWidth=bounds.height>0?H*bounds.width/bounds.height:W;
+ if(battleFX){
+  const point=id=>{const hero=G.party.findIndex(h=>h.id===id);return hero>=0?battleHeroPoint(hero):battleEnemyPoint(combat.enemies.findIndex(e=>e.id===id))};
+  battleFX.source=point(battleFX.actorId);battleFX.targets=battleFX.targetIds.map(point);
+ }
+ ctx.save();ctx.setTransform(canvas.width/battleWidth,0,0,canvas.height/H,0,0);
  const scene=battleScene();
  if(scene==='camp')drawBackdropCamp();
  else if(scene==='crypt')drawBackdropCrypt();
  else if(scene==='town')drawBackdropTown();
  else drawBackdropWild();
- for(let i=0;i<18;i++){const x=(i*67+Math.sin(animTick/43+i)*10)%480,y=(i*27+animTick*.14)%220;ctx.fillStyle=scene==='camp'?'#f1b77384':scene==='crypt'?'#9fb8d939':'#acc3d039';ctx.fillRect(x,y,1.4,1.4)}
+ for(let i=0;i<18;i++){const x=(i*67+Math.sin(animTick/43+i)*10)%battleWidth,y=(i*27+animTick*.14)%220;ctx.fillStyle=scene==='camp'?'#f1b77384':scene==='crypt'?'#9fb8d939':'#acc3d039';ctx.fillRect(x,y,1.4,1.4)}
  const moving=(actor,base)=>{if(!battleFX||battleFX.actorId!==actor.id)return base;const p=clamp((performance.now()-battleFX.startTime)/battleFX.duration,0,1),move=p<.3?p/.3:p<.55?1:p<.9?(1-(p-.55)/.35):0,t=battleFX.targets[0];if(!t)return base;if(!['slash'].includes(battleFX.kind))return base;return{x:base.x+(t.x-base.x)*Math.min(.76,move*.76),y:base.y+(t.y-base.y)*move*.21}};
  const immersive=document.documentElement.classList.contains('cinematic-battle');
  for(let i=0;i<combat.enemies.length;i++){
-  const e=combat.enemies[i];if(e.hp<=0)continue;
+  const e=combat.enemies[i];
+  if(e.hp<=0&&!window.AshenSprites?.ready(e.type))continue;
   const pt=battleEnemyPoint(i),m=moving(e,pt);
+  drawBattleMarker(e,pt);
   drawEnemy(e,m.x,m.y,e.type==='warboss'?1.06:e.type==='boss'?1.1:1);
   if(!immersive){
    const y=Math.max(24,pt.y-(e.type==='warboss'?131:e.type==='boss'?131:112));
@@ -1483,23 +1616,18 @@ function drawBattle(){
 
  G.party.forEach((hero,i)=>{
   const point=battleHeroPoint(i),m=moving(hero,point);
+  drawBattleMarker(hero,point);
   drawBattleHero(hero,m.x,m.y,i);
   if(!immersive){ctx.fillStyle='#121d2cbb';ctx.fillRect(point.x-30,point.y+6,60,12);textDraw(hero.name.slice(0,11),point.x,point.y+15,8,hero.hp>0?'#fff1d8':'#aaabb9','center');}
  });
  drawBattleFX();
  if(!document.documentElement.classList.contains('cinematic-battle')){ctx.save();ctx.fillStyle='#071221d9';ctx.fillRect(6,5,184,24);ctx.strokeStyle='#c7a46a77';ctx.strokeRect(6,5,184,24);ctx.restore();textDraw(`ROUND ${combat.round}   ·   ${combat.isBoss?'BOSS BATTLE':'TACTICAL ENCOUNTER'}`,13,22,10,'#ffe0ac');}
+ ctx.restore();
 }
 function drawTitle(){
- if(imageReady('title_backdrop.jpg')){
-  ctx.drawImage(ART['title_backdrop.jpg'],0,0,W,H);
-  const veil=ctx.createLinearGradient(0,0,0,H);veil.addColorStop(0,'#07111f47');veil.addColorStop(.65,'#0a0c1608');veil.addColorStop(1,'#060b19b3');
-  ctx.fillStyle=veil;ctx.fillRect(0,0,W,H);
-  ctx.font='normal 28px Georgia';ctx.textAlign='center';ctx.fillStyle='#0b1320';ctx.fillText('THE ASHEN REALMS',W/2+1,56);ctx.fillStyle='#f4d49c';ctx.fillText('THE ASHEN REALMS',W/2,55);
-  ctx.font='10px Georgia';ctx.fillStyle='#f9dfbb';ctx.fillText('C H A P T E R   I   ·   T H E   H O L L O W   B E L L',W/2,75);ctx.textAlign='left';
-  return;
- }
-const gr=ctx.createLinearGradient(0,0,0,288);gr.addColorStop(0,'#18203b');gr.addColorStop(.7,'#5b4e61');gr.addColorStop(1,'#141e2a');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);for(let i=0;i<55;i++){const x=Math.floor(hash(i,13)*W),y=Math.floor(hash(i,7)*155);pix(x,y,2,2,'#f9e9c3')}
- ctx.fillStyle='#efc59b';ctx.beginPath();ctx.arc(367,65,34,0,Math.PI*2);ctx.fill();ctx.fillStyle='#182139';ctx.beginPath();ctx.arc(357,59,33,0,Math.PI*2);ctx.fill();for(let i=0;i<12;i++){const x=i*47,hh=hash(i,11)*78+80;pix(x,255-hh,52,hh,'#1d293b');pix(x+9,244-hh,23,15,'#273447')}pix(175,110,125,162,'#111e2c');pix(191,95,93,20,'#111e2c');pix(231,65,14,70,'#111e2c');pix(202,145,70,100,'#354052');pix(211,151,52,85,'#211f31');pix(224,174,28,30,'#c48c6c');textDraw('THE ASHEN REALMS',240,54,27,'#ffdda8','center');textDraw('C H A P T E R   I  ·  T H E   H O L L O W   B E L L',240,75,10,'#f5d7b6','center')}
+ if(imageReady('title_backdrop.jpg'))ctx.drawImage(ART['title_backdrop.jpg'],0,0,W,H);
+ else{ctx.fillStyle='#091321';ctx.fillRect(0,0,W,H)}
+}
 let trail=[];
 function rememberStep(){if(!G)return;trail.unshift({loc:G.location,x:G.x,y:G.y});trail=trail.slice(0,18)}
 let lastScreenMode=null;
@@ -1508,16 +1636,22 @@ function renderCinemaHud(){
  const hud=$('cinemaHud');if(!hud)return;
  if(mode!=='combat'||!combat){if(hud.innerHTML)hud.innerHTML='';previousCinemaHud='';return}
  const turn=combat.queue?.[combat.turn],actor=activeUnit();
- const cacheKey=G.party.map(h=>[h.id,h.hp,h.mp,h.poison,h.defending,h.protectedThroughRound].join(':')).join('|')+combat.enemies.map(e=>e.id+':'+e.hp).join(',')+turn?.id+combat.round+document.documentElement.classList.contains('cinema-compact');
+ const cacheKey=combatSession+':'+combatAnimating+':'+G.party.map(h=>[h.id,h.hp,h.mp,h.poison,h.defending,h.protectedThroughRound].join(':')).join('|')+combat.enemies.map(e=>e.id+':'+e.hp).join(',')+turn?.id+combat.round+document.documentElement.classList.contains('cinema-compact');
  if(cacheKey===previousCinemaHud)return;previousCinemaHud=cacheKey;
+ const viewFocused=document.activeElement?.id==='cinemaMinimize';
  const party=G.party.map(h=>{
    const hp=clamp(100*h.hp/h.maxHp,0,100),mp=h.maxMp?clamp(100*h.mp/h.maxMp,0,100):0;
-   const conditions=[h.hp<=0?'Unconscious':'',h.poison?`Poison · ${h.poison} turns`:'',isDefending(h)?'Protected':''].filter(Boolean).join(' · ');
-   return `<article class="cinema-member ${actor?.id===h.id?'active':''} ${h.hp<=0?'fallen':''}"><img src="${imagePath(ROLE_PORTRAIT[h.role]||'portrait_fighter.png')}" alt=""><div class="cinema-member-info"><b>${escapeHtml(h.name)}</b><small>LV ${h.level} · ${h.role}</small><div class="cinema-stat"><span>HP</span><i><em style="width:${hp}%"></em></i><span>${h.hp}/${h.maxHp}</span></div><div class="cinema-stat mana"><span>MP</span><i><em style="width:${mp}%"></em></i><span>${h.mp}/${h.maxMp}</span></div>${conditions?`<span class="combat-condition">${conditions}</span>`:''}</div></article>`;
+   const conditions=[h.hp<=0?'Unconscious':'',h.poison?`Poison · ${h.poison} turns`:'',h.defending?'Guard · until next turn':h.protectedThroughRound>=combat.round?`Protected · through R${h.protectedThroughRound}`:''].filter(Boolean).join(' · ');
+   return `<article class="cinema-member ${actor?.id===h.id?'active':''} ${h.hp<=0?'fallen':''}"><img src="${imagePath(ROLE_PORTRAIT[h.role]||'portrait_fighter.png')}" alt=""><div class="cinema-member-info"><b title="${escapeHtml(h.name)}">${escapeHtml(h.name)}</b><small>LV ${h.level} · ${h.role}</small><div class="cinema-stat"><span>HP</span><i><em style="width:${hp}%"></em></i><span>${h.hp}/${h.maxHp}</span></div><div class="cinema-stat mana"><span>MP</span><i><em style="width:${mp}%"></em></i><span>${h.mp}/${h.maxMp}</span></div>${conditions?`<span class="combat-condition">${conditions}</span>`:''}</div></article>`;
  }).join('');
  const foes=combat.enemies.filter(e=>e.hp>0).map(e=>`<article class="cinema-foe ${actor?.id===e.id?'active':''}"><div class="foe-line"><span>${escapeHtml(e.name)}</span><b>${e.hp}/${e.maxHp} HP</b></div><div class="foe-track" role="progressbar" aria-label="${escapeHtml(e.name)} health" aria-valuenow="${e.hp}" aria-valuemin="0" aria-valuemax="${e.maxHp}"><i style="width:${clamp(100*e.hp/e.maxHp,0,100)}%"></i></div></article>`).join('');
- hud.innerHTML=`<header class="cinema-title"><div><span>THE ASHEN REALMS</span><small>${G.flags.ending?'CHAPTER II':'CHAPTER I'} · ${battleScene().toUpperCase()} ENCOUNTER</small></div><button id="cinemaMinimize" title="Toggle immersive battle view">${document.documentElement.classList.contains('cinema-compact')?'EXPAND':'WINDOWED'}</button></header><section class="cinema-party" aria-label="Party status"><h2 class="combat-section-title">YOUR PARTY</h2><div class="combat-status-list">${party}</div></section><section class="cinema-foes" aria-label="Enemy status"><h2 class="combat-section-title">ENEMIES</h2><div class="combat-status-list">${foes}</div></section>`;
+ const initiative=combat.queue.slice(combat.turn).map(q=>{
+   const unit=q.side==='ally'?G.party.find(h=>h.id===q.id):combat.enemies.find(e=>e.id===q.id);
+   return unit?.hp>0?`<span class="initiative-actor ${q.side} ${unit.id===actor?.id?'current':''}" ${unit.id===actor?.id?'aria-current="step"':''}>${escapeHtml(unit.name)}</span>`:'';
+ }).join('');
+ hud.innerHTML=`<header class="cinema-title"><div class="combat-title"><span>THE ASHEN REALMS</span><small>${G.flags.ending?'CHAPTER II':'CHAPTER I'} · ${battleScene().toUpperCase()} ENCOUNTER</small></div><nav class="turn-order" aria-label="Remaining turn order"><span>UP NEXT</span>${initiative}</nav><button id="cinemaMinimize" title="Toggle immersive battle view" aria-label="${document.documentElement.classList.contains('cinema-compact')?'Expand combat view':'Use windowed combat view'}">${document.documentElement.classList.contains('cinema-compact')?'EXPAND':'WINDOWED'}</button></header><section class="cinema-party" aria-label="Party status" style="--party-count:${G.party.length}"><h2 class="combat-section-title">YOUR PARTY</h2><div class="combat-status-list">${party}</div></section><section class="cinema-foes" aria-label="Enemy status"><h2 class="combat-section-title">ENEMIES</h2><div class="combat-status-list">${foes}</div></section>`;
  $('cinemaMinimize').onclick=()=>document.documentElement.classList.toggle('cinema-compact');
+ if(viewFocused)$('cinemaMinimize').focus({preventScroll:true});
 }
 let lastWorldHudKey='';
 function renderWorldHud(){
@@ -1570,14 +1704,21 @@ const SFX={ctx:null,musicTimer:null,notes:[220,261.6,293.7,349.2,293.7,261.6,196
  ensure(){if(!audioEnabled)return null;try{if(!this.ctx)this.ctx=new(window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==='suspended')this.ctx.resume();BGM.update();return this.ctx}catch(e){return null}},
  tone(freq,dur=.1,shape='square',vol=.024,delay=0){const a=this.ctx;if(!a||!audioEnabled)return;try{const o=a.createOscillator(),gain=a.createGain(),now=a.currentTime+delay;o.type=shape;o.frequency.setValueAtTime(freq,now);gain.gain.setValueAtTime(vol,now);gain.gain.exponentialRampToValueAtTime(.0001,now+dur);o.connect(gain);gain.connect(a.destination);o.start(now);o.stop(now+dur+.02)}catch(e){}},
  play(key){if(!audioEnabled)return;this.ensure();const f={menu:440,bump:135,foot:100,hit:155,miss:170,critical:330,magic:570,heal:440,coin:820,warp:340,battle:220,victory:510,level:660,join:490,chest:610,start:370,guard:270}[key]||340;const vol=key==='foot'?.004:.025;this.tone(f,key==='warp'?.22:.11,key==='heal'?'sine':'triangle',vol);if(['chest','victory','level','magic','join','start'].includes(key)){this.tone(f*1.25,.1,'triangle',.015,.1);this.tone(f*1.5,.18,'triangle',.012,.2)}},
+ dice(impact=.5){
+  const a=this.ensure();if(!a||!audioEnabled)return;
+  try{const length=Math.floor(a.sampleRate*.065),buffer=a.createBuffer(1,length,a.sampleRate),samples=buffer.getChannelData(0);
+   for(let i=0;i<length;i++){const n=Math.sin(i*12.9898)*43758.5453;samples[i]=((n-Math.floor(n))*2-1)*Math.exp(-i/(length*.17));}
+   const source=a.createBufferSource(),filter=a.createBiquadFilter(),gain=a.createGain();source.buffer=buffer;filter.type='lowpass';filter.frequency.value=1400;gain.gain.value=.035*Math.max(.15,impact);source.connect(filter);filter.connect(gain);gain.connect(a.destination);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect()};source.start();
+  }catch(e){/* Audio is optional; outcomes and animations never depend on it. */}
+ },
  music(){BGM.update()},
- toggle(){audioEnabled=!audioEnabled;$('soundBtn').textContent=audioEnabled?'SOUND ON':'SOUND OFF';$('worldSoundBtn').textContent=audioEnabled?'SOUND ON':'SOUND OFF';if(audioEnabled)this.ensure();else BGM.stop();toast(audioEnabled?'Sound and music enabled':'Sound and music muted')}
+ toggle(){audioEnabled=!audioEnabled;window.AshenTitle?.save({sound:audioEnabled});$('soundBtn').textContent=audioEnabled?'SOUND ON':'SOUND OFF';$('worldSoundBtn').textContent=audioEnabled?'SOUND ON':'SOUND OFF';if(audioEnabled)this.ensure();else BGM.stop();toast(audioEnabled?'Sound and music enabled':'Sound and music muted')}
 };
 /* ---------------------------- INPUT AND START ---------------------------- */
 function moveCommand(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;rememberStep();tryMove(dx,dy)}
 function updateFrame(now){if(mode==='explore'&&!isOverlay()&&now-lastMove>145){const directions=[['ArrowUp',0,-1],['w',0,-1],['ArrowDown',0,1],['s',0,1],['ArrowLeft',-1,0],['a',-1,0],['ArrowRight',1,0],['d',1,0]];for(const [key,dx,dy] of directions)if(keyboard.has(key)){moveCommand(dx,dy);lastMove=now;break}}requestAnimationFrame(updateFrame)}
-window.addEventListener('keydown',e=>{const k=e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k))e.preventDefault();const typing=['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);if(typing)return;
- if(k.toLowerCase()==='h'&&G&&mode==='explore'&&!isOverlay()){if(e.shiftKey){document.documentElement.classList.toggle('hud-detailed')}else document.documentElement.classList.toggle('hud-hidden');return}if(k==='Tab'&&G&&mode==='explore'&&!isOverlay()){e.preventDefault();document.getElementById('worldQuestBtn')?.classList.toggle('expanded');return}if(k.toLowerCase()==='k'&&G&&mode==='explore'&&!isOverlay()){spellbook();return}if(k==='Escape'){if(isOverlay()){closeModal();if(mode==='title')mainMenu()}else if(mode==='combat'){battleMenu='commands';renderCombatMenu()}else if(mode==='explore')helpMenu();return}if(isOverlay())return;
+window.addEventListener('keydown',e=>{const k=e.key;const typing=['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName);if(typing&&k!=='Escape')return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)||(k===' '&&document.activeElement?.tagName!=='BUTTON'))e.preventDefault();
+ if(k.toLowerCase()==='h'&&G&&mode==='explore'&&!isOverlay()){if(e.shiftKey){document.documentElement.classList.toggle('hud-detailed')}else document.documentElement.classList.toggle('hud-hidden');return}if(k==='Tab'&&G&&mode==='explore'&&!isOverlay()){e.preventDefault();document.getElementById('worldQuestBtn')?.classList.toggle('expanded');return}if(k.toLowerCase()==='k'&&G&&mode==='explore'&&!isOverlay()){spellbook();return}if(k==='Escape'){if(mode==='title'&&document.documentElement.classList.contains('tavern-creation-open')&&window.AshenTavern?.back())return;if(isOverlay()){closeModal();if(mode==='title')mainMenu()}else if(mode==='combat'){battleMenu='commands';renderCombatMenu()}else if(mode==='explore')helpMenu();return}if(isOverlay())return;
  if(mode==='title'){if(k==='Enter')mainMenu();return}if(mode==='combat'){if(k==='0'){setCombatTactic(combatTactic==='manual'?'attack':'manual');return}if(/^[1-9]$/.test(k)||k==='Enter'){const bs=Array.from(document.querySelectorAll('#battlePanel button[data-c]')).filter(b=>!b.disabled);const b=bs[k==='Enter'?0:Number(k)-1];if(b)battleAction(b.dataset.c)}return;}
  if(k.toLowerCase()==='e'||k===' '||k==='Enter'){interact();return}if(k.toLowerCase()==='i'){inventory();return}if(k.toLowerCase()==='p'){partyMenu();return}if(k.toLowerCase()==='j'){journalMenu();return}if(k.toLowerCase()==='m'){mapMenu();return}
  keyboard.add(k.length===1?k.toLowerCase():k);if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(k.toLowerCase())||k.startsWith('Arrow')){let m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[k]||{w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[k.toLowerCase()];if(m){if(performance.now()-lastMove>95){moveCommand(...m);lastMove=performance.now()}}}
@@ -1587,14 +1728,16 @@ $('worldViewBtn').onclick=()=>{document.documentElement.classList.add('world-win
 $('worldZoomBtn').onclick=()=>{$('zoomBtn').click();$('worldZoomBtn').textContent=$('zoomBtn').textContent};
 $('worldMapBtn').onclick=()=>{if(G&&mode==='explore')mapMenu()};$('worldQuestBtn').onclick=()=>{if(G&&mode==='explore')$('worldQuestBtn').classList.toggle('expanded')};
 $('worldPartyBtn').onclick=()=>{if(G&&mode==='explore')partyMenu()};$('worldSaveBtn').onclick=()=>saveGame();$('worldSoundBtn').onclick=()=>SFX.toggle();$('worldMenuBtn').onclick=()=>helpMenu();$('worldBagBtn').onclick=()=>inventory();$('worldSkillsBtn').onclick=()=>spellbook();$('worldJournalBtn').onclick=()=>journalMenu();$('hudToggle').onclick=()=>document.documentElement.classList.toggle('hud-hidden');
-$('zoomBtn').onclick=()=>{cameraZoom=zoomSteps[(zoomSteps.indexOf(cameraZoom)+1)%zoomSteps.length];$('zoomBtn').textContent=`ZOOM ${Math.round(cameraZoom*100)}%`; $('worldZoomBtn').textContent=$('zoomBtn').textContent;toast(`World zoom: ${Math.round(cameraZoom*100)}%`)};
+$('zoomBtn').onclick=()=>{cameraZoom=zoomSteps[(zoomSteps.indexOf(cameraZoom)+1)%zoomSteps.length];window.AshenTitle?.save({zoom:cameraZoom});$('zoomBtn').textContent=`ZOOM ${Math.round(cameraZoom*100)}%`; $('worldZoomBtn').textContent=$('zoomBtn').textContent;toast(`World zoom: ${Math.round(cameraZoom*100)}%`)};
  $('saveBtn').onclick=()=>saveGame();$('loadBtn').onclick=()=>loadGame();$('soundBtn').onclick=()=>SFX.toggle();$('menuBtn').onclick=()=>{if(!G)mainMenu();else if(isOverlay())closeModal();else helpMenu()};
 $('skillsBtn').onclick=()=>{if(G&&mode==='explore')spellbook()};
 $('bagBtn').onclick=()=>{if(G&&mode==='explore')inventory()};$('partyBtn').onclick=()=>{if(G&&mode==='explore')partyMenu()};$('journalBtn').onclick=()=>{if(G&&mode==='explore')journalMenu()};$('mapBtn').onclick=()=>{if(G&&mode==='explore')mapMenu()};
 $('mobileAction').onclick=()=>{if(mode==='explore')interact()};$('mobileMenu').onclick=()=>{if(mode==='explore')inventory()};
 for(const b of document.querySelectorAll('[data-dir]')){const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};b.onclick=()=>moveCommand(...dirs[b.dataset.dir]);}
+const presentation=window.AshenTitle?.preferences();
+if(presentation){audioEnabled=presentation.sound;cameraZoom=presentation.zoom;$('soundBtn').textContent=$('worldSoundBtn').textContent=audioEnabled?'SOUND ON':'SOUND OFF';$('zoomBtn').textContent=$('worldZoomBtn').textContent=`ZOOM ${Math.round(cameraZoom*100)}%`;}
 initMaps();refreshHud();mainMenu();requestAnimationFrame(render);requestAnimationFrame(updateFrame);
 // Expose a small test/debug surface; no effect on normal play.
 window.AshenRealms={enterBuilding,leaveBuilding,getState:()=>G?JSON.parse(JSON.stringify(G)):null,networkState:()=>G?{name:G.party[0]?.name,loc:G.location,x:G.x,y:G.y,dir:G.dir,role:G.party[0]?.role,level:G.party[0]?.level,mode}:null,getMode:()=>mode,newGame:startGame,move:moveCommand,interact,action,beginCombat,save:saveGame,load:loadGame,closeModal,getMap:()=>G?.location,getCombat:()=>combat?JSON.parse(JSON.stringify(combat)):null,battleAction,setCombatTactic,getCombatTactic:()=>combatTactic,walkable,getMapData:loc=>maps[loc],getAbilities:()=>G?G.party.map(h=>({role:h.role,level:h.level,known:knownAbilities(h).map(a=>a.id),points:h.talentPoints})):[],triggerJob:jobBoard,spellbook,levelUp,performAbility,getBattleFX:()=>battleFX,renderFrame:render,getZoom:()=>cameraZoom,openShop:shop,openInventory:inventory,rollDroppedLoot,getMusicTheme:()=>BGM.key,getMusicStatus:()=>({theme:BGM.key,paused:BGM.node?.paused??true,ready:BGM.node?.readyState??0}),roll4d6,rollStatSet,autoAssign,createHero:newHero,levelThreshold,mod};
-if(window.__ASHEN_TEST__){window.AshenRealms.test={modifyGame:fn=>{fn(G);refreshHud()},setLevel:(index,level)=>{const hero=G.party[index];while(hero.level<level)levelUp(hero);refreshHud()},addAlly:role=>{G.party.push(newHero(role, 'Human',role));refreshHud()},modifyCombat:fn=>{fn(combat);renderCombatMenu()},runEnemy:enemyAct,resolveWin:winCombat,refresh:refreshHud};}
+if(window.__ASHEN_TEST__){window.AshenRealms.test={previewCreation:creationStats,modifyGame:fn=>{fn(G);refreshHud()},setLevel:(index,level)=>{const hero=G.party[index];while(hero.level<level)levelUp(hero);refreshHud()},addAlly:role=>{G.party.push(newHero(role, 'Human',role));refreshHud()},modifyCombat:fn=>{fn(combat);renderCombatMenu()},runEnemy:enemyAct,resolveWin:winCombat,refresh:refreshHud};}
 })();
