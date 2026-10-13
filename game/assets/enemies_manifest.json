@@ -1,0 +1,14 @@
+{
+  "frameSize": 192,
+  "order": [
+    "slime",
+    "wolf",
+    "bandit",
+    "bat",
+    "bone",
+    "wisp",
+    "sentinel",
+    "boss"
+  ],
+  "columns": 4
+}

@@ -1,0 +1,30 @@
+{
+  "frameWidth": 240,
+  "frameHeight": 280,
+  "frames": {
+    "idle_a": 0,
+    "idle_b": 1,
+    "attack": 2,
+    "cast": 3,
+    "hurt": 4
+  },
+  "characters": [
+    "fighter",
+    "rogue",
+    "cleric",
+    "wizard",
+    "goblin",
+    "shaman",
+    "orc",
+    "warboss",
+    "bandit",
+    "sentinel",
+    "boss",
+    "bone",
+    "wolf",
+    "slime",
+    "wisp",
+    "bat"
+  ],
+  "license": "Original Ashen Realms character artwork generated locally with SVG and CairoSVG"
+}

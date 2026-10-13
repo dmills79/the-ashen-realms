@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111521" />
+  <meta name="description" content="The Ashen Realms: Chapter I — The Hollow Bell. A playable d20 fantasy browser RPG." />
+  <title>The Ashen Realms v1.7 — LPC Character Preview</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="shell">
+  <header class="topbar">
+    <div class="brand"><span class="crest">✦</span><div><div class="kicker">FANTASY ADVENTURE • d20 TACTICAL JRPG</div><h1>THE ASHEN REALMS</h1></div></div>
+    <div class="chapter">CHAPTER I <span>THE HOLLOW BELL</span></div>
+    <div class="topactions">
+      <button id="windowExpandBtn" title="Return to full-screen world">EXPAND</button>
+      <button id="lanToggle" title="Show network lobby">LAN <span id="lanHeaderDot">○</span></button>
+      <button id="zoomBtn" title="Change world zoom">ZOOM 75%</button>
+      <button id="saveBtn" title="Save game">SAVE</button>
+      <button id="loadBtn" title="Load game">LOAD</button>
+      <button id="soundBtn" title="Toggle sound">SOUND ON</button>
+      <button id="menuBtn" title="Open menu">MENU</button>
+    </div>
+  </header>
+  <div class="game-meta"><span><strong>THE HOLLOW BELL</strong> <span class="meta-separator">/</span> INTERACTIVE WORLD</span><span>WASD TO MOVE <span class="meta-separator">•</span> E TO INTERACT</span></div>
+  <div class="layout">
+    <main class="mainpane">
+      <div class="gameframe">
+        <canvas id="game" width="480" height="288" aria-label="The Ashen Realms game canvas"></canvas>
+        <div class="frame-label" id="regionLabel">HAVENMERE • THE LOWLANDS</div>
+        <div class="proximity" id="proximityHint">EXPLORE · DISCOVER · CONQUER</div>
+        <div id="districtNotice" class="district-notice" aria-live="polite"></div>
+        <div id="worldHud" class="world-hud" aria-label="Adventure interface">
+          <div class="world-topline"><span class="world-crest">✦</span><div><strong>THE ASHEN REALMS</strong><small>CHAPTER I · THE HOLLOW BELL</small></div></div>
+          <div class="world-topactions"><button id="worldViewBtn" title="Open the windowed dashboard and LAN lobby">DASHBOARD</button><button id="worldZoomBtn" title="Change map zoom">ZOOM 75%</button><button id="worldSaveBtn">SAVE</button><button id="worldSoundBtn">SOUND ON</button><button id="worldMenuBtn">HELP</button></div>
+          <div class="world-location"><span class="location-pin">◇</span><span id="worldLocation">HAVENMERE</span><small id="worldGold">45 GOLD</small></div>
+          <button class="world-quest" id="worldQuestBtn"><small>ACTIVE QUEST <span>↕</span></small><b id="worldQuest">AN UNQUIET MORNING</b><span id="worldQuestDesc">Enter Havenmere's Great Hall.</span></button>
+          <button class="world-map" id="worldMapBtn" title="Open map"><canvas id="worldMini" width="200" height="104"></canvas><span>AREA MAP ↗</span></button>
+          <button class="world-hero world-roster" id="worldPartyBtn" title="Open party training"><span class="world-roster-label">ADVENTURING PARTY <span id="worldPartyCount">SOLO ADVENTURER</span></span><span class="world-roster-rows" id="worldPartyRoster"></span><span class="world-roster-action">PARTY & TRAINING ↗</span></button>
+          <div class="world-actions"><button id="worldBagBtn"><span>I</span> INVENTORY</button><button id="worldSkillsBtn"><span>K</span> SPELLS</button><button id="worldJournalBtn"><span>J</span> JOURNAL</button></div>
+          <div class="world-keyhelp">WASD MOVE <span>·</span> E INTERACT <span>·</span> TAB QUEST <span>·</span> H HIDE HUD</div>
+        </div>
+        <button id="hudToggle" aria-label="Show or hide HUD">HUD <span>H</span></button>
+        <div id="cinemaHud" class="cinema-hud" aria-label="Combat status"></div>
+        <div id="battlePanel" class="battlepanel hidden"></div>
+        <div id="toast" aria-live="polite"></div>
+        <div id="overlay" class="overlay hidden"><div id="modal" class="modal"></div></div>
+      </div>
+      <div class="lowerbar">
+        
+        <div class="guide" id="guide">ARROWS / WASD — MOVE <span>•</span> E / SPACE — INTERACT <span>•</span> I — INVENTORY <span>•</span> J — JOURNAL</div>
+        <div class="mobilepad" aria-label="Mobile controls">
+          <div class="pad-dirs"><button data-dir="up">▲</button><div><button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button></div></div>
+          <button id="mobileAction" class="actionkey">ACT</button>
+          <button id="mobileMenu" class="actionkey muted">MENU</button>
+        </div>
+      </div>
+    <section class="lan-section hidden-panel"><h2><span class="bullet">◇</span> FRIENDS ON LAN <small id="lanCount">OFFLINE</small></h2>
+      <div id="lanStatus" class="lan-status">Start the LAN server to play with friends.</div>
+      <div id="lanPanel" class="lan-panel">
+        <div class="lan-form"><label>LOBBY / ROOM<input id="lanRoom" maxlength="24" value="havenmere" spellcheck="false" /></label><label>DISPLAY NAME<input id="lanName" maxlength="20" value="Adventurer" spellcheck="false" /></label></div>
+        <div class="lan-actions"><button id="lanConnect">CONNECT</button><button id="lanDisconnect" disabled>LEAVE</button></div>
+        <div id="lanPlayers" class="lan-players">Other adventurers will appear here.</div>
+        <div id="lanChat" class="lan-chat" aria-live="polite"></div>
+        <form id="lanChatForm" class="lan-chat-form"><input id="lanMessage" maxlength="180" placeholder="Message your party…" aria-label="Party message" /><button id="lanSend" type="submit">SEND</button></form>
+        <div class="lan-note">Shared player locations and chat only. Combat, loot, quests and saves are still individual in this preview.</div>
+      </div>
+    </section>
+    </main>
+    <aside class="sidepane">
+      <section class="sidebar-section"><h2><span class="bullet">◆</span> PARTY</h2><div id="partySummary" class="partySummary"><div class="subtle">Begin an adventure to create your hero.</div></div></section>
+      <section class="sidebar-section"><h2><span class="bullet">◇</span> ACTIVE QUEST</h2><div id="questSummary" class="questSummary">The road into the realm awaits.</div></section>
+      <section class="sidebar-section map-section"><h2><span class="bullet">✧</span> AREA OVERVIEW <small>GOLD = YOU</small></h2><canvas id="areaMini" width="300" height="155" aria-label="Live map showing the player's location"></canvas><div class="mapcaption">Havenmere: High Street, Market Square, Forge Lane, Lantern Row, and seven enterable buildings.</div></section>
+  
+    <section class="sidebar-section kit-section"><h2><span class="bullet">✧</span> ADVENTURER'S KIT</h2><div class="quickactions"><button id="partyBtn">PARTY <small>[P]</small></button><button id="skillsBtn">SPELLS <small>[K]</small></button><button id="bagBtn">BAG <small>[I]</small></button><button id="journalBtn">JOURNAL <small>[J]</small></button><button id="mapBtn">MAP <small>[M]</small></button></div></section>
+      <section class="sidebar-section event-section"><h2><span class="bullet">✦</span> CHRONICLE</h2><div id="chronicle" class="chronicle">The story has yet to be written.</div></section>
+      <div class="sidebar-footer"><span id="coinCount">0 GOLD</span><span id="locationText">—</span></div>
+    </aside>
+  </div>
+  <footer>THE ASHEN REALMS · v1.7 · LPC CHARACTER PREVIEW · LAN OPTIONAL · PROGRESS SAVES LOCALLY IN YOUR BROWSER</footer>
+</div>
+<script src="game.js"></script>
+<script src="network.js"></script>
+</body>
+</html>

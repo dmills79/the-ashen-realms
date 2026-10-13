@@ -1,0 +1,6 @@
+node_modules/
+.playwright-browsers/
+playwright-report/
+test-results/
+artifacts/
+.npm-cache/

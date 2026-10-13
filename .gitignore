@@ -1,0 +1,57 @@
+# Dependencies and local runtime environments
+node_modules/
+.npm-cache/
+.npm/
+.cache/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Browser binaries, generated test output, and browser profiles
+.playwright-browsers/
+playwright-report/
+test-results/
+artifacts/
+playwright/.auth/
+user-data/
+chrome-user-data/
+.playwright-review.config.mjs
+
+# Temporary files and logs
+.tmp/
+tmp/
+temp/
+*.tmp
+*.temp
+*.log
+*.bak
+*~
+.DS_Store
+Thumbs.db
+
+# Credentials and private configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+.aws/
+.ssh/
+.codex/
+credentials*.json
+secrets*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+
+# Local/exported player saves and authenticated browser state
+local-saves/
+saves/
+*.sav
+*.save
+ashen-realms*save*.json
+storage-state*.json
+storageState*.json
+auth-state*.json

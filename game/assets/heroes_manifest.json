@@ -1,0 +1,17 @@
+{
+  "frameWidth": 96,
+  "frameHeight": 112,
+  "framesPerDirection": 4,
+  "directions": [
+    "down",
+    "left",
+    "right",
+    "up"
+  ],
+  "roles": [
+    "Fighter",
+    "Rogue",
+    "Wizard",
+    "Cleric"
+  ]
+}
