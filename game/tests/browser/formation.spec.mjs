@@ -27,7 +27,7 @@ for(const [phase,steps] of [['day',0],['evening',300],['night',400],['dusk-blend
  test(`integrated ${phase} forest loads, preserves artwork and shows initiative on phones`,async({page})=>{
   const errors=await setup(page);await page.evaluate(steps=>{const a=window.AshenRealms;a.test.modifyGame(g=>{g.location='wild';g.steps=steps});a.beginCombat(['wolf','orc']);},steps);
   for(const name of ['day','evening','night'])expect((await page.request.get(`/assets/battle/forest_${name}.jpg`)).status()).toBe(200);
-  await expect(page.locator('.initiative-actor.current img')).toBeVisible();await expect(page.locator('[data-c=attack] small')).toBeVisible();
+  await expect(page.locator('.initiative-actor.current img')).toBeVisible();await expect(page.locator('[data-action-card=attack] img')).toBeVisible();await expect(page.locator('#battleActionDetail')).toContainText('Accuracy');
   await page.waitForFunction(()=>window.AshenIdentity.debug().draws.some(d=>d.mode==='combat')||window.AshenIdentity.debug().draws.length>0);
   await page.screenshot({path:`artifacts/formation/forest-${phase}.png`});
   await page.setViewportSize({width:390,height:844});await expect(page.locator('.turn-order')).toBeVisible();await expect(page.locator('.row-badge').first()).toBeVisible();

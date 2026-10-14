@@ -760,9 +760,12 @@ function battlePanel(html){
   panel.querySelectorAll('[data-c]').forEach(btn=>{
     btn.onclick=()=>battleAction(btn.dataset.c);
     const target=btn.dataset.c.startsWith('target:')||btn.dataset.c.startsWith('ally:')?btn.dataset.c.split(':')[1]:null;
-    btn.onpointerenter=btn.onfocus=()=>{highlightedTarget=target};
+    btn.onpointerenter=btn.onfocus=()=>{highlightedTarget=target;if(target)renderBattleTarget(target);if(btn.dataset.preview)renderBattleActionInspector(btn.dataset.preview)};
     btn.onpointerleave=btn.onblur=()=>{highlightedTarget=null};
   });
+  panel.querySelectorAll('[data-nav],[data-action-card]').forEach(btn=>btn.onclick=()=>battleAction(btn.dataset.nav||btn.dataset.actionCard));
+  panel.querySelectorAll('[data-preview]').forEach(btn=>{btn.addEventListener('pointerenter',()=>renderBattleActionInspector(btn.dataset.preview));btn.addEventListener('focus',()=>renderBattleActionInspector(btn.dataset.preview))});
+  const inspectToggle=panel.querySelector('[data-inspect-toggle]');if(inspectToggle)inspectToggle.onclick=()=>inspectToggle.setAttribute('aria-expanded',panel.querySelector('.battle-controls').classList.toggle('show-action-detail'));
   panel.querySelectorAll('[data-tactic]').forEach(btn=>btn.onclick=()=>setCombatTactic(btn.dataset.tactic));
   if(focusCommand||focusTactic){
     const buttons=Array.from(panel.querySelectorAll('button'));
@@ -788,29 +791,89 @@ function renderCombatEvents(){
   const follow=$('battlePanel').querySelector('[data-log-follow]');
   if(follow)follow.onclick=()=>{history.scrollTop=history.scrollHeight};
 }
-function renderCombatMenu(){if(mode!=='combat'||!combat){$('battlePanel').classList.add('hidden');return}const q=combat.queue[combat.turn],who=activeUnit();if(!who||!q)return;
- let buttons='';if(q.side==='ally'&&!combatAnimating&&combatTactic==='manual'){
-  if(battleMenu==='commands')buttons=[['attack','⚔','ATTACK','Weapon strike'],['skills','✦','SKILLS / SPELLS','Class abilities'],['item','✚','ITEM','Use supplies'],['guard','◈','GUARD','Halve damage'],['flee','↩','FLEE','Attempt escape']].map(([id,icon,label,tip])=>`<button data-c="${id}" class="command-card command-${id}" title="${id==='attack'?(Formation.attackPenalty(who,G.party)?'Screened rear melee: −2 to hit. Equip a bow or use spells to avoid this penalty.':'Weapon strike · no formation penalty'):tip}"><i aria-hidden="true">${icon}</i><b>${label}</b><small>${tip}</small></button>`).join('');
-  else if(battleMenu==='abilities')buttons=knownAbilities(who).filter(a=>!['passive','field'].includes(a.kind)).map(a=>`<button class="ability-card effect-${a.fx}" data-c="ability:${a.id}" title="${a.tip}" ${who.mp<a.mp||(a.id==='backstab'&&!who.hidden)||(a.id==='hide'&&who.hidden)?'disabled':''}><i aria-hidden="true">${['heal','purify'].includes(a.fx)?'✚':['slash','shadow'].includes(a.fx)?'⚔':'✦'}</i><b>${a.name}</b> <small>${a.mp} MP · ${a.kind==='aoe'?'ALL FOES':a.kind==='allies'?'ALL ALLIES':a.kind.toUpperCase()}</small></button>`).join('')+'<button data-c="back">↩ BACK</button>';
-  else if(battleMenu==='enemy')buttons=combat.enemies.filter(e=>e.hp>0).map(e=>`<button data-c="target:${e.id}">${escapeHtml(e.name)}<small>${e.hp}/${e.maxHp} HP · AC ${e.ac} · ${Formation.enemyRange(e).toUpperCase()}</small></button>`).join('')+'<button data-c="back">↩ BACK</button>';
-  else if(battleMenu==='ally')buttons=G.party.filter(h=>h.hp>0).map(h=>`<button data-c="ally:${h.id}">${escapeHtml(h.name)} · ${h.hp}/${h.maxHp} HP</button>`).join('')+'<button data-c="back">↩ BACK</button>';
-  else if(battleMenu==='items')buttons=Object.keys(G.bag).filter(id=>G.bag[id]>0&&ITEMS[id]?.kind==='consumable').map(id=>`<button data-c="item:${id}">${ITEMS[id].name} ×${G.bag[id]}</button>`).join('')+'<button data-c="back">↩ BACK</button>';
+const battleIcon=name=>'assets/battle/ui/'+name+'.jpg';
+const signedBonus=value=>value<0?' − '+Math.abs(value):' + '+value;
+function battleActionInfo(id,hero){
+ const weapon=ITEMS[hero.gear.weapon],melee=hero.gear.weapon!=='oakbow',penalty=Formation.attackPenalty(hero,G.party);
+ const weaponName=weapon?.name||'Unarmed Strike';
+ const attack=prof(hero)+attackMod(hero)-penalty;
+ const base={id,title:weaponName,icon:!weapon?'gauntlet':hero.gear.weapon==='runestaff'?'book':melee?'sword':'bow',kind:'Weapon attack',description:'Strike one enemy with your equipped weapon.',stats:[['Damage','1d6'+signedBonus(attackMod(hero)+weaponBonus(hero))],['Accuracy','d20'+signedBonus(attack)+' vs AC'],['Range',melee?'Melee · 1 enemy':'Ranged · 1 enemy'],['Formation',penalty?'Rear melee: −2 to hit':'No attack penalty']]};
+ if(id==='attack')return base;
+ if(id==='guard')return {...base,title:'Guard',icon:'guard',kind:'Defensive action',description:'Brace until your next turn. Incoming damage is halved, rounded up.',stats:[['Recovery','1 MP'],['Cost','Your turn']]};
+ if(id==='flee')return {...base,title:'Retreat',icon:'flee',kind:'Escape attempt',description:combat.isBoss?'This boss blocks escape. An attempt still spends your turn.':'Try to escape with your entire party. A failed attempt spends your turn.',stats:[['Success',combat.isBoss?'Blocked':'75%'],['Formation','Preserved on retreat']]};
+ if(id==='skills'||id==='spells')return {...base,title:id==='spells'?'Spells':'Class abilities',icon:'book',kind:hero.role,description:'Select an ability to inspect its actual cost, targeting and effects.',stats:[['Mana',hero.mp+' / '+hero.maxMp],['Known',String(knownAbilities(hero).filter(a=>!['field','passive'].includes(a.kind)).length)]]};
+ if(id==='item')return {...base,title:'Adventuring supplies',icon:'potion',kind:'Consumables',description:'Use an available supply on an ally. Only a successful use consumes the item and your turn.',stats:[['Supplies',Object.entries(G.bag).filter(([key,n])=>n>0&&ITEMS[key]?.kind==='consumable').reduce((sum,[,n])=>sum+n,0)+' available']]};
+ if(id.startsWith('item:')){const item=ITEMS[id.slice(5)];return {...base,title:item.name,icon:id.includes('ether')?'ether':id.includes('salve')?'poison':'potion',kind:'Consumable',description:item.description,stats:[['Available','×'+(G.bag[id.slice(5)]||0)],['Target',item.target==='party'?'Entire party':'One ally']]}}
+ const ability=knownAbilities(hero).find(a=>'ability:'+a.id===id);if(!ability)return base;
+ const magic=['Wizard','Cleric'].includes(hero.role)||ability.id==='runeflare';
+ const icon={power:'gauntlet',hide:'hide',backstab:'daggers',shadow:'daggers',fan:'daggers',vanish:'hide',mend:'heal',sanctuary:'heal',purify:'heal',rally:'guard'}[ability.id]||({slash:'sword',arcane:'arcane',ice:'ice',fire:'fire',meteor:'fire',holy:'holy',shadow:'hide'}[ability.fx]||'book');
+ const target={single:'1 enemy',aoe:'All enemies',ally:'1 ally',allies:'Entire party',buff:'Entire party',self:'Self'}[ability.kind];
+ const stats=[['Cost',ability.mp+' MP'],['Target',target]];
+ if(ability.id==='hide'){stats.push(['Check','d20'+signedBonus(mod(hero.stats[1])+prof(hero))],['DC',String(10+Math.max(...combat.enemies.filter(e=>e.hp>0).map(e=>e.dex)))])}
+ else if(ability.id==='purify')stats.push(['Healing','4 HP + remove poison']);
+ else if(['ally','allies'].includes(ability.kind))stats.push(['Healing',(ability.kind==='allies'?'1d8':'2d8')+signedBonus(Math.max(0,mod(hero.stats[4]))+2+(hero.talents?.focus||0))]);
+ else if(ability.kind==='buff')stats.push(['Protection','½ damage through next round']);
+ else if(ability.kind==='aoe'){
+  const index=hero.role==='Fighter'?0:hero.role==='Rogue'?1:hero.role==='Cleric'?4:3;
+  stats.push(['Damage',(ability.id==='meteor'?'4d6':ability.id==='sunburst'?'3d6':'2d6')+signedBonus(Math.max(0,mod(hero.stats[index]))+(magic?spellDamageBonus(hero):weaponBonus(hero)))],['Save','DEX vs DC '+(10+prof(hero)+mod(hero.stats[index]))]);
+ }else{
+  const extra={backstab:3,shadow:3,power:2,bolt:1,frost:3}[ability.id]??3;
+  stats.push(['Damage',(ability.id==='backstab'?'3d6':'2d6')+signedBonus(attackMod(hero,magic)+(magic?spellDamageBonus(hero):weaponBonus(hero))+extra)],['Accuracy','d20'+signedBonus(prof(hero)+attackMod(hero,magic)-(magic?0:penalty))+' vs AC']);
+  if(['shadow','backstab'].includes(ability.id))stats.push(['Roll','Advantage']);
  }
- const tactics=`<div class="tactics" role="group" aria-label="Battle automation">${Object.entries(COMBAT_TACTICS).map(([id,label])=>`<button type="button" data-tactic="${id}" aria-pressed="${id===combatTactic}" class="${id===combatTactic?'tactic-current':''}" title="${id==='manual'?'Command each ally':id==='attack'?'Physical attacks only':id==='conserve'?'Only emergency heals or multi-enemy spells while preserving 45% MP':'Spend MP on offensive spells whenever possible'}">${label}</button>`).join('')}</div>`;
- const modeDescription=combatTactic==='manual'?'':`<div class="auto-running"><span class="auto-pulse"></span> AUTO: ${COMBAT_TACTICS[combatTactic]} · Select MANUAL to take control</div>`;
- const labels={commands:'Choose an action',abilities:'Skills & spells',enemy:'Choose an enemy',ally:'Choose an ally',items:'Use a consumable'};
- battlePanel(`<section class="battle-controls" aria-label="Combat commands"><div class="battle-topline"><div class="turntext"><span class="battle-eyebrow">${combatAnimating?'ACTION IN PROGRESS':q.side==='ally'?'YOUR TURN':'ENEMY TURN'}</span><strong>${escapeHtml(who.name)}</strong></div><span class="battle-round">ROUND ${combat.round}</span></div>${tactics}<div class="command-heading">${combatAnimating?'Resolving action…':q.side==='enemy'?'Awaiting the enemy':labels[battleMenu]||labels.commands}<span>1–9 SELECT · ESC BACK</span></div><div class="actionrow" data-menu="${battleMenu}">${buttons||modeDescription||'<span class="battle-wait">The next action will begin shortly.</span>'}</div></section><section class="battle-events" aria-label="Combat events"><div class="events-heading"><span>COMBAT EVENTS</span><button type="button" data-log-follow title="Scroll to the latest combat event">LATEST ↓</button></div><ol class="battlehistory" tabindex="0" aria-label="Combat event history" role="log" aria-live="polite" aria-relevant="additions"></ol></section>`);
- renderCombatEvents();
-
+ return {id,title:ability.name,icon,kind:magic?'Spell':'Class skill',description:ability.tip,stats};
+}
+function battleArtCard(id,hero,attribute='data-c'){
+ const info=battleActionInfo(id,hero),ability=id.startsWith('ability:')?knownAbilities(hero).find(a=>a.id===id.slice(8)):null;
+ const disabled=ability&&(hero.mp<ability.mp||(ability.id==='backstab'&&!hero.hidden)||(ability.id==='hide'&&hero.hidden));
+ return `<button class="battle-art-card ${ability?'effect-'+ability.fx:''}" ${attribute}="${id}" data-preview="${id}" aria-describedby="battleActionDetail" title="${escapeHtml(info.description)}" ${disabled?'disabled':''}><span class="action-art"><img src="${battleIcon(info.icon)}" alt="">${ability?`<em>${ability.mp} MP</em>`:''}</span><b>${escapeHtml(info.title)}</b></button>`;
+}
+function renderBattleActionInspector(id='attack'){
+ const node=$('battleActionDetail');if(!node||!combat)return;
+ const who=activeUnit(),hero=who?.stats?who:G.party.find(h=>h.hp>0)||G.party[0];
+ const info=who&&!who.stats?{title:who.name,image:enemyPortrait(who),kind:'Enemy turn',description:'The enemy is acting. Your next adventurer is shown in the initiative queue.',stats:[['Health',who.hp+' / '+who.maxHp],['Armor class',String(who.ac)],['Attack style',Formation.enemyRange(who)]]}:battleActionInfo(id,hero);
+ node.innerHTML=`<header><img src="${info.image||battleIcon(info.icon)}" alt=""><div><h3>${escapeHtml(info.title)}</h3><small>${escapeHtml(info.kind)}</small></div></header><p>${escapeHtml(info.description)}</p><dl>${info.stats.map(([label,value])=>`<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>`;
+ $('battlePanel').querySelectorAll('[data-preview]').forEach(b=>b.classList.toggle('inspected',b.dataset.preview===id));
+}
+const enemyPortrait=e=>'assets/battle/ui/enemy_'+e.type+'.jpg';
+function renderBattleTarget(id=highlightedTarget||battleFX?.targetIds[0]){
+ const node=$('battleTargetDetail');if(!node||!combat)return;
+ const unit=G.party.find(h=>h.id===id)||combat.enemies.find(e=>e.id===id)||combat.enemies.find(e=>e.hp>0);
+ if(!unit){node.innerHTML='<h3>TARGET</h3><p>No enemies remain.</p>';return}
+ const hero=!!unit.stats,health=clamp(100*unit.hp/unit.maxHp,0,100);
+ const conditions=hero?conditionBadges(unit):unit.atk<(BESTIARY[unit.original]?.atk??unit.atk)?`<span class="condition-icon condition-chilled" tabindex="0" role="img" title="Attack reduced from ${BESTIARY[unit.original].atk} to ${unit.atk} for this encounter" aria-label="Weakened attack: ${unit.atk} attack bonus">❄</span>`:'';
+ node.innerHTML=`<h3>TARGET</h3><div class="target-identity"><img src="${hero?heroPortrait(unit):enemyPortrait(unit)}" alt=""><div><strong>${escapeHtml(unit.name)}</strong><small>${hero?unit.role+' · '+Formation.row(unit).toUpperCase()+' ROW':Formation.enemyRange(unit).toUpperCase()+' ATTACKER'}</small><div class="target-health"><i style="width:${health}%"></i></div><small>${unit.hp}/${unit.maxHp} HP · AC ${hero?armorClass(unit):unit.ac}</small></div></div><h4>CONDITIONS</h4><div class="target-conditions">${conditions||'<small>No active conditions</small>'}</div>${hero&&Formation.screened(unit,G.party)?'<p>Frontline cover: 25% less melee damage.</p>':''}`;
+}
+function renderCombatMenu(){
+ if(mode!=='combat'||!combat){$('battlePanel').classList.add('hidden');return}
+ const q=combat.queue[combat.turn],who=activeUnit();if(!who||!q)return;
+ const ready=q.side==='ally'&&!combatAnimating&&combatTactic==='manual',hero=who.stats?who:G.party.find(h=>h.hp>0)||G.party[0];
+ const commands=[['attack','⚔','ATTACK'],['skills','⚒','SKILLS'],['spells','✦','SPELLS'],['item','✚','ITEMS'],['guard','◈','GUARD'],['flee','↩','FLEE']];
+ const category=battleMenu==='commands'?'attack':battleMenu==='abilities'?'skills':battleMenu==='items'?'item':battleMenu==='spells'?'spells':currentTargetAction?.startsWith('ability:')?(battleActionInfo(currentTargetAction,hero).kind==='Spell'?'spells':'skills'):currentTargetAction?.startsWith('item:')?'item':'attack';
+ const rail=`<nav class="combat-command-rail" aria-label="Battle categories">${commands.map(([id,icon,label])=>`<button ${ready&&battleMenu==='commands'&&id!=='spells'?'data-c':'data-nav'}="${id}" data-preview="${id}" class="${category===id?'selected':''}" ${!ready||(id==='spells'&&!knownAbilities(hero).some(a=>a.id==='runeflare'||['Wizard','Cleric'].includes(hero.role)))?'disabled':''}><i aria-hidden="true">${icon}</i>${label}</button>`).join('')}</nav>`;
+ let buttons='';
+ if(ready){
+  if(battleMenu==='commands')buttons=battleArtCard('attack',hero,'data-action-card')+knownAbilities(hero).filter(a=>['single','aoe'].includes(a.kind)).map(a=>battleArtCard('ability:'+a.id,hero)).join('');
+  else if(['abilities','spells'].includes(battleMenu))buttons=knownAbilities(hero).filter(a=>!['passive','field'].includes(a.kind)&&(battleMenu!=='spells'||a.id==='runeflare'||['Wizard','Cleric'].includes(hero.role))).map(a=>battleArtCard('ability:'+a.id,hero)).join('')+'<button class="battle-back" data-c="back">↩ BACK</button>';
+  else if(battleMenu==='enemy')buttons=combat.enemies.filter(e=>e.hp>0).map(e=>`<button class="battle-art-card target-card" data-c="target:${e.id}"><span class="action-art"><img src="${enemyPortrait(e)}" alt=""></span><b>${escapeHtml(e.name)}</b><small>${e.hp}/${e.maxHp} HP · AC ${e.ac}</small></button>`).join('')+'<button class="battle-back" data-c="back">↩ BACK</button>';
+  else if(battleMenu==='ally')buttons=G.party.filter(h=>h.hp>0).map(h=>`<button class="battle-art-card target-card" data-c="ally:${h.id}"><span class="action-art"><img src="${heroPortrait(h)}" alt=""></span><b>${escapeHtml(h.name)}</b><small>${h.hp}/${h.maxHp} HP</small></button>`).join('')+'<button class="battle-back" data-c="back">↩ BACK</button>';
+  else if(battleMenu==='items')buttons=Object.keys(G.bag).filter(id=>G.bag[id]>0&&ITEMS[id]?.kind==='consumable').map(id=>battleArtCard('item:'+id,hero)).join('')+'<button class="battle-back" data-c="back">↩ BACK</button>';
+ }
+ const tactics=`<div class="tactics" role="group" aria-label="Battle automation">${Object.entries(COMBAT_TACTICS).map(([id,label])=>`<button type="button" data-tactic="${id}" aria-pressed="${id===combatTactic}" class="${id===combatTactic?'tactic-current':''}" title="${label}">${label}</button>`).join('')}</div>`;
+ const labels={commands:'ATTACK',abilities:'SKILLS',spells:'SPELLS',enemy:'CHOOSE AN ENEMY',ally:'CHOOSE AN ALLY',items:'ITEMS'};
+ battlePanel(`<section class="battle-controls" aria-label="Combat commands"><div class="battle-topline"><div class="turntext"><span class="battle-eyebrow">${combatAnimating?'ACTION IN PROGRESS':q.side==='ally'?'YOUR TURN':'ENEMY TURN'}</span><strong>${escapeHtml(who.name)}</strong></div>${tactics}<span class="battle-round">ROUND ${combat.round}</span></div>${rail}<section class="battle-catalog"><div class="command-heading">${combatAnimating?'Resolving action…':q.side==='enemy'?'Awaiting the enemy':labels[battleMenu]}<span>1–9 SELECT · ESC BACK</span><button type="button" data-inspect-toggle aria-expanded="false" aria-controls="battleActionDetail">DETAILS</button></div><div class="actionrow" data-menu="${battleMenu}">${buttons||`<span class="battle-wait">${combatTactic!=='manual'?'AUTO: '+COMBAT_TACTICS[combatTactic]:'The next action will begin shortly.'}</span>`}</div></section><section id="battleActionDetail" class="battle-action-detail" aria-label="Action details"></section><aside id="battleTargetDetail" class="battle-target-detail" aria-label="Target details"></aside></section><section class="battle-events" aria-label="Combat events"><div class="events-heading"><span>COMBAT LOG</span><button type="button" data-log-follow title="Scroll to the latest combat event">LATEST ↓</button></div><ol class="battlehistory" tabindex="0" aria-label="Combat event history" role="log" aria-live="polite" aria-relevant="additions"></ol></section>`);
+ const initial=battleMenu==='commands'?'attack':currentTargetAction||(['abilities','spells'].includes(battleMenu)?'ability:'+knownAbilities(hero).find(a=>!['passive','field'].includes(a.kind))?.id:battleMenu==='items'?'item:'+Object.keys(G.bag).find(id=>G.bag[id]>0&&ITEMS[id]?.kind==='consumable'):'attack');
+ renderBattleActionInspector(initial);renderBattleTarget();renderCombatEvents();
 }
 function battleAction(a){
  if(mode!=='combat'||!combat||combatTactic!=='manual'||combatAnimating||!combat.queue[combat.turn]||combat.queue[combat.turn].side!=='ally')return;
  highlightedTarget=null;
  const hero=activeUnit();if(a==='back'){battleMenu='commands';renderCombatMenu();return}
  if(a==='attack'){currentTargetAction='attack';battleMenu='enemy';renderCombatMenu();return}
- if(a==='skills'){battleMenu='abilities';renderCombatMenu();return}
+ if(a==='skills'){battleMenu='abilities';currentTargetAction=null;renderCombatMenu();return}
+ if(a==='spells'){battleMenu='spells';currentTargetAction=null;renderCombatMenu();return}
  if(a.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===a.slice(8));if(!ability||hero.mp<ability.mp)return;if(ability.kind==='self'){performAbility(hero,ability,[hero]);return}if(ability.kind==='aoe'||ability.kind==='allies'||ability.kind==='buff'){performAbility(hero,ability,ability.kind==='aoe'?combat.enemies.filter(e=>e.hp>0):G.party.filter(h=>h.hp>0));return}currentTargetAction='ability:'+ability.id;battleMenu=ability.kind==='ally'?'ally':'enemy';renderCombatMenu();return}
- if(a==='item'){battleMenu='items';renderCombatMenu();return}
+ if(a==='item'){battleMenu='items';currentTargetAction=null;renderCombatMenu();return}
  if(a.startsWith('item:')){const id=a.slice(5);if(!Object.hasOwn(ITEMS,id)||ITEMS[id].kind!=='consumable'||!G.bag[id])return;if(ITEMS[id].target==='party'){combatUseItem(G.party.indexOf(hero),id);return}currentTargetAction=a;battleMenu='ally';renderCombatMenu();return}
  if(a==='guard'){hero.defending=true;hero.mp=Math.min(hero.maxMp,hero.mp+1);combatLog(`${hero.name} guards until their next turn and recovers 1 MP.`,false,{type:'status',actor:hero.name});SFX.play('guard');battleMenu='commands';nextTurn();return}
  if(a==='flee'){if(combat.isBoss){combatLog('The warleader blocks your escape!',true);SFX.play('bump');nextTurn();return}if(rand(100)<=75){combatLog('The party escapes!');endCombat();SFX.play('warp');stepCounter=0;saveGame(true);return}combatLog('Escape failed!');nextTurn();return}
@@ -1499,16 +1562,28 @@ function drawBattleMarker(unit,point){
  if(unit.hp<=0||(!active&&!selected))return;
  ctx.save();ctx.strokeStyle=selected?'#ffe5a4':'#d1b782';ctx.lineWidth=1.2;
  ctx.globalAlpha=selected?.9:.5;
- ctx.beginPath();ctx.ellipse(point.x,point.y+2,20,5,0,0,Math.PI*2);ctx.stroke();
+ ctx.beginPath();ctx.ellipse(point.x,point.y+2,27,6,0,0,Math.PI*2);ctx.stroke();
  textDraw(selected?'TARGET':unit.name,point.x,point.y+19,7,selected?'#ffe5a4':'#dacaa7','center');
  ctx.restore();
 }
 function drawBattleHero(hero,x,y,index){
  const type=(hero.role||'fighter').toLowerCase(),frame=actorSpriteFrame(hero,'ally');
- if(drawIllustratedActor(hero,x,y,'ally'))return;
+ if(drawIllustratedActor(hero,x,y,'ally',1.5))return;
  ctx.save();ctx.globalAlpha=hero.hp>0?1:.35;
  ctx.fillStyle='#060b1399';ctx.beginPath();ctx.ellipse(x,y+3,15,4,0,0,Math.PI*2);ctx.fill();
- drawActorSprite(type,x,y+Math.sin(animTick/33+index)*.6,85,frame);
+ drawActorSprite(type,x,y+Math.sin(animTick/33+index)*.6,128,frame);
+ ctx.restore();
+}
+function drawEnemyBattlePlate(enemy,point){
+ const focus=highlightedTarget||combat.enemies.find(e=>e.hp>0)?.id;
+ if(enemy.hp<=0||enemy.id!==focus)return;
+ const scale=(enemy.type==='warboss'?1.06:enemy.type==='boss'?1.1:1)*(enemy.type==='wisp'?2.55:1.4);
+ const height=(window.AshenSprites?.manifest.characters[enemy.type]?.heightInBattle||72)*scale;
+ const top=Math.max(18,point.y-height-24),left=point.x-55;
+ ctx.save();ctx.fillStyle='#041016dc';ctx.fillRect(left,top,110,24);ctx.strokeStyle='#cba76570';ctx.lineWidth=.6;ctx.strokeRect(left,top,110,24);
+ textDraw(enemy.name.length>20?enemy.name.slice(0,18)+'…':enemy.name,left+5,top+9,7,'#f0dec0');
+ textDraw(`${enemy.hp}/${enemy.maxHp}`,left+105,top+9,6,'#e1c4a8','right');
+ ctx.fillStyle='#251c1c';ctx.fillRect(left+5,top+14,100,4);ctx.fillStyle='#c25243';ctx.fillRect(left+5,top+14,100*clamp(enemy.hp/enemy.maxHp,0,1),4);
  ctx.restore();
 }
 function drawBattleFX(){
@@ -1608,8 +1683,9 @@ function drawBattle(){
   const pt=battleEnemyPoint(i),m=moving(e,pt);
   drawBattleMarker(e,pt);
   ctx.save();ctx.filter=actorFilter;
-  drawEnemy(e,m.x,m.y,e.type==='warboss'?1.06:e.type==='boss'?1.1:1);
+  drawEnemy(e,m.x,m.y,(e.type==='warboss'?1.06:e.type==='boss'?1.1:1)*(e.type==='wisp'?2.55:1.4));
   ctx.restore();
+  drawEnemyBattlePlate(e,pt);
   if(!immersive){
    const y=Math.max(24,pt.y-(e.type==='warboss'?131:e.type==='boss'?131:112));
    ctx.fillStyle='#08111be2';ctx.fillRect(pt.x-21,y-8,42,17);
@@ -1652,9 +1728,9 @@ function renderCinemaHud(){
  const foes=combat.enemies.filter(e=>e.hp>0).map(e=>`<article class="cinema-foe ${actor?.id===e.id?'active':''}"><div class="foe-line"><span>${escapeHtml(e.name)}</span><b>${e.hp}/${e.maxHp} HP</b></div><div class="foe-track" role="progressbar" aria-label="${escapeHtml(e.name)} health" aria-valuenow="${e.hp}" aria-valuemin="0" aria-valuemax="${e.maxHp}"><i style="width:${clamp(100*e.hp/e.maxHp,0,100)}%"></i></div></article>`).join('');
  const initiative=combat.queue.slice(combat.turn).map(q=>{
    const unit=q.side==='ally'?G.party.find(h=>h.id===q.id):combat.enemies.find(e=>e.id===q.id);
-   return unit?.hp>0?`<span class="initiative-actor ${q.side} ${unit.id===actor?.id?'current':''}" ${unit.id===actor?.id?'aria-current="step"':''} title="${escapeHtml(unit.name)} · Initiative ${q.roll} · ${q.side==='ally'?Formation.row(unit)+' row':'enemy'}">${q.side==='ally'?`<img src="${heroPortrait(unit)}" alt="">`:`<i aria-hidden="true">${Formation.enemyRange(unit)==='magic'?'✦':'⚔'}</i>`}<b>${escapeHtml(unit.name)}</b><small>${q.roll}</small></span>`:'';
+   return unit?.hp>0?`<span class="initiative-actor ${q.side} ${unit.id===actor?.id?'current':''}" ${unit.id===actor?.id?'aria-current="step"':''} title="${escapeHtml(unit.name)} · Initiative ${q.roll} · ${q.side==='ally'?Formation.row(unit)+' row':'enemy'}">${q.side==='ally'?`<img src="${heroPortrait(unit)}" alt="">`:`<img src="${enemyPortrait(unit)}" alt="">`}<b>${escapeHtml(unit.name)}</b><small>${q.roll}</small></span>`:'';
  }).join('');
- hud.innerHTML=`<header class="cinema-title"><div class="combat-title"><span>THE ASHEN REALMS</span><small>${G.flags.ending?'CHAPTER II':'CHAPTER I'} · ${battleScene().toUpperCase()} ENCOUNTER</small></div><nav class="turn-order" aria-label="Remaining turn order"><span>UP NEXT</span>${initiative}</nav><button id="cinemaMinimize" title="Toggle immersive battle view" aria-label="${document.documentElement.classList.contains('cinema-compact')?'Expand combat view':'Use windowed combat view'}">${document.documentElement.classList.contains('cinema-compact')?'EXPAND':'WINDOWED'}</button></header><section class="cinema-party" aria-label="Party status" style="--party-count:${G.party.length}"><h2 class="combat-section-title">YOUR PARTY</h2><div class="combat-status-list">${party}</div></section><section class="cinema-foes" aria-label="Enemy status"><h2 class="combat-section-title">ENEMIES</h2><div class="combat-status-list">${foes}</div></section>`;
+ hud.innerHTML=`<header class="cinema-title"><div class="combat-title"><span class="battle-compass" aria-hidden="true">✧</span><span>THE ASHEN REALMS</span><small>${G.flags.ending?'CHAPTER II':'CHAPTER I'} · ${battleScene().toUpperCase()} ENCOUNTER</small></div><nav class="turn-order" aria-label="Remaining turn order"><span>UP NEXT</span>${initiative}</nav><span class="header-round">ROUND ${combat.round}</span><button id="cinemaMinimize" title="Toggle immersive battle view" aria-label="${document.documentElement.classList.contains('cinema-compact')?'Expand combat view':'Use windowed combat view'}">${document.documentElement.classList.contains('cinema-compact')?'EXPAND':'WINDOWED'}</button></header><section class="cinema-party" aria-label="Party status" style="--party-count:${G.party.length}"><h2 class="combat-section-title">YOUR PARTY</h2><div class="combat-status-list">${party}</div></section><section class="cinema-foes" aria-label="Enemy status"><div class="battle-location"><img src="${imagePath(battleScene()==='crypt'?'overhaul/battle_crypt.png':battleScene()==='camp'?'gromclaw_battle.jpg':battleScene()==='town'?'battle_town.jpg':'battle/forest_'+Formation.lighting(G.steps).from+'.jpg')}" alt=""><strong>${escapeHtml(maps[G.location]?.name||'Battlefield')}</strong><small>${escapeHtml('Defeat '+(combat.isBoss?combat.enemies.find(e=>e.original===combat.bossType)?.name||'the enemy leader':'the enemy party'))}</small></div><h2 class="combat-section-title">ENEMIES</h2><div class="combat-status-list">${foes}</div></section>`;
  $('cinemaMinimize').onclick=()=>document.documentElement.classList.toggle('cinema-compact');
  if(viewFocused)$('cinemaMinimize').focus({preventScroll:true});
 }

@@ -25,7 +25,7 @@ function createHarness(role='Wizard',level=5){
     requestAnimationFrame:noop,setTimeout:(fn,ms)=>{const id=++nextTimer;pending.set(id,{fn,at:clock+ms});return id},clearTimeout:id=>pending.delete(id),
     performance:{now:()=>clock},Math:math};
   const end=gameSource.lastIndexOf('})();');assert.ok(end>=0);
-  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,castFieldSpell,trapCheck,knownAbilities,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
+  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,castFieldSpell,trapCheck,knownAbilities,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,battleActionInfo,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
   vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../formation.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
   const api=sandbox.window.AshenRealms,engine=sandbox.window.__engine;
   api.newGame('Audit','Human',role);api.closeModal();
@@ -39,6 +39,19 @@ function createHarness(role='Wizard',level=5){
   return {api,engine,hero,node,storage,random,enemy,battle,advance,ally,ability};
 }
 
+test('action inspector derives weapon damage and rear accuracy from actual gear and formation',()=>{
+ const h=createHarness('Fighter');h.hero.stats[0]=14;h.hero.gear.weapon='iron';h.hero.talents.might=1;h.hero.row='back';h.ally('Fighter');h.battle();
+ const info=h.engine.battleActionInfo('attack',h.hero),stats=Object.fromEntries(info.stats);
+ assert.equal(info.title,'Ironblade');assert.equal(stats.Damage,'1d6 + 5');assert.equal(stats.Accuracy,'d20 + 3 vs AC');assert.match(stats.Formation,/−2/);
+ h.hero.gear.weapon='oakbow';assert.equal(h.engine.battleActionInfo('attack',h.hero).icon,'bow');
+ h.hero.gear.weapon=null;assert.equal(h.engine.battleActionInfo('attack',h.hero).icon,'gauntlet');
+});
+test('spell, area and healing inspections mirror the engine without spending MP or modifying state',()=>{
+ const h=createHarness('Wizard');h.hero.stats[3]=16;h.hero.gear.weapon='runestaff';h.hero.talents.focus=2;h.hero.row='back';h.ally('Fighter');h.battle();const before=JSON.stringify(h.api.getState());
+ const bolt=Object.fromEntries(h.engine.battleActionInfo('ability:bolt',h.hero).stats),area=Object.fromEntries(h.engine.battleActionInfo('ability:fireball',h.hero).stats);
+ assert.equal(bolt.Damage,'2d6 + 9');assert.equal(bolt.Accuracy,'d20 + 6 vs AC');assert.equal(area.Damage,'2d6 + 8');assert.equal(area.Save,'DEX vs DC 16');assert.equal(JSON.stringify(h.api.getState()),before);
+ const c=createHarness('Cleric');c.hero.stats[4]=16;c.hero.talents.focus=2;c.battle();assert.equal(Object.fromEntries(c.engine.battleActionInfo('ability:mend',c.hero).stats).Healing,'2d8 + 7');
+});
 test('real attack engine applies rear melee penalty but exempts bows and spells',()=>{
  const h=createHarness('Wizard'),front=h.ally('Fighter'),foe=h.enemy({ac:10});h.hero.row='back';front.row='front';h.battle([foe]);
  h.random([.35,.999]);assert.equal(h.engine.hitAttack(h.hero,foe),0);
