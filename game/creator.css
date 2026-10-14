@@ -178,6 +178,21 @@ html.title-motion-paused .dice-outcome.result-settled{animation:none!important}
 .final-ledger{max-width:1000px;gap:24px;padding:25px;position:relative;border:5px double #8c693d;border-radius:7px;box-shadow:0 12px 35px #0009,inset 0 0 30px #77512845}
 .final-ledger:before,.final-ledger:after{content:'✥';position:absolute;color:#795629;font:28px Georgia,serif;pointer-events:none;top:5px}
 .final-ledger:before{left:8px}.final-ledger:after{right:8px}
+.sheet-ability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.sheet-ability{border:1px solid #86633770;border-radius:6px;background:#ac854215;padding:10px 13px;box-shadow:inset 0 0 0 3px #aa844015}
+.sheet-ability header{display:flex;align-items:center;gap:9px}
+.sheet-ability header>span{display:grid;place-items:center;width:29px;height:29px;border-radius:50%;background:#765029;color:#ebd39a;font:10px Georgia,serif}
+.sheet-ability header>strong{font:11px Georgia,serif;letter-spacing:.6px;text-transform:uppercase;color:#56391f}
+.sheet-ability-total{display:flex;justify-content:center;gap:18px;align-items:center;margin:5px 0}
+.sheet-ability-total>b{font:32px Georgia,serif;color:#382414}
+.sheet-ability-total>span{font:18px Georgia,serif;color:#694728;text-align:center}
+.tavern-shell .sheet-ability-total small{display:block;font:7px Arial,sans-serif;letter-spacing:.6px}
+.sheet-ability footer{font:9px/1.4 Georgia,serif;color:#765a34;text-align:center;display:block;white-space:normal;margin:0;padding:0;border:0;letter-spacing:0}
+.sheet-ability footer em{font-style:normal}
+.sheet-skills{padding:0;list-style:none;margin:5px 0;font:11px/1.6 Georgia,serif;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px}
+.sheet-skills li{display:flex;justify-content:space-between;gap:8px}.sheet-skills li>span{white-space:nowrap;color:#775b36}
+@media(min-width:701px) and (max-height:800px){.sheet-ability{padding:7px 10px}.sheet-ability-total>b{font-size:26px}.sheet-ability-grid{gap:7px}.sheet-ability header>span{width:23px;height:23px}.sheet-ability header>strong{font-size:10px}}
+@media(max-width:700px){.sheet-ability{padding:8px}.sheet-ability header{gap:6px}.sheet-ability header>span{width:23px;height:23px;font-size:8px}.sheet-ability header>strong{font-size:9px}.sheet-ability footer{font-size:8px}.sheet-ability-total>b{font-size:28px}}
 .final-ledger>aside{padding-right:18px}
 .tavern-shell .sheet-subtitle{font:11px Georgia,serif;margin:0 0 10px;color:#765734}
 .final-attributes caption{padding-bottom:10px}

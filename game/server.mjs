@@ -11,7 +11,7 @@ import {createHash,randomBytes} from 'node:crypto';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const host=process.env.HOST||'0.0.0.0';
 const port=Number(process.env.PORT||8844);
-const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.ogg':'audio/ogg','.mp3':'audio/mpeg','.jpg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon','.md':'text/markdown; charset=utf-8'};
+const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.ogg':'audio/ogg','.wav':'audio/wav','.mp3':'audio/mpeg','.jpg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon','.md':'text/markdown; charset=utf-8'};
 const rooms=new Map();
 const locs={town:[30,22],wild:[46,32],crypt:[40,30],camp:[30,22],hall:[18,14],smith:[18,14],inn:[18,14],tavern:[18,14],chapel:[18,14],cottage:[18,14],bakery:[18,14]};
 const roles=new Set(['Fighter','Rogue','Wizard','Cleric']);

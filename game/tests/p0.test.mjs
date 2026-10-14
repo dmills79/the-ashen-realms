@@ -25,7 +25,7 @@ function createHarness(role='Wizard',level=5){
     requestAnimationFrame:noop,setTimeout:(fn,ms)=>{const id=++nextTimer;pending.set(id,{fn,at:clock+ms});return id},clearTimeout:id=>pending.delete(id),
     performance:{now:()=>clock},Math:math};
   const end=gameSource.lastIndexOf('})();');assert.ok(end>=0);
-  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
+  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,castFieldSpell,trapCheck,knownAbilities,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
   vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
   const api=sandbox.window.AshenRealms,engine=sandbox.window.__engine;
   api.newGame('Audit','Human',role);api.closeModal();
@@ -336,4 +336,54 @@ test('a newly created Elf Rogue uses final ancestry/class stats once in real com
  const h=createHarness('Rogue'),rolls=Array.from({length:6},()=>({score:12})),hero=h.api.createHero('Rook','Elf','Rogue',1,[0,1,2,3,4,5],rolls);
  h.engine.getGame().party[0]=hero;const foe=h.enemy({ac:15});h.battle([foe],[{side:'ally',id:hero.id},{side:'enemy',id:foe.id}]);h.random([.5]);
  assert.equal(hero.stats[1],15);assert.equal(h.engine.hitAttack(hero,foe),3);assert.equal(foe.hp,97);assert.equal(h.engine.getCombat().log[0].attackBonus,4);
+});
+
+test('backstab requires hiding, consumes hiding on a miss, and doubles only dice on criticals',()=>{
+ const h=createHarness('Rogue'),foe=h.enemy();h.battle([foe]);h.hero.stats[1]=14;h.hero.gear.weapon='iron';
+ assert.equal(h.engine.hitAttack(h.hero,foe,{backstab:true,bonusDmg:3}),0);assert.equal(foe.hp,100);
+ h.hero.hidden=true;h.random([.5,.5,0,0,0]);assert.equal(h.engine.hitAttack(h.hero,foe,{backstab:true,advantage:true,bonusDmg:3}),10);assert.equal(h.hero.hidden,undefined);
+ h.hero.hidden=true;h.random([.999,.999,0,0,0,0,0,0]);assert.equal(h.engine.hitAttack(h.hero,foe,{backstab:true,advantage:true,bonusDmg:3}),13);
+ h.hero.hidden=true;h.random([0,0]);assert.equal(h.engine.hitAttack(h.hero,foe,{backstab:true,advantage:true}),0);assert.equal(h.hero.hidden,undefined);
+});
+
+test('Hide in Shadows succeeds or fails on real checks and cannot repeatedly spend MP while hidden',()=>{
+ const h=createHarness('Rogue'),foe=h.enemy();h.battle([foe]);h.random([.5]);h.api.performAbility(h.hero,h.ability('hide'),[h.hero]);h.advance(500);
+ assert.equal(h.hero.hidden,true);assert.equal(h.hero.mp,99);assert.equal(h.hero.hideTotal,14);
+ const h2=createHarness('Rogue');h2.battle();h2.random([0]);h2.api.performAbility(h2.hero,h2.ability('hide'),[h2.hero]);h2.advance(500);assert.equal(h2.hero.hidden,false);
+ const h3=createHarness('Rogue');h3.battle();h3.hero.hidden=true;h3.api.performAbility(h3.hero,h3.ability('hide'),[h3.hero]);assert.equal(h3.hero.mp,100);
+});
+
+test('enemies search if all heroes remain hidden; successful detection reveals their target',()=>{
+ const h=createHarness('Rogue'),foe=h.enemy(),battle=h.battle([foe]);battle.turn=1;h.hero.hidden=true;h.hero.hideTotal=99;h.random([0]);h.engine.enemyAct();
+ assert.equal(h.hero.hp,100);assert.equal(h.hero.hidden,true);assert.ok(battle.log.some(e=>e.s.includes('searches the shadows')));
+ const h2=createHarness('Rogue'),b2=h2.battle();b2.turn=1;h2.hero.hidden=true;h2.hero.hideTotal=1;h2.random([.5]);h2.engine.enemyAct();assert.equal(h2.hero.hidden,undefined);
+});
+
+test('silent field movement spends MP once, lasts 12 successful steps and survives saves',()=>{
+ const h=createHarness('Rogue');assert.equal(h.engine.castFieldSpell(h.hero.id,'silent'),true);assert.equal(h.hero.silentSteps,12);assert.equal(h.hero.mp,99);
+ assert.equal(h.engine.castFieldSpell(h.hero.id,'silent'),false);assert.equal(h.hero.mp,99);
+ h.api.move(0,1);assert.equal(h.hero.silentSteps,11);h.api.save();h.api.load();assert.equal(h.api.getState().party[0].silentSteps,11);
+});
+
+test('Rogues disarm traps using DEX and proficiency rather than untrained perception',()=>{
+ const h=createHarness('Rogue');h.hero.stats[1]=14;h.hero.stats[4]=2;h.random([.4]);h.engine.trapCheck();
+ assert.equal(h.hero.hp,100);assert.ok(h.engine.getGame().log.some(line=>line.includes('Disarm Traps 14 vs DC 13')));
+});
+
+test('Runestaff unlocks a real spell; Silverguard wards new poison without healing existing poison',()=>{
+ const h=createHarness('Fighter');h.hero.gear.weapon='runestaff';assert.ok(h.api.getAbilities()[0].known.includes('runeflare'));
+ h.hero.gear.weapon=null;assert.ok(!h.api.getAbilities()[0].known.includes('runeflare'));
+ h.hero.gear.armor='silvermail';const foe=h.enemy({original:'slime',atk:99});h.battle([foe]);h.random([.5,0,0]);h.engine.hitAttack(foe,h.hero);assert.equal(h.hero.poison,0);
+ h.hero.poison=2;h.random([.5,0,0]);h.engine.hitAttack(foe,h.hero);assert.equal(h.hero.poison,2);
+});
+
+test('older saves on a changed riverbank relocate to dry ground without losing quest or character progress',()=>{
+ const h=createHarness(),save=h.api.getState(),map=h.api.getMapData('wild');save.location='wild';save.x=map.tiles[6].indexOf('water');save.y=6;save.flags.elder=true;save.gold=171;save.bag.runestaff=2;
+ const stats=Array.from(save.party[0].stats);h.storage.set(SAVE_KEY,JSON.stringify(save));h.api.load();const loaded=h.api.getState();
+ assert.equal(loaded.location,'wild');assert.ok(h.api.walkable('wild',loaded.x,loaded.y));assert.equal(loaded.flags.elder,true);assert.equal(loaded.gold,171);assert.equal(loaded.bag.runestaff,2);assert.deepEqual(Array.from(loaded.party[0].stats),stats);
+});
+
+test('Runic Flare spends actual MP and applies Runestaff spell damage to its target',()=>{
+ const h=createHarness('Fighter'),foe=h.enemy();h.hero.gear.weapon='runestaff';h.battle([foe]);h.random([.5]);
+ const ability=h.engine.knownAbilities(h.hero).find(a=>a.id==='runeflare');h.api.performAbility(h.hero,ability,[foe]);assert.equal(h.hero.mp,96);h.advance(500);assert.equal(foe.hp,92);
 });

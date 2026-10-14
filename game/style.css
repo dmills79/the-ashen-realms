@@ -496,3 +496,14 @@ html.world-explore.hud-minimal .district-notice{display:none}
 /* v1.6 keep merchant content inside the modal */
 .modal:has(.trade-screen){width:min(820px,96vw);max-width:min(820px,96vw)}
 .modal .trade-screen{width:100%}
+/* Equipped slots are visible before choosing any replacement item. */
+.equipped-party{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:20px 0}
+.equipped-character{padding:14px;background:#14212bcc;border:1px solid #c5a46a40;border-radius:4px}
+.equipped-character header{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.equipped-character header img{width:40px;height:48px;object-fit:cover;border-radius:3px}
+.equipped-character header b{display:block;font:17px Georgia,serif;color:#efd5a4}
+.equipped-character small{display:block;font:11px/1.5 Arial,sans-serif;color:#acb9c2}
+.equipped-slot{display:flex;gap:8px;justify-content:space-between;align-items:center;border-top:1px solid #b6985f25;padding:10px 0}
+.equipped-slot span{display:block;font:9px Arial,sans-serif;letter-spacing:1px;color:#bda06a;margin-bottom:4px}
+.equipped-slot strong{font:13px Georgia,serif;color:#e0d4b9}
+.equipped-slot button{font-size:9px;padding:7px;min-height:32px}

@@ -24,7 +24,7 @@ async function setup(page,role='Fighter'){
 }
 
 async function drawn(page,id,state){
-  await expect.poll(()=>page.evaluate(({id,state})=>window.__spriteDraws.some(d=>d.id===id&&d.state===state&&d.result),{id,state})).toBe(true);
+  await expect.poll(()=>page.evaluate(({id,state})=>[...window.__spriteDraws,...(window.AshenIdentity?.debug().draws||[])].some(d=>d.id===id&&d.state===state&&d.result),{id,state})).toBe(true);
 }
 
 test('all replacement characters and six animation states render in the atelier',async({page})=>{
@@ -69,6 +69,7 @@ test('new assets render in exploration and battle; real hits and deaths animate 
 test('casting, hit reactions and shadow-scaled world NPCs use the new renderer',async({page})=>{
   const errors=await setup(page,'Wizard');
   await page.evaluate(()=>window.AshenRealms.action('campGate'));
+  await page.locator('[data-action="enter"]').click();
   await expect.poll(()=>page.evaluate(()=>window.AshenSprites.ready('warboss'))).toBe(true);
   await drawn(page,'warboss','idle');
   expect(await page.evaluate(()=>window.__spriteDraws.filter(d=>d.id==='warboss'&&d.result).at(-1).height)).toBe(52);
