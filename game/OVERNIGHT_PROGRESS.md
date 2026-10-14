@@ -1,6 +1,16 @@
 # Overnight development progress
 
-Branch: `feature/visual-overhaul`. Latest implementation commit: `decf44d53907a5cb75b20ed053656b6876b5145e`. The new combat overhaul is **local only, not pushed**, as requested. A progress-record commit follows; `git rev-parse HEAD` reports the final checkout hash.
+Branch: `feature/visual-overhaul`. Latest implementation commit: `724f57a94c870875662fd4de377da24260e1ee19`. The new combat overhaul is **local only, not pushed**, as requested. A progress-record commit follows; `git rev-parse HEAD` reports the final checkout hash.
+
+## Supplied battle interface reference — 14 October 2026
+
+- Implemented the attached image's composition: portrait initiative queue and round marker, a scene-side location/foe/chronicle column, framed party cards, a six-category command rail, illustrated action cards, live action descriptions, and a target/condition panel. Enlarged battle-only characters and added the focused enemy's in-scene HP plate. Exploration sizing and combat rules remain unchanged.
+- Hover/focus inspections show actual weapon, damage dice, attack bonus, formation penalty, MP cost, target scope, DEX save DC and healing. Previewing spends no resource or turn. SPELLS is a functional category, disabled when no spell is available. Existing hotkeys, class skills, items, guard, retreat and automation remain functional. Phone layouts offer a DETAILS toggle; short desktop windows retain the reference composition.
+- Assets: 16 original ImageGen action icons, 12 enemy portraits cropped from existing registered artwork, and a native gold/bronze frame; approximately 340 KB total. Production files and the final generation prompt are in `assets/battle/ui/`. Rebuild tool: `tools/import-battle-ui.ps1`.
+- Files: `game.js`, `index.html`, `battle-reference.css`, `assets/battle/ui/`, importer, two engine inspector checks, six reference browser checks, and the updated forest UI assertion. Unrelated lockfile and supplied reference files remain unstaged.
+- Validation: **106/106 unit tests passed; full Chromium browser suite 65/65 passed**. Includes creation/review, all identities, saving/loading, navigation, equipment, Rogue skills, combat actions, victory/defeat/retreat, quests and audio. Syntax and `git diff --check` passed. Initial stale visual assertions were updated to inspect the new illustrated cards and actual item name; no test failure remains.
+- Inspected crypt captures at 1440×900, 1024×768 and 970×550 and mobile captures at 390×844/640×360, plus seven-size combat regressions. Local previews: `artifacts/battle-reference/crypt-1440-900.png` and `crypt-970-550.png`. Artifacts remain ignored by Git. Non-Chromium testing and bespoke new attack/cast pose art remain outside this pass.
+- Launch: from `game/`, `npm.cmd start`, then `http://127.0.0.1:8844`; refresh the browser to load the new CSS. No dependency installation, merge or push was performed.
 
 ## Wilderness battle / tactical formation update — 14 October 2026
 
