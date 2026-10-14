@@ -122,7 +122,8 @@ test('log scroll, escaping and focus survive command updates and view changes',a
 test('conditions, resizing during a spell, victory and return to exploration',async({page})=>{
   const errors=await encounter(page);
   await page.evaluate(()=>window.AshenRealms.test.modifyGame(g=>{g.party[1].poison=2;g.party[2].protectedThroughRound=2}));
-  await expect(page.locator('.combat-condition')).toContainText(['Poison · 2 turns','Protected · through R2']);
+  await expect(page.locator('.condition-poison')).toHaveAttribute('aria-label','Poison: 2 damage at the start of the next 2 turns.');
+  await expect(page.locator('.condition-ward')).toHaveAttribute('aria-label','Protected: halves incoming damage through round 2.');
   await page.locator('[data-c="skills"]').click();await page.locator('[data-c="ability:sweep"]').click();
   await page.setViewportSize({width:640,height:360});
   await expect(page.locator('[data-c="attack"]')).toBeVisible();

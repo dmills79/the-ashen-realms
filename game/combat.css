@@ -1,5 +1,12 @@
-/* Combat owns its layout here. Artwork and the exploration interface are unchanged. */
+/* Compact combat controls and accessible status displays. */
 .cinema-hud,.battlepanel { display:none; }
+.combat-conditions{display:flex;gap:5px;position:absolute;right:5px;top:5px}
+.condition-icon{display:inline-grid;place-items:center;width:19px;height:19px;border:1px solid #b8986266;border-radius:50%;font:12px Georgia,serif;background:#111b25;color:#e3cb92;cursor:help}
+.condition-poison{color:#b7d980}.condition-fallen{color:#f1a59d}.condition-guard,.condition-ward{color:#9acbdd}.condition-hidden{color:#c8afe6}
+html.cinematic-battle .cinema-member{position:relative}
+html.cinematic-battle .cinema-stat.experience>span:first-child{color:#e8ce84}
+html.cinematic-battle .cinema-stat.experience em{background:linear-gradient(90deg,#92703e,#ebce84)}
+html.cinematic-battle .cinema-stat.experience>span:last-child{font-size:9px;min-width:44px}
 html.cinematic-battle {
   --combat-gold:#dfbe82;
   --combat-ink:#efe9de;

@@ -161,3 +161,41 @@ html.title-motion-paused .tavern-firelight,html.title-motion-paused .tavern-smok
 .lineage-portrait .calling-seal{display:grid;place-items:center;background:#352615 url('assets/tavern_creation/tabletop.png') center/cover;font:25px Georgia,serif;color:#f3d595}
 
 html.title-motion-paused .dice-outcome.result-settled{animation:none!important}
+
+/* A compact sheet on the existing tavern table. */
+.appearance-picker{display:flex;gap:8px;margin:10px 0}
+.tavern-shell .appearance-picker button{background:transparent;color:#50381f;border:1px solid #82623980;padding:7px 13px;min-height:36px;font:11px Georgia,serif}
+.tavern-shell .appearance-picker button[aria-pressed='true']{background:#69462325;border-color:#63421d;box-shadow:inset 0 -2px #745224}
+.assignment-journal{max-width:850px;padding:22px 25px}
+.roll-token-strip{gap:8px;margin:15px 0}
+.tavern-shell .roll-token{border-radius:3px;padding:7px 4px}
+.roll-token b{font-size:24px;margin:3px 0}
+.assignment-grid{gap:4px 22px}
+.assignment-entry{grid-template-columns:minmax(68px,1fr) 94px 75px 44px;gap:7px;padding:9px 0}
+.tavern-shell .assignment-entry label{font-size:13px}
+.assignment-entry>div>small{font-size:12px;color:#49301b;font-weight:bold;margin-top:3px}
+.attribute-bonuses{font-size:10px;gap:4px}
+.final-ledger{max-width:1000px;gap:24px;padding:25px;position:relative;border:5px double #8c693d;border-radius:7px;box-shadow:0 12px 35px #0009,inset 0 0 30px #77512845}
+.final-ledger:before,.final-ledger:after{content:'✥';position:absolute;color:#795629;font:28px Georgia,serif;pointer-events:none;top:5px}
+.final-ledger:before{left:8px}.final-ledger:after{right:8px}
+.final-ledger>aside{padding-right:18px}
+.tavern-shell .sheet-subtitle{font:11px Georgia,serif;margin:0 0 10px;color:#765734}
+.final-attributes caption{padding-bottom:10px}
+.final-attributes th,.final-attributes td{padding:8px 5px}
+.final-kit{gap:18px;margin-top:10px}
+.tavern-shell .final-kit p{font-size:11px;line-height:1.6}
+@media(min-width:701px) and (max-height:800px){
+ .stage-5 .lineage-portrait{height:160px;width:145px}
+ .stage-5 .final-ledger{padding:20px;grid-template-columns:195px minmax(0,1fr)}
+ .stage-5 .final-attributes th,.stage-5 .final-attributes td{padding:6px 5px}
+ .stage-5 .final-message{margin:8px 0 0}
+ .stage-5 .final-ledger aside p{margin:10px 0 5px;line-height:1.5}
+ .stage-5 .final-kit h4{margin:7px 0 5px}
+ .stage-5 .final-kit p{margin:5px 0;line-height:1.45}
+ .stage-5 .final-ledger aside h3{margin:7px 0}
+}
+@media(max-width:700px){
+ .assignment-journal{padding:18px 14px}
+ .assignment-entry{grid-template-columns:minmax(62px,1fr) 89px 72px 38px;gap:5px}
+ .final-ledger{padding:20px 14px;grid-template-columns:1fr}
+}

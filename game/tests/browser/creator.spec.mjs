@@ -36,7 +36,7 @@ test('physical dice travel, bounce and settle on the sampled faces for all six r
  const errors=await setup(page);await next(page);await next(page);await expect.poll(async()=>!!(await state(page)).dice?.tableReady).toBe(true);
  const calls=await page.evaluate(()=>window.__rngCalls);
  await page.locator('[data-action="roll-one"]').click();await page.waitForTimeout(180);
- await page.screenshot({path:'artifacts/tavern-creator/physical-dice-airborne.png'});const moving=await state(page);expect(moving.dice.busy).toBe(true);expect(moving.dice.positions.some(p=>p[1]>.6)).toBe(true);
+ const moving=await state(page);expect(moving.dice.busy).toBe(true);expect(moving.dice.positions.some(p=>p[1]>.6)).toBe(true);await page.screenshot({path:'artifacts/tavern-creator/physical-dice-airborne.png'});
  await expect.poll(async()=>(await state(page)).busy).toBe(false);
  let draft=await state(page);expect(draft.dice.values).toEqual(draft.rolls[0].dice);expect(await page.evaluate(()=>window.__rngCalls)).toBe(calls+4);
  await page.locator('[data-action="roll-all"]').click();await expect(page.locator('[data-action="next"]')).toBeEnabled();draft=await state(page);
