@@ -26,7 +26,7 @@ function createHarness(role='Wizard',level=5){
     performance:{now:()=>clock},Math:math};
   const end=gameSource.lastIndexOf('})();');assert.ok(end>=0);
   const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,castFieldSpell,trapCheck,knownAbilities,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
-  vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
+  vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../formation.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
   const api=sandbox.window.AshenRealms,engine=sandbox.window.__engine;
   api.newGame('Audit','Human',role);api.closeModal();
   const hero=engine.getGame().party[0];hero.stats=[10,10,10,10,10,10];hero.level=level;hero.hp=hero.maxHp=100;hero.mp=hero.maxMp=100;
@@ -39,6 +39,37 @@ function createHarness(role='Wizard',level=5){
   return {api,engine,hero,node,storage,random,enemy,battle,advance,ally,ability};
 }
 
+test('real attack engine applies rear melee penalty but exempts bows and spells',()=>{
+ const h=createHarness('Wizard'),front=h.ally('Fighter'),foe=h.enemy({ac:10});h.hero.row='back';front.row='front';h.battle([foe]);
+ h.random([.35,.999]);assert.equal(h.engine.hitAttack(h.hero,foe),0);
+ h.hero.gear.weapon='oakbow';h.random([.35,.999]);assert.equal(h.engine.hitAttack(h.hero,foe),8);
+ h.hero.gear.weapon=null;h.random([.35,.999]);assert.equal(h.engine.hitAttack(h.hero,foe,{spell:true}),6);
+ front.hp=0;h.random([.35,.999]);assert.equal(h.engine.hitAttack(h.hero,foe),6);
+});
+test('real enemy damage applies cover after guard, with magic and fallen defenders bypassing it',()=>{
+ const h=createHarness('Wizard'),front=h.ally('Fighter'),foe=h.enemy();h.hero.row='back';front.row='front';h.battle([foe]);
+ h.random([.5,.999]);assert.equal(h.engine.hitAttack(foe,h.hero),6);assert.match(h.engine.getCombat().log[0].detail,/prevented 2/);
+ h.hero.defending=true;h.random([.5,.999]);assert.equal(h.engine.hitAttack(foe,h.hero),3);
+ h.hero.defending=false;foe.original='shaman';h.random([.5,.999]);assert.equal(h.engine.hitAttack(foe,h.hero),8);
+ foe.original='orc';front.hp=0;h.random([.5,.999]);assert.equal(h.engine.hitAttack(foe,h.hero),8);
+});
+test('enemy turns use weighted formation targets and area attacks still hit rear heroes',()=>{
+ const h=createHarness('Fighter'),rear=h.ally('Cleric'),foe=h.enemy();h.hero.row='front';rear.row='back';
+ const combat=h.battle([foe],[{side:'enemy',id:foe.id},{side:'ally',id:h.hero.id}]);
+ h.random([.7,.5,.999],.5);h.engine.enemyAct();h.advance(500);assert.equal(h.hero.hp,92);assert.equal(rear.hp,100);
+ foe.original='shaman';combat.turn=0;combat.round=3;h.advance(400);combat.turn=0;h.random([.5],.5);h.engine.enemyAct();h.advance(500);assert.ok(rear.hp<100);
+});
+test('formation changes save safely outside battle and cannot alter initiative during combat',()=>{
+ const h=createHarness('Fighter');assert.equal(h.api.setFormation(h.hero.id,'back'),true);
+ h.api.load();assert.equal(h.api.getState().party[0].row,'back');
+ const old=h.api.getState();delete old.party[0].row;const stats=old.party[0].stats.slice();
+ const migrated=h.engine.normalizeSave(old);assert.equal(migrated.party[0].row,'front');assert.deepEqual(migrated.party[0].stats,stats);
+ const combat=h.battle();const queue=JSON.stringify(combat.queue);assert.equal(h.api.setFormation(h.hero.id,'front'),false);assert.equal(JSON.stringify(combat.queue),queue);
+});
+test('initiative follows DEX regardless of party array or row placement',()=>{
+ const h=createHarness('Fighter'),rear=h.ally('Wizard'),foe=h.enemy();rear.row='back';rear.stats[1]=20;h.hero.row='front';h.battle([foe]);h.random([], .5);h.engine.startRound();
+ assert.equal(h.engine.getCombat().queue[0].id,rear.id);assert.equal(h.engine.getCombat().queue[0].roll,16);
+});
 test('natural 1 misses and natural 20 doubles only damage dice',()=>{
   const h=createHarness('Fighter');h.hero.stats[0]=14;h.hero.gear.weapon='iron';h.hero.talents.might=1;
   const foe=h.enemy({ac:999});h.battle([foe]);h.random([0]);assert.equal(h.engine.hitAttack(h.hero,foe),0);assert.equal(foe.hp,100);

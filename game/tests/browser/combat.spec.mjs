@@ -61,6 +61,11 @@ async function layout(page){
   const command=page.locator('[data-c="attack"]');
   await expect(command).toBeVisible();
   const box=await command.boundingBox();expect(box.y+box.height).toBeLessThanOrEqual(height);
+  const controls=await page.locator('.battle-controls').boundingBox();
+  for(const button of await page.locator('[data-c]').all()){
+    const bounds=await button.boundingBox();
+    expect(bounds.y+bounds.height).toBeLessThanOrEqual(controls.y+controls.height+1);
+  }
 }
 
 for(const viewport of [{width:1440,height:900},{width:1920,height:1080},{width:1024,height:768},{width:390,height:844},{width:360,height:640},{width:844,height:390},{width:640,height:360}]){

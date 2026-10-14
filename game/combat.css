@@ -1,5 +1,12 @@
-/* Compact combat controls and accessible status displays. */
+/* Cinematic battle layout, command cards and accessible tactical status. */
 .cinema-hud,.battlepanel { display:none; }
+.formation-screen{max-width:850px;margin:auto}.formation-screen>p{line-height:1.6;color:#bcb5a6}
+.formation-rules{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:15px 20px;background:#101b20;border:1px solid #947b493d}
+.formation-rules h3{color:#e1c58f;font:15px Georgia,serif;margin:0 0 8px}.formation-rules p{font:13px/1.6 Arial,sans-serif;margin:0;color:#b8c2c3}
+.formation-roster{display:grid;gap:12px;margin:20px 0}.formation-member{display:flex;gap:18px;align-items:center;padding:12px;background:#172026;border-left:3px solid #b89862}
+.formation-member img{width:64px;height:84px;object-fit:cover;object-position:center 20%;border-radius:3px}.formation-member h3{margin:0 0 5px}.formation-member small{color:#b8c2c3}
+.formation-switch{display:flex;gap:8px;margin-top:10px}.formation-switch button{font:11px Arial,sans-serif;padding:10px 14px}.formation-switch button[aria-pressed=true]{background:#5e4d2c;color:#ffe2a4;border-color:#c6a367}.formation-note{font-size:12px}
+@media(max-width:500px){.formation-rules{grid-template-columns:1fr;gap:12px}.formation-member{gap:10px}.formation-switch button{padding:9px 8px;font-size:10px}}
 .combat-conditions{display:flex;gap:5px;position:absolute;right:5px;top:5px}
 .condition-icon{display:inline-grid;place-items:center;width:19px;height:19px;border:1px solid #b8986266;border-radius:50%;font:12px Georgia,serif;background:#111b25;color:#e3cb92;cursor:help}
 .condition-poison{color:#b7d980}.condition-fallen{color:#f1a59d}.condition-guard,.condition-ward{color:#9acbdd}.condition-hidden{color:#c8afe6}

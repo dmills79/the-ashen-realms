@@ -8,6 +8,7 @@
   <title>The Ashen Realms — The Hollow Bell</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="combat.css" />
+  <link rel="stylesheet" href="combat-refinements.css" />
   <link rel="stylesheet" href="title.css" />
   <link rel="stylesheet" href="creator.css" />
 </head>
@@ -42,7 +43,7 @@
           <div class="world-location"><span class="location-pin">◇</span><span id="worldLocation">HAVENMERE</span><small id="worldGold">45 GOLD</small></div>
           <button class="world-quest" id="worldQuestBtn"><small>ACTIVE QUEST <span>↕</span></small><b id="worldQuest">AN UNQUIET MORNING</b><span id="worldQuestDesc">Enter Havenmere's Great Hall.</span></button>
           <button class="world-map" id="worldMapBtn" title="Open map"><canvas id="worldMini" width="200" height="104"></canvas><span>AREA MAP ↗</span></button>
-          <button class="world-hero world-roster" id="worldPartyBtn" title="Open party training"><span class="world-roster-label">ADVENTURING PARTY <span id="worldPartyCount">SOLO ADVENTURER</span></span><span class="world-roster-rows" id="worldPartyRoster"></span><span class="world-roster-action">PARTY & TRAINING ↗</span></button>
+          <button class="world-hero world-roster" id="worldPartyBtn" title="Inspect party, formation and training"><span class="world-roster-label">ADVENTURING PARTY <span id="worldPartyCount">SOLO ADVENTURER</span></span><span class="world-roster-rows" id="worldPartyRoster"></span><span class="world-roster-action">PARTY & FORMATION ↗</span></button>
           <div class="world-actions"><button id="worldBagBtn"><span>I</span> INVENTORY</button><button id="worldSkillsBtn"><span>K</span> SPELLS</button><button id="worldJournalBtn"><span>J</span> JOURNAL</button></div>
           <div class="world-keyhelp">WASD MOVE <span>·</span> E INTERACT <span>·</span> TAB QUEST <span>·</span> H HIDE HUD</div>
         </div>
@@ -96,6 +97,7 @@
 <script src="dice-3d.js"></script>
 <script src="tavern-creator.js"></script>
 <script src="audio.js"></script>
+<script src="formation.js"></script>
 <script src="game.js"></script>
 <script src="network.js"></script>
 </body>

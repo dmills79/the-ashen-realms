@@ -4,6 +4,7 @@
 'use strict';
 (() => {
 const $ = id => document.getElementById(id);
+const Formation=window.AshenFormation;
 const canvas = $('game'), ctx=canvas.getContext('2d');
 ctx.imageSmoothingEnabled=true;
 const W=480,H=288,T=24, SAVE_KEY='ashen-realms-v1.2-save';
@@ -13,7 +14,7 @@ const ART = {};
 const LPC_NAMES=['fighter','rogue','wizard','cleric','goblin','shaman','orc','warboss','bandit','sentinel'];
 const SPRITE_NAMES=['fighter','rogue','wizard','cleric','goblin','shaman','orc','warboss','bandit','sentinel','boss','bone','wolf','slime','wisp','bat'];
 const SPRITE_FRAMES={width:240,height:280,idleA:0,idleB:1,attack:2,cast:3,hurt:4};
-const ASSET_NAMES = [...LPC_NAMES.map(name=>'lpc/'+name+'.png'),...SPRITE_NAMES.map(name=>'sprites/'+name+'.png'),...['hall','smith','inn','tavern','chapel','cottage','bakery'].map(x=>'interiors/'+x+'.png'),'terrain_atlas.png','heroes_atlas.png','enemies_atlas.png','title_backdrop.jpg','battle_backdrop.jpg','battle_forest.jpg','battle_town.jpg','battle_crypt.jpg','gromclaw_battle.jpg','cinematic/camp_backdrop.jpg','overhaul/battle_crypt.png',...['fighter','cleric','rogue','goblin','orc','shaman'].map(n=>'cinematic/'+n+'.png'),'portrait_fighter.png','portrait_rogue.png','portrait_wizard.png','portrait_cleric.png',...['hall','smith','inn','tavern','chapel','cottage','bakery'].map(x=>'havenmere/'+x+'.png'),'havenmere/outskirts.png'];
+const ASSET_NAMES = [...LPC_NAMES.map(name=>'lpc/'+name+'.png'),...SPRITE_NAMES.map(name=>'sprites/'+name+'.png'),...['hall','smith','inn','tavern','chapel','cottage','bakery'].map(x=>'interiors/'+x+'.png'),'terrain_atlas.png','heroes_atlas.png','enemies_atlas.png','title_backdrop.jpg','battle_backdrop.jpg','battle_forest.jpg','battle_town.jpg','battle_crypt.jpg','gromclaw_battle.jpg','cinematic/camp_backdrop.jpg','overhaul/battle_crypt.png',...['day','evening','night'].map(n=>'battle/forest_'+n+'.jpg'),...['fighter','cleric','rogue','goblin','orc','shaman'].map(n=>'cinematic/'+n+'.png'),'portrait_fighter.png','portrait_rogue.png','portrait_wizard.png','portrait_cleric.png',...['hall','smith','inn','tavern','chapel','cottage','bakery'].map(x=>'havenmere/'+x+'.png'),'havenmere/outskirts.png'];
 const imagePath = name => window.ASHEN_ASSET_DATA?.[name] || 'assets/' + name;
 for(const name of ASSET_NAMES){ const image = new Image(); ART[name] = image; image.decoding = 'async'; image.src = imagePath(name); }
 const imageReady = name => !!(ART[name]?.complete && ART[name].naturalWidth>0);
@@ -206,7 +207,7 @@ function autoAct(){
   if(choice)targets=choice.kind==='aoe'?livingFoes:[target];
  }
  if(choice&&targets?.length){performAbility(hero,choice,targets);return}
- queueCinematic('slash',hero,[target],()=>hitAttack(hero,target),'ally');
+ queueCinematic(hero.gear.weapon==='oakbow'?'arrow':'slash',hero,[target],()=>hitAttack(hero,target),'ally');
 }
 
 let cameraZoom=.75; const zoomSteps=[.75,.9,1.1,1.35];
@@ -231,7 +232,7 @@ function creationStats(ancestry,role,assigned,rolls){
 function newHero(name,ancestry,role,level=1,assigned=null,rolls=null,appearance='male'){
  rolls=rolls||rollStatSet();assigned=assigned||autoAssign(rolls,role);
  const derived=creationStats(ancestry,role,assigned,rolls);
- return {id:Math.random().toString(36).slice(2,8),name,ancestry,role,appearance:appearance==='female'?'female':'male',silentSteps:0,level,talentPoints:0,talents:{might:0,focus:0,vigor:0,ward:0},xp:0,xpTotal:0,ancestryRuleSet:window.AshenCharacterRules.version,ancestryModifiers:ANCESTRIES[ancestry].stats.slice(),classModifiers:CLASS_TRAINING[role].stats.slice(),rolls,assigned:assigned.slice(),...derived,hp:derived.maxHp,mp:derived.maxMp,gear:{weapon:null,armor:null},poison:0,defending:false};
+ return {id:Math.random().toString(36).slice(2,8),name,ancestry,role,row:Formation.defaultRow({role}),appearance:appearance==='female'?'female':'male',silentSteps:0,level,talentPoints:0,talents:{might:0,focus:0,vigor:0,ward:0},xp:0,xpTotal:0,ancestryRuleSet:window.AshenCharacterRules.version,ancestryModifiers:ANCESTRIES[ancestry].stats.slice(),classModifiers:CLASS_TRAINING[role].stats.slice(),rolls,assigned:assigned.slice(),...derived,hp:derived.maxHp,mp:derived.maxMp,gear:{weapon:null,armor:null},poison:0,defending:false};
 }
 function startGame(name,ancestry,role,assigned=null,rolls=null,appearance='male'){G={version:5,location:'town',x:15,y:11,dir:'up',party:[newHero(name||'Wanderer',ancestry,role,1,assigned,rolls,appearance)],bag:{potion:4,ether:2,salve:2,ration:3},gold:45,flags:{elder:false,ritual:false,leverA:false,leverB:false,gate:false,boss:false,ending:null,satchelFound:false,satchelReturned:false,shrine:false,starterChest:false,cryptChestA:false,cryptChestB:false,trial:false},log:[],steps:0,battles:0,jobs:{goblin:{state:'none',count:0},orc:{state:'none',count:0}}};mode='explore';closeModal();trail=[];lastTownDistrict='';uiLog('A new adventurer arrives in Havenmere.');uiLog('Enter the northern Great Hall and speak to Elder Maelin.');refreshHud();saveGame(true);toast('Chapter I · The Hollow Bell');SFX.play('start')}
 function showModal(html,onChoice){document.documentElement.classList.remove('title-menu-open','tavern-creation-open');$('modal').setAttribute('data-screen','dialog');modalCallback=onChoice;$('modal').innerHTML=html;$('overlay').classList.remove('hidden');$('modal').scrollTop=0;$('modal').querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.action;modalCallback?.(action,btn)}))}
@@ -282,6 +283,7 @@ function normalizeSave(data){
     requireValid(Array.isArray(h.stats)&&h.stats.length===6&&h.stats.every(v=>integer(v,1)));
     // Stored final stats are authoritative. Legacy saves gain provenance, never recalculated bonuses.
     delete h.hidden;delete h.hideTotal;h.silentSteps??=0;requireValid(integer(h.silentSteps)&&h.silentSteps<=12);
+    h.row??=Formation.defaultRow(h);requireValid(['front','back'].includes(h.row));
     h.appearance??=h.name==='Sister Elowen'?'female':'male';
     requireValid(['male','female'].includes(h.appearance));
     h.ancestryRuleSet??='legacy-v1';
@@ -676,9 +678,19 @@ function applyItem(hero,id){if(!hero||!Object.hasOwn(ITEMS,id))return false;if(h
 function partyMenu(){
  if(!G)return;G.party.forEach(ensureProgress);
  const cards=G.party.map(h=>`<article class="roster-card"><img src="${heroPortrait(h)}" alt="${escapeHtml(h.role)} portrait"><div class="roster-detail"><span class="roster-class">LV ${h.level} · ${h.ancestry.toUpperCase()} ${h.role.toUpperCase()}</span><h3>${escapeHtml(h.name)}</h3><div class="roster-meters"><span>HP ${h.hp}/${h.maxHp}</span><span>MP ${h.mp}/${h.maxMp}</span><span>AC ${armorClass(h)}</span></div><p>${knownAbilities(h).map(a=>a.name).join(' · ')}</p><small>Weapon: ${ITEMS[h.gear.weapon]?.name||'Unarmed'} · Armor: ${ITEMS[h.gear.armor]?.name||'None'}</small><small>${ABILS.map((a,i)=>a+' '+h.stats[i]).join(' · ')}</small><small>${h.ancestryRuleSet==='legacy-v1'?'Ancestry (legacy)':'Ancestry'}: ${bonusSummary(h.ancestryModifiers||ANCESTRIES[h.ancestry].stats)} · Class: ${bonusSummary(h.classModifiers||CLASS_TRAINING[h.role].stats)}</small><div class="roster-xp"><i style="width:${clamp(100*h.xp/levelThreshold(h.level),0,100)}%"></i></div><small>XP ${h.xp} / ${levelThreshold(h.level)} · ${h.talentPoints} TRAINING POINT${h.talentPoints===1?'':'S'}</small></div><button data-action="train:${h.id}">TRAIN →</button></article>`).join('');
- showModal(`<div class="roster-screen"><header class="train-title"><span>THE ADVENTURER'S GUILD</span><h2>YOUR PARTY</h2><p>Develop each adventurer, learn new techniques, and prepare for the next encounter.</p></header><div class="roster-list">${cards}</div><footer class="train-footer"><span>Select TRAIN to invest level-up points.</span><div><button data-action="spells">OPEN GRIMOIRE</button><button data-action="close">RETURN TO GAME</button></div></footer></div>`,a=>{if(a==='close'){closeModal();return}if(a==='spells'){spellbook();return}if(a.startsWith('train:'))talentMenu(a.slice(6))});
+ showModal(`<div class="roster-screen"><header class="train-title"><span>THE ADVENTURER'S GUILD</span><h2>YOUR PARTY</h2><p>Develop each adventurer, learn new techniques, and prepare for the next encounter.</p></header><div class="roster-list">${cards}</div><footer class="train-footer"><span>Select TRAIN to invest level-up points.</span><div><button data-action="formation">PARTY FORMATION</button><button data-action="spells">OPEN GRIMOIRE</button><button data-action="close">RETURN TO GAME</button></div></footer></div>`,a=>{if(a==='close'){closeModal();return}if(a==='formation'){formationMenu();return}if(a==='spells'){spellbook();return}if(a.startsWith('train:'))talentMenu(a.slice(6))});
 }
 
+function setFormation(id,row){
+ if(!G||mode!=='explore'||!['front','back'].includes(row))return false;
+ const hero=G.party.find(h=>h.id===id);if(!hero)return false;
+ hero.row=row;saveGame(true);refreshHud();return true;
+}
+function formationMenu(){
+ if(!G||mode!=='explore')return;
+ const cards=G.party.map(h=>`<article class="formation-member"><img src="${heroPortrait(h)}" alt=""><div><h3>${escapeHtml(h.name)}</h3><small>${h.role} · AC ${armorClass(h)} · HP ${h.hp}/${h.maxHp}</small><div class="formation-switch" role="group" aria-label="${escapeHtml(h.name)} formation">${['front','back'].map(row=>`<button data-action="row:${escapeHtml(h.id)}:${row}" aria-pressed="${Formation.row(h)===row}">${row==='front'?'◆ FRONT ROW':'◇ BACK ROW'}</button>`).join('')}</div></div></article>`).join('');
+ showModal(`<section class="formation-screen"><span class="settings-eyebrow">PREPARE FOR BATTLE</span><h2>PARTY FORMATION</h2><p>Choose who holds the line. Formation never changes initiative: each round uses d20 + DEX modifier.</p><div class="formation-rules"><div><h3>◆ FRONT ROW</h3><p>Visible, conscious defenders draw four times the melee attention and shield rear allies from 25% of melee damage.</p></div><div><h3>◇ BACK ROW</h3><p>While screened, close-range attacks take −2 to hit. Bows and spells work normally. Enemy magic, flying attacks and area attacks bypass the screen.</p></div></div><div class="formation-roster">${cards}</div><p class="formation-note">If no front-row ally can defend, everyone is exposed and the rear melee penalty ends. Hidden allies cannot hold the line. Placement is saved immediately.</p><div class="choices"><button data-action="party">← YOUR PARTY</button><button data-action="close">RETURN TO GAME</button></div></section>`,a=>{if(a==='close'){closeModal();return}if(a==='party'){partyMenu();return}if(a.startsWith('row:')){const split=a.lastIndexOf(':'),id=a.slice(4,split),row=a.slice(split+1);if(setFormation(id,row)){formationMenu();Array.from($('modal').querySelectorAll('[data-action]')).find(b=>b.dataset.action===a)?.focus({preventScroll:true})}}});
+}
 function journalMenu(){if(!G)return;showModal(`<h2>ADVENTURER'S JOURNAL</h2><h3>MAIN QUEST: ${questTitle()}</h3><p>${objective()}</p><div class="rule"></div><h3>SIDE QUEST: A Merchant's Misfortune</h3><p>${G.flags.satchelReturned?'Completed! Pella has her satchel again.':G.flags.satchelFound?'Return the lost satchel to Pella in Havenmere.':'Pella the merchant lost a satchel near the bridge along the eastern road.'}</p><h3>CHAPTER II: THE BROKEN BANNER</h3><p>${G.flags.warboss?'Gruk Bloodtusk is defeated. The eastern road is safe.':G.flags.ending?'Find Gromclaw Warcamp beyond the eastern road. The goblins and orcs are organizing under Gruk Bloodtusk.':'A new threat is brewing east of Havenmere. Finish the Hollow Bell to learn more.'}</p><h3>JOBS</h3><p>Goblin scouts ${G.jobs?.goblin?.count||0}/3 · Orc reavers ${G.jobs?.orc?.count||0}/2. Accept and claim bounties from the town crier.</p><h3>YOUR JOURNEY</h3><p>Encounters: ${G.battles} · Steps: ${G.steps} · Rune-seals: ${Number(G.flags.leverA)+Number(G.flags.leverB)} of 2 · Boss: ${G.flags.boss?'Defeated':'Unbeaten'}</p><p>Choice: ${G.flags.ending==='seal'?'The shard was sealed.':G.flags.ending==='keep'?'The shard was kept.':'Not yet made.'}</p><h3>RECENT CHRONICLE</h3><div class="scroll">${G.log.map(x=>`<div class="logrow">${escapeHtml(x)}</div>`).join('')}</div><div class="choices"><button data-action="close">Return to Game</button></div>`,()=>closeModal())}
 function mapMenu(){if(!G)return;const loc=G.location;showModal(`<h2>THE CARTOGRAPHER'S MAP</h2><p>${maps[loc].name} — your position is marked in gold. Important points of interest glow with white stars.</p><canvas id="miniMap" width="360" height="208" style="width:100%;height:auto;image-rendering:pixelated;border:1px solid #6a6b6f;background:#0e1420"></canvas><p>${loc==='town'?'Enter the GREAT HALL to find Maelin and Elowen. The FORGE sells equipment, the INN restores HP and MP, and the TAVERN holds Rook and Pella.':loc==='wild'?'Havenmere lies in the west. The broken monument outside Emberfall Crypt stands in the eastern wilds. Follow the old stone road.':'One rune-seal sleeps in the northern chamber and one in the southern chamber. The Warden waits within the eastern burial hall.'}</p><div class="choices"><button data-action="close">Return to Game</button></div>`,()=>closeModal());const mc=$('miniMap'),c=mc.getContext('2d'),m=maps[loc],scale=Math.min(350/m.w,198/m.h);const offX=(360-m.w*scale)/2,offY=(208-m.h*scale)/2;for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){c.fillStyle=tileColor(m.tiles[y][x]);c.fillRect(offX+x*scale,offY+y*scale,Math.ceil(scale),Math.ceil(scale))}entities().forEach(e=>{c.fillStyle='#f6ead0';c.fillRect(offX+e.x*scale,offY+e.y*scale,Math.max(2,scale),Math.max(2,scale))});c.fillStyle='#ffd05a';c.fillRect(offX+G.x*scale-1,offY+G.y*scale-1,Math.max(4,scale+2),Math.max(4,scale+2))}
 /* -------------------------- COMBAT ENGINE -------------------------- */
@@ -767,7 +779,7 @@ function renderCombatEvents(){
     const label=COMBAT_EVENT_TYPES[event.type]||COMBAT_EVENT_TYPES.info;
     const outcome=event.actor&&event.target&&['hit','critical','miss'].includes(event.type)
       ?`${event.actor} → ${event.target}${event.amount!==undefined?' · '+event.amount+' damage':''}`:event.s;
-    const detail=event.actor&&event.target&&event.roll!==undefined?`d20 ${event.roll}${event.advantage?' · advantage':''} + ${event.attackBonus} = ${event.total} vs AC ${event.armor}`:event.detail;
+    const detail=event.actor&&event.target&&event.roll!==undefined?`d20 ${event.roll}${event.advantage?' · advantage':''} + ${event.attackBonus} = ${event.total} vs AC ${event.armor}${event.detail?' · '+event.detail:''}`:event.detail;
     history.insertAdjacentHTML('beforeend',`<li class="combat-event event-${event.type}${event.important?' event-important':''}" data-event-id="${event.id}"><span class="event-kind">${label}</span><div class="event-copy"><span>${escapeHtml(outcome)}</span>${detail?`<small>${escapeHtml(detail)}</small>`:''}</div><span class="event-round" title="Round ${event.round}">R${event.round}</span></li>`);
   }
   while(history.children.length>100)history.firstElementChild.remove();
@@ -778,16 +790,16 @@ function renderCombatEvents(){
 }
 function renderCombatMenu(){if(mode!=='combat'||!combat){$('battlePanel').classList.add('hidden');return}const q=combat.queue[combat.turn],who=activeUnit();if(!who||!q)return;
  let buttons='';if(q.side==='ally'&&!combatAnimating&&combatTactic==='manual'){
-  if(battleMenu==='commands')buttons=[['attack','⚔ ATTACK'],['skills','✦ SKILLS / SPELLS'],['item','✚ ITEM'],['guard','◈ GUARD'],['flee','↩ FLEE']].map(([id,label])=>`<button data-c="${id}">${label}</button>`).join('');
-  else if(battleMenu==='abilities')buttons=knownAbilities(who).filter(a=>!['passive','field'].includes(a.kind)).map(a=>`<button data-c="ability:${a.id}" title="${a.tip}" ${who.mp<a.mp||(a.id==='backstab'&&!who.hidden)||(a.id==='hide'&&who.hidden)?'disabled':''}>${a.name} <small>${a.mp} MP · ${a.kind==='aoe'?'ALL FOES':a.kind==='allies'?'ALL ALLIES':a.kind.toUpperCase()}</small></button>`).join('')+'<button data-c="back">↩ BACK</button>';
-  else if(battleMenu==='enemy')buttons=combat.enemies.filter(e=>e.hp>0).map(e=>`<button data-c="target:${e.id}">${e.name} · ${e.hp}/${e.maxHp} HP</button>`).join('')+'<button data-c="back">↩ BACK</button>';
+  if(battleMenu==='commands')buttons=[['attack','⚔','ATTACK','Weapon strike'],['skills','✦','SKILLS / SPELLS','Class abilities'],['item','✚','ITEM','Use supplies'],['guard','◈','GUARD','Halve damage'],['flee','↩','FLEE','Attempt escape']].map(([id,icon,label,tip])=>`<button data-c="${id}" class="command-card command-${id}" title="${id==='attack'?(Formation.attackPenalty(who,G.party)?'Screened rear melee: −2 to hit. Equip a bow or use spells to avoid this penalty.':'Weapon strike · no formation penalty'):tip}"><i aria-hidden="true">${icon}</i><b>${label}</b><small>${tip}</small></button>`).join('');
+  else if(battleMenu==='abilities')buttons=knownAbilities(who).filter(a=>!['passive','field'].includes(a.kind)).map(a=>`<button class="ability-card effect-${a.fx}" data-c="ability:${a.id}" title="${a.tip}" ${who.mp<a.mp||(a.id==='backstab'&&!who.hidden)||(a.id==='hide'&&who.hidden)?'disabled':''}><i aria-hidden="true">${['heal','purify'].includes(a.fx)?'✚':['slash','shadow'].includes(a.fx)?'⚔':'✦'}</i><b>${a.name}</b> <small>${a.mp} MP · ${a.kind==='aoe'?'ALL FOES':a.kind==='allies'?'ALL ALLIES':a.kind.toUpperCase()}</small></button>`).join('')+'<button data-c="back">↩ BACK</button>';
+  else if(battleMenu==='enemy')buttons=combat.enemies.filter(e=>e.hp>0).map(e=>`<button data-c="target:${e.id}">${escapeHtml(e.name)}<small>${e.hp}/${e.maxHp} HP · AC ${e.ac} · ${Formation.enemyRange(e).toUpperCase()}</small></button>`).join('')+'<button data-c="back">↩ BACK</button>';
   else if(battleMenu==='ally')buttons=G.party.filter(h=>h.hp>0).map(h=>`<button data-c="ally:${h.id}">${escapeHtml(h.name)} · ${h.hp}/${h.maxHp} HP</button>`).join('')+'<button data-c="back">↩ BACK</button>';
   else if(battleMenu==='items')buttons=Object.keys(G.bag).filter(id=>G.bag[id]>0&&ITEMS[id]?.kind==='consumable').map(id=>`<button data-c="item:${id}">${ITEMS[id].name} ×${G.bag[id]}</button>`).join('')+'<button data-c="back">↩ BACK</button>';
  }
  const tactics=`<div class="tactics" role="group" aria-label="Battle automation">${Object.entries(COMBAT_TACTICS).map(([id,label])=>`<button type="button" data-tactic="${id}" aria-pressed="${id===combatTactic}" class="${id===combatTactic?'tactic-current':''}" title="${id==='manual'?'Command each ally':id==='attack'?'Physical attacks only':id==='conserve'?'Only emergency heals or multi-enemy spells while preserving 45% MP':'Spend MP on offensive spells whenever possible'}">${label}</button>`).join('')}</div>`;
  const modeDescription=combatTactic==='manual'?'':`<div class="auto-running"><span class="auto-pulse"></span> AUTO: ${COMBAT_TACTICS[combatTactic]} · Select MANUAL to take control</div>`;
  const labels={commands:'Choose an action',abilities:'Skills & spells',enemy:'Choose an enemy',ally:'Choose an ally',items:'Use a consumable'};
- battlePanel(`<section class="battle-controls" aria-label="Combat commands"><div class="battle-topline"><div class="turntext"><span class="battle-eyebrow">${combatAnimating?'ACTION IN PROGRESS':q.side==='ally'?'YOUR TURN':'ENEMY TURN'}</span><strong>${escapeHtml(who.name)}</strong></div><span class="battle-round">ROUND ${combat.round}</span></div>${tactics}<div class="command-heading">${combatAnimating?'Resolving action…':q.side==='enemy'?'Awaiting the enemy':labels[battleMenu]||labels.commands}<span>1–9 SELECT · ESC BACK</span></div><div class="actionrow">${buttons||modeDescription||'<span class="battle-wait">The next action will begin shortly.</span>'}</div></section><section class="battle-events" aria-label="Combat events"><div class="events-heading"><span>COMBAT EVENTS</span><button type="button" data-log-follow title="Scroll to the latest combat event">LATEST ↓</button></div><ol class="battlehistory" tabindex="0" aria-label="Combat event history" role="log" aria-live="polite" aria-relevant="additions"></ol></section>`);
+ battlePanel(`<section class="battle-controls" aria-label="Combat commands"><div class="battle-topline"><div class="turntext"><span class="battle-eyebrow">${combatAnimating?'ACTION IN PROGRESS':q.side==='ally'?'YOUR TURN':'ENEMY TURN'}</span><strong>${escapeHtml(who.name)}</strong></div><span class="battle-round">ROUND ${combat.round}</span></div>${tactics}<div class="command-heading">${combatAnimating?'Resolving action…':q.side==='enemy'?'Awaiting the enemy':labels[battleMenu]||labels.commands}<span>1–9 SELECT · ESC BACK</span></div><div class="actionrow" data-menu="${battleMenu}">${buttons||modeDescription||'<span class="battle-wait">The next action will begin shortly.</span>'}</div></section><section class="battle-events" aria-label="Combat events"><div class="events-heading"><span>COMBAT EVENTS</span><button type="button" data-log-follow title="Scroll to the latest combat event">LATEST ↓</button></div><ol class="battlehistory" tabindex="0" aria-label="Combat event history" role="log" aria-live="polite" aria-relevant="additions"></ol></section>`);
  renderCombatEvents();
 
 }
@@ -802,15 +814,19 @@ function battleAction(a){
  if(a.startsWith('item:')){const id=a.slice(5);if(!Object.hasOwn(ITEMS,id)||ITEMS[id].kind!=='consumable'||!G.bag[id])return;if(ITEMS[id].target==='party'){combatUseItem(G.party.indexOf(hero),id);return}currentTargetAction=a;battleMenu='ally';renderCombatMenu();return}
  if(a==='guard'){hero.defending=true;hero.mp=Math.min(hero.maxMp,hero.mp+1);combatLog(`${hero.name} guards until their next turn and recovers 1 MP.`,false,{type:'status',actor:hero.name});SFX.play('guard');battleMenu='commands';nextTurn();return}
  if(a==='flee'){if(combat.isBoss){combatLog('The warleader blocks your escape!',true);SFX.play('bump');nextTurn();return}if(rand(100)<=75){combatLog('The party escapes!');endCombat();SFX.play('warp');stepCounter=0;saveGame(true);return}combatLog('Escape failed!');nextTurn();return}
- if(a.startsWith('target:')){const enemy=combat.enemies.find(e=>e.id===a.slice(7));if(enemy&&enemy.hp>0){if(currentTargetAction==='attack')queueCinematic('slash',hero,[enemy],()=>hitAttack(hero,enemy),'ally');else if(currentTargetAction?.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===currentTargetAction.slice(8));if(ability)performAbility(hero,ability,[enemy])}}return}
+ if(a.startsWith('target:')){const enemy=combat.enemies.find(e=>e.id===a.slice(7));if(enemy&&enemy.hp>0){if(currentTargetAction==='attack')queueCinematic(hero.gear.weapon==='oakbow'?'arrow':'slash',hero,[enemy],()=>hitAttack(hero,enemy),'ally');else if(currentTargetAction?.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===currentTargetAction.slice(8));if(ability)performAbility(hero,ability,[enemy])}}return}
  if(a.startsWith('ally:')){const target=G.party.find(h=>h.id===a.slice(5));if(!target)return;if(currentTargetAction?.startsWith('item:'))combatUseItem(G.party.indexOf(target),currentTargetAction.split(':')[1]);else if(currentTargetAction?.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===currentTargetAction.slice(8));if(ability)performAbility(hero,ability,[target])}return}
+}
+function markCombatNotice(unit,message,color){
+ const point=unit.stats?battleHeroPoint(G.party.indexOf(unit)):battleEnemyPoint(combat?.enemies.indexOf(unit)??0);
+ battleNumbers.push({x:point.x,xFraction:point.x/battleWidth,y:point.y-75,text:message,start:performance.now(),color});
 }
 function markDamage(unit,amount,side=null,color='#fff3c5'){
  if(amount>0&&color!=='#97ffd7'){delete unit.hidden;delete unit.hideTotal}
  if(amount>0&&color!=='#97ffd7')window.AshenSprites?.react(unit.id,unit.hp<=0?'death':'hit');
  const isHero=side?side==='ally':!!unit.stats;
  const point=isHero?battleHeroPoint(G.party.indexOf(unit)):battleEnemyPoint(combat?.enemies.indexOf(unit)??0);
- if(point&&amount>0)battleNumbers.push({x:point.x,xFraction:point.x/battleWidth,y:point.y-85,text:(color==='#97ffd7'?'+':'−')+amount,start:performance.now(),color});
+ if(point&&amount>0)battleNumbers.push({x:point.x,xFraction:point.x/battleWidth,y:point.y-85,text:(color==='#ffe89b'?'CRITICAL ':'')+(color==='#97ffd7'?'+':'−')+amount,start:performance.now(),color});
 }
 function queueCinematic(kind,actor,targets,resolve,side=null){
  if(combatAnimating||mode!=='combat')return;
@@ -841,10 +857,10 @@ function combatUseItem(index,id){
 function hitAttack(actor,target,{spell=false,power=false,advantage=false,bonusDmg=0,backstab=false}={}){
  if(backstab&&(!actor.hidden||actor.role!=='Rogue'))return 0;
  if(actor.stats){delete actor.hidden;delete actor.hideTotal}
- const attackerHero=!!actor.stats,modifier=attackerHero?attackMod(actor,spell):actor.atk;let d20=dice(20),second=advantage?dice(20):null;if(second!==null)d20=Math.max(d20,second);const toHit=d20+modifier+(attackerHero?prof(actor):0),armor=target.stats?armorClass(target):target.ac,success=d20===20||(d20!==1&&toHit>=armor),critical=d20===20;
- if(!success){combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — MISS.`,false,{type:'miss',actor:actor.name,target:target.name,roll:d20,attackBonus:toHit-d20,total:toHit,armor,advantage});SFX.play('miss');return 0}
- const base=attackerHero?6:actor.dmg,dieCount=backstab?3:power?2:1,rolled=dice(base,critical?dieCount*2:dieCount);let dealt=Math.max(1,rolled+modifier+(attackerHero?(spell?spellDamageBonus(actor):weaponBonus(actor)):0)+bonusDmg);if(isDefending(target))dealt=Math.ceil(dealt/2);target.hp=Math.max(0,target.hp-dealt);
- combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — ${critical?'CRITICAL! ':'HIT! '}${dealt} damage.`,critical,{type:critical?'critical':'hit',actor:actor.name,target:target.name,amount:dealt,roll:d20,attackBonus:toHit-d20,total:toHit,armor,advantage});markDamage(target,dealt,null,critical?'#ffe89b':spell?'#bddefe':'#fff0ce');
+ const attackerHero=!!actor.stats,penalty=attackerHero?Formation.attackPenalty(actor,G.party,spell):0,modifier=attackerHero?attackMod(actor,spell):actor.atk;let d20=dice(20),second=advantage?dice(20):null;if(second!==null)d20=Math.max(d20,second);const toHit=d20+modifier+(attackerHero?prof(actor):0)-penalty,armor=target.stats?armorClass(target):target.ac,success=d20===20||(d20!==1&&toHit>=armor),critical=d20===20;
+ if(!success){combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — MISS.`,false,{type:'miss',actor:actor.name,target:target.name,roll:d20,attackBonus:toHit-d20,total:toHit,armor,advantage});markCombatNotice(target,'MISS','#b9c2ca');SFX.play('miss');return 0}
+ const base=attackerHero?6:actor.dmg,dieCount=backstab?3:power?2:1,rolled=dice(base,critical?dieCount*2:dieCount);let dealt=Math.max(1,rolled+modifier+(attackerHero?(spell?spellDamageBonus(actor):weaponBonus(actor)):0)+bonusDmg);if(isDefending(target))dealt=Math.ceil(dealt/2);const beforeCover=dealt;if(!attackerHero&&target.stats)dealt=Formation.coverDamage(dealt,target,G.party,Formation.enemyRange(actor));const detail=[penalty?'Rear melee −2 to hit':'',beforeCover>dealt?`Frontline cover prevented ${beforeCover-dealt} damage`:''].filter(Boolean).join(' · ');target.hp=Math.max(0,target.hp-dealt);
+ combatLog(`${actor.name}: d20 ${d20} + ${toHit-d20} = ${toHit} vs AC ${armor} — ${critical?'CRITICAL! ':'HIT! '}${dealt} damage.`,critical,{type:critical?'critical':'hit',actor:actor.name,target:target.name,amount:dealt,detail,roll:d20,attackBonus:toHit-d20,total:toHit,armor,advantage});markDamage(target,dealt,null,critical?'#ffe89b':spell?'#bddefe':'#fff0ce');
  SFX.play(critical?'critical':spell?'magic':'hit');if(target.hp<=0)combatLog(`${target.name} falls!`,true,{type:'death',target:target.name});
  if(!attackerHero&&target.hp>0&&['slime','bat'].includes(actor.original)&&rand(100)<=13){if(ITEMS[target.gear?.armor]?.poisonWard)combatLog(`${target.name}'s Silverguard wards resist poison.`,false,{type:'status',target:target.name});else{target.poison=2;combatLog(`${target.name} is poisoned for the next 2 turns!`,false,{type:'status',target:target.name})}}return dealt
 }
@@ -884,11 +900,11 @@ function performAbility(hero,ability,targets){
 }
 function enemyAct(){if(mode!=='combat'||combatAnimating)return;const enemy=activeUnit();if(!enemy||enemy.hp<=0){nextTurn();return}let options=alive();if(!options.length){loseCombat();return}
  for(const hero of options.filter(h=>h.hidden)){const check=dice(20)+enemy.dex;if(check>=hero.hideTotal){delete hero.hidden;delete hero.hideTotal;combatLog(`${enemy.name} detects ${hero.name}!`,false,{type:'status',target:hero.name})}}
- const visible=options.filter(h=>!h.hidden);if(!visible.length){combatLog(`${enemy.name} searches the shadows.`,false,{type:'status'});nextTurn();return}const target=visible[rand(visible.length)-1];
+ const visible=options.filter(h=>!h.hidden);if(!visible.length){combatLog(`${enemy.name} searches the shadows.`,false,{type:'status'});nextTurn();return}const targets=Formation.targetPool(enemy,visible),target=targets[rand(targets.length)-1];
  const doAOE=(enemy.original==='boss'&&combat.round%4===0)||(enemy.original==='warboss'&&combat.round%3===0)||(enemy.original==='shaman'&&combat.round%3===0);
  if(doAOE){const name=enemy.original==='warboss'?'Crushing Warcry':enemy.original==='shaman'?'Cinder Hex':'Toll of Ash';
   queueCinematic(enemy.original==='shaman'?'fire':'shadow',enemy,options,()=>{combatLog(`${enemy.name} casts ${name} against the entire party!`,true,{type:'action',actor:enemy.name});for(const ally of options.filter(h=>h.hp>0)){const roll=dice(20)+mod(ally.stats[1]);let amount=dice(6)+(enemy.original==='warboss'?4:2);if(roll>=13)amount=Math.ceil(amount/2);if(isDefending(ally))amount=Math.ceil(amount/2);ally.hp=Math.max(0,ally.hp-amount);combatLog(`${ally.name}: DEX save ${roll} vs DC 13, ${amount} damage.`,false,{type:'hit',actor:enemy.name,target:ally.name,amount,detail:`DEX save ${roll} vs DC 13${roll>=13?' · half damage':''}`});if(ally.hp<=0)combatLog(`${ally.name} falls!`,true,{type:'death',target:ally.name});markDamage(ally,amount)}SFX.play('magic')},'enemy')}
- else queueCinematic('slash',enemy,[target],()=>hitAttack(enemy,target),'enemy');
+ else queueCinematic(Formation.enemyRange(enemy)==='magic'?'arcane':'slash',enemy,[target],()=>hitAttack(enemy,target,{spell:Formation.enemyRange(enemy)==='magic'}),'enemy');
 }
 
 const ENEMY_DROPS={
@@ -1429,7 +1445,7 @@ function illustratedActorState(actor){
  const reaction=window.AshenSprites?.reaction(actor.id),now=performance.now();
  if(actor.hp<=0)return {state:'death',time:reaction?now-reaction.startedAt:700};
  if(reaction)return {state:reaction.state,time:now-reaction.startedAt};
- if(battleFX&&battleFX.actorId===actor.id)return {state:battleFX.kind==='slash'?'attack':'cast',time:now-battleFX.startTime};
+ if(battleFX&&battleFX.actorId===actor.id)return {state:['slash','arrow'].includes(battleFX.kind)?'attack':'cast',time:now-battleFX.startTime};
  return {state:'idle',time:now+hash((actor.id||'').length,actor.role?.length||actor.type?.length||0)*1500};
 }
 function drawIllustratedActor(actor,x,y,kind='ally',scale=1){
@@ -1470,8 +1486,9 @@ function drawEnemy(enemy,x,y,scale=1){
  }
 }
 function battleHeroPoint(index){
- const count=Math.max(1,G?.party?.length||1),spacing=Math.min(54,battleWidth*.115);
- return {x:battleWidth*.27+(index-(count-1)/2)*spacing,y:232-(index%2)*14};
+ const hero=G?.party[index],row=hero?Formation.row(hero):'front',members=(G?.party||[]).filter(h=>Formation.row(h)===row),slot=Math.max(0,members.indexOf(hero)),count=Math.max(1,members.length);
+ const spread=Math.min(36,96/Math.max(1,count-1));
+ return {x:battleWidth*(row==='front'?.39:.22)+(slot%2)*Math.min(28,battleWidth*.04),y:216+(slot-(count-1)/2)*spread};
 }
 function battleEnemyPoint(index){
  const count=Math.max(1,combat?.enemies.length||1),spacing=Math.min(61,battleWidth*.12);
@@ -1505,11 +1522,12 @@ function drawBattleFX(){
    if(!isMelee){
     const shot=Math.min(1,p/.52),sx=e.source.x,sy=e.source.y-39,tx=t.x,ty=t.y-45;
     if(shot<1){const x=sx+(tx-sx)*shot,y=sy+(ty-sy)*shot-25*Math.sin(Math.PI*shot);const r=e.kind==='meteor'?13:8;
+     if(e.kind==='arrow'){ctx.save();ctx.translate(x,y);ctx.rotate(Math.atan2(ty-sy,tx-sx));ctx.strokeStyle='#f0d5a5';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-17,0);ctx.lineTo(7,0);ctx.moveTo(2,-3);ctx.lineTo(7,0);ctx.lineTo(2,3);ctx.moveTo(-14,-3);ctx.lineTo(-10,0);ctx.lineTo(-14,3);ctx.stroke();ctx.restore();return}
      const halo=ctx.createRadialGradient(x,y,0,x,y,r*4);halo.addColorStop(0,'#ffffffed');halo.addColorStop(.18,col);halo.addColorStop(1,'#ffffff00');ctx.fillStyle=halo;ctx.fillRect(x-r*4,y-r*4,r*8,r*8);
      ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.globalAlpha=.75;ctx.beginPath();ctx.moveTo(x-17,y+9);ctx.lineTo(x,y);ctx.stroke();ctx.globalAlpha=1;
     }
    }
-   if(exploding){const t01=(p-.36)/.64,rad=(e.kind==='fire'||e.kind==='meteor'?45:30)*(.3+t01),fade=Math.max(0,1-t01);
+   if(exploding&&e.kind!=='arrow'){const t01=(p-.36)/.64,rad=(e.kind==='fire'||e.kind==='meteor'?45:30)*(.3+t01),fade=Math.max(0,1-t01);
     ctx.save();ctx.globalAlpha=.75*fade;ctx.strokeStyle=col;ctx.lineWidth=6*fade+1;ctx.beginPath();ctx.ellipse(t.x,t.y-42,rad,rad*.56,0,0,Math.PI*2);ctx.stroke();
     if(e.kind!=='slash'){const glow=ctx.createRadialGradient(t.x,t.y-42,0,t.x,t.y-42,rad*1.7);glow.addColorStop(0,col+'b9');glow.addColorStop(1,col+'00');ctx.fillStyle=glow;ctx.fillRect(t.x-rad*2,t.y-rad*2,rad*4,rad*4);}
     if(e.kind==='slash'){ctx.strokeStyle='#fff6d8';ctx.lineWidth=4*fade;ctx.beginPath();ctx.moveTo(t.x-25,t.y-73);ctx.quadraticCurveTo(t.x+15,t.y-45,t.x+25,t.y-10);ctx.stroke()}
@@ -1541,9 +1559,10 @@ function drawBackdropTown(){
  ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
 }
 function drawBackdropWild(){
- const backdrop='battle_forest.jpg';
- if(!drawCombatBackdrop(backdrop)){ctx.fillStyle='#1b2336';ctx.fillRect(0,0,battleWidth,H)}
- const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#10152516');shade.addColorStop(.45,'#101b2834');shade.addColorStop(1,'#10131ae0');ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
+ const light=Formation.lighting(G?.steps),path=n=>'battle/forest_'+n+'.jpg';
+ if(!drawCombatBackdrop(path(light.from))&&!drawCombatBackdrop(path('day'))){ctx.fillStyle='#1b2336';ctx.fillRect(0,0,battleWidth,H)}
+ if(light.blend>0&&imageReady(path(light.to))){ctx.save();ctx.globalAlpha=light.blend;drawCombatBackdrop(path(light.to));ctx.restore()}
+ const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#07101808');shade.addColorStop(.65,'#07101800');shade.addColorStop(1,'#07101835');ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
 }
 function drawBackdropCamp(){
  const backdrop='gromclaw_battle.jpg';
@@ -1580,12 +1599,17 @@ function drawBattle(){
  for(let i=0;i<18;i++){const x=(i*67+Math.sin(animTick/43+i)*10)%battleWidth,y=(i*27+animTick*.14)%220;ctx.fillStyle=scene==='camp'?'#f1b77384':scene==='crypt'?'#9fb8d939':'#acc3d039';ctx.fillRect(x,y,1.4,1.4)}
  const moving=(actor,base)=>{if(!battleFX||battleFX.actorId!==actor.id)return base;const p=clamp((performance.now()-battleFX.startTime)/battleFX.duration,0,1),move=p<.3?p/.3:p<.55?1:p<.9?(1-(p-.55)/.35):0,t=battleFX.targets[0];if(!t)return base;if(!['slash'].includes(battleFX.kind))return base;return{x:base.x+(t.x-base.x)*Math.min(.76,move*.76),y:base.y+(t.y-base.y)*move*.21}};
  const immersive=document.documentElement.classList.contains('cinematic-battle');
+ const light=Formation.lighting(G.steps),tones={day:1,evening:.91,night:.68};
+ const brightness=battleScene()==='wild'?tones[light.from]*(1-light.blend)+tones[light.to]*light.blend:1;
+ const actorFilter=brightness<1?`brightness(${brightness}) saturate(${.7+.3*brightness})`:'none';
  for(let i=0;i<combat.enemies.length;i++){
   const e=combat.enemies[i];
   if(e.hp<=0&&!window.AshenSprites?.ready(e.type))continue;
   const pt=battleEnemyPoint(i),m=moving(e,pt);
   drawBattleMarker(e,pt);
+  ctx.save();ctx.filter=actorFilter;
   drawEnemy(e,m.x,m.y,e.type==='warboss'?1.06:e.type==='boss'?1.1:1);
+  ctx.restore();
   if(!immersive){
    const y=Math.max(24,pt.y-(e.type==='warboss'?131:e.type==='boss'?131:112));
    ctx.fillStyle='#08111be2';ctx.fillRect(pt.x-21,y-8,42,17);
@@ -1594,10 +1618,12 @@ function drawBattle(){
   }
  }
 
- G.party.forEach((hero,i)=>{
+ G.party.map((hero,i)=>({hero,i,point:battleHeroPoint(i)})).sort((a,b)=>a.point.y-b.point.y).forEach(({hero,i})=>{
   const point=battleHeroPoint(i),m=moving(hero,point);
   drawBattleMarker(hero,point);
+  ctx.save();ctx.filter=actorFilter;
   drawBattleHero(hero,m.x,m.y,i);
+  ctx.restore();
   if(!immersive){ctx.fillStyle='#121d2cbb';ctx.fillRect(point.x-30,point.y+6,60,12);textDraw(hero.name.slice(0,11),point.x,point.y+15,8,hero.hp>0?'#fff1d8':'#aaabb9','center');}
  });
  drawBattleFX();
@@ -1616,17 +1642,17 @@ function renderCinemaHud(){
  const hud=$('cinemaHud');if(!hud)return;
  if(mode!=='combat'||!combat){if(hud.innerHTML)hud.innerHTML='';previousCinemaHud='';return}
  const turn=combat.queue?.[combat.turn],actor=activeUnit();
- const cacheKey=combatSession+':'+combatAnimating+':'+G.party.map(h=>[h.id,h.hp,h.mp,h.poison,h.defending,h.protectedThroughRound,h.xp,h.level,h.appearance,h.hidden,h.gear.weapon,h.gear.armor].join(':')).join('|')+combat.enemies.map(e=>e.id+':'+e.hp).join(',')+turn?.id+combat.round+document.documentElement.classList.contains('cinema-compact');
+ const cacheKey=combatSession+':'+combatAnimating+':'+G.party.map(h=>[h.id,h.hp,h.mp,h.poison,h.defending,h.protectedThroughRound,h.xp,h.level,h.row,h.appearance,h.hidden,h.gear.weapon,h.gear.armor].join(':')).join('|')+combat.enemies.map(e=>e.id+':'+e.hp).join(',')+turn?.id+combat.round+document.documentElement.classList.contains('cinema-compact');
  if(cacheKey===previousCinemaHud)return;previousCinemaHud=cacheKey;
  const viewFocused=document.activeElement?.id==='cinemaMinimize';
  const party=G.party.map(h=>{
    const hp=clamp(100*h.hp/h.maxHp,0,100),mp=h.maxMp?clamp(100*h.mp/h.maxMp,0,100):0;
-   return `<article class="cinema-member ${actor?.id===h.id?'active':''} ${h.hp<=0?'fallen':''}"><img src="${heroPortrait(h)}" alt=""><div class="cinema-member-info"><b title="${escapeHtml(h.name)}">${escapeHtml(h.name)}</b><small>LV ${h.level} · ${h.role} · AC ${armorClass(h)}</small><div class="cinema-stat"><span>HP</span><i><em style="width:${hp}%"></em></i><span>${h.hp}/${h.maxHp}</span></div><div class="cinema-stat mana"><span>MP</span><i><em style="width:${mp}%"></em></i><span>${h.mp}/${h.maxMp}</span></div><div class="cinema-stat experience" title="${Math.max(0,levelThreshold(h.level)-h.xp)} EXP to level ${h.level+1}"><span>EXP</span><i role="progressbar" aria-label="${escapeHtml(h.name)} experience" aria-valuenow="${h.xp}" aria-valuemin="0" aria-valuemax="${levelThreshold(h.level)}"><em style="width:${clamp(100*h.xp/levelThreshold(h.level),0,100)}%"></em></i><span>${Math.max(0,levelThreshold(h.level)-h.xp)} to go</span></div><div class="combat-conditions">${conditionBadges(h)}</div></div></article>`;
+   return `<article data-row="${Formation.row(h)}" class="cinema-member ${actor?.id===h.id?'active':''} ${h.hp<=0?'fallen':''}"><img src="${heroPortrait(h)}" alt=""><div class="cinema-member-info"><b title="${escapeHtml(h.name)}">${escapeHtml(h.name)}</b><small title="Level ${h.level} ${h.role} · AC ${armorClass(h)}"><span class="row-badge row-${Formation.row(h)}" title="${Formation.screened(h,G.party)?'Screened: 25% melee protection; −2 close-range hit':'Exposed frontline; full melee effectiveness'}">${Formation.row(h).toUpperCase()}</span> LV ${h.level} · ${h.role} · AC ${armorClass(h)}</small><div class="cinema-stat"><span>HP</span><i><em style="width:${hp}%"></em></i><span>${h.hp}/${h.maxHp}</span></div><div class="cinema-stat mana"><span>MP</span><i><em style="width:${mp}%"></em></i><span>${h.mp}/${h.maxMp}</span></div><div class="cinema-stat experience" title="${Math.max(0,levelThreshold(h.level)-h.xp)} EXP to level ${h.level+1}"><span>EXP</span><i role="progressbar" aria-label="${escapeHtml(h.name)} experience" aria-valuenow="${h.xp}" aria-valuemin="0" aria-valuemax="${levelThreshold(h.level)}"><em style="width:${clamp(100*h.xp/levelThreshold(h.level),0,100)}%"></em></i><span>${Math.max(0,levelThreshold(h.level)-h.xp)} to go</span></div><div class="combat-conditions">${conditionBadges(h)}</div></div></article>`;
  }).join('');
  const foes=combat.enemies.filter(e=>e.hp>0).map(e=>`<article class="cinema-foe ${actor?.id===e.id?'active':''}"><div class="foe-line"><span>${escapeHtml(e.name)}</span><b>${e.hp}/${e.maxHp} HP</b></div><div class="foe-track" role="progressbar" aria-label="${escapeHtml(e.name)} health" aria-valuenow="${e.hp}" aria-valuemin="0" aria-valuemax="${e.maxHp}"><i style="width:${clamp(100*e.hp/e.maxHp,0,100)}%"></i></div></article>`).join('');
  const initiative=combat.queue.slice(combat.turn).map(q=>{
    const unit=q.side==='ally'?G.party.find(h=>h.id===q.id):combat.enemies.find(e=>e.id===q.id);
-   return unit?.hp>0?`<span class="initiative-actor ${q.side} ${unit.id===actor?.id?'current':''}" ${unit.id===actor?.id?'aria-current="step"':''}>${escapeHtml(unit.name)}</span>`:'';
+   return unit?.hp>0?`<span class="initiative-actor ${q.side} ${unit.id===actor?.id?'current':''}" ${unit.id===actor?.id?'aria-current="step"':''} title="${escapeHtml(unit.name)} · Initiative ${q.roll} · ${q.side==='ally'?Formation.row(unit)+' row':'enemy'}">${q.side==='ally'?`<img src="${heroPortrait(unit)}" alt="">`:`<i aria-hidden="true">${Formation.enemyRange(unit)==='magic'?'✦':'⚔'}</i>`}<b>${escapeHtml(unit.name)}</b><small>${q.roll}</small></span>`:'';
  }).join('');
  hud.innerHTML=`<header class="cinema-title"><div class="combat-title"><span>THE ASHEN REALMS</span><small>${G.flags.ending?'CHAPTER II':'CHAPTER I'} · ${battleScene().toUpperCase()} ENCOUNTER</small></div><nav class="turn-order" aria-label="Remaining turn order"><span>UP NEXT</span>${initiative}</nav><button id="cinemaMinimize" title="Toggle immersive battle view" aria-label="${document.documentElement.classList.contains('cinema-compact')?'Expand combat view':'Use windowed combat view'}">${document.documentElement.classList.contains('cinema-compact')?'EXPAND':'WINDOWED'}</button></header><section class="cinema-party" aria-label="Party status" style="--party-count:${G.party.length}"><h2 class="combat-section-title">YOUR PARTY</h2><div class="combat-status-list">${party}</div></section><section class="cinema-foes" aria-label="Enemy status"><h2 class="combat-section-title">ENEMIES</h2><div class="combat-status-list">${foes}</div></section>`;
  $('cinemaMinimize').onclick=()=>document.documentElement.classList.toggle('cinema-compact');
@@ -1715,6 +1741,6 @@ const presentation=window.AshenTitle?.preferences();
 if(presentation){audioEnabled=presentation.sound;cameraZoom=presentation.zoom;$('soundBtn').textContent=$('worldSoundBtn').textContent=audioEnabled?'SOUND ON':'SOUND OFF';$('zoomBtn').textContent=$('worldZoomBtn').textContent=`ZOOM ${Math.round(cameraZoom*100)}%`;}
 initMaps();refreshHud();mainMenu();requestAnimationFrame(render);requestAnimationFrame(updateFrame);
 // Expose a small test/debug surface; no effect on normal play.
-window.AshenRealms={enterBuilding,leaveBuilding,getState:()=>G?JSON.parse(JSON.stringify(G)):null,networkState:()=>G?{name:G.party[0]?.name,loc:G.location,x:G.x,y:G.y,dir:G.dir,role:G.party[0]?.role,level:G.party[0]?.level,mode}:null,getMode:()=>mode,newGame:startGame,move:moveCommand,interact,action,beginCombat,save:saveGame,load:loadGame,closeModal,getMap:()=>G?.location,getCombat:()=>combat?JSON.parse(JSON.stringify(combat)):null,battleAction,setCombatTactic,getCombatTactic:()=>combatTactic,walkable,getMapData:loc=>maps[loc],getAbilities:()=>G?G.party.map(h=>({role:h.role,level:h.level,known:knownAbilities(h).map(a=>a.id),points:h.talentPoints})):[],triggerJob:jobBoard,spellbook,levelUp,performAbility,getBattleFX:()=>battleFX,renderFrame:()=>render(false),getZoom:()=>cameraZoom,openShop:shop,openInventory:inventory,rollDroppedLoot,getMusicTheme:()=>BGM.key,getMusicStatus:()=>({theme:BGM.key,paused:BGM.node?.paused??true,ready:BGM.node?.readyState??0}),roll4d6,rollStatSet,autoAssign,createHero:newHero,levelThreshold,mod};
+window.AshenRealms={enterBuilding,leaveBuilding,getState:()=>G?JSON.parse(JSON.stringify(G)):null,networkState:()=>G?{name:G.party[0]?.name,loc:G.location,x:G.x,y:G.y,dir:G.dir,role:G.party[0]?.role,level:G.party[0]?.level,mode}:null,getMode:()=>mode,openFormation:formationMenu,setFormation,newGame:startGame,move:moveCommand,interact,action,beginCombat,save:saveGame,load:loadGame,closeModal,getMap:()=>G?.location,getCombat:()=>combat?JSON.parse(JSON.stringify(combat)):null,battleAction,setCombatTactic,getCombatTactic:()=>combatTactic,walkable,getMapData:loc=>maps[loc],getAbilities:()=>G?G.party.map(h=>({role:h.role,level:h.level,known:knownAbilities(h).map(a=>a.id),points:h.talentPoints})):[],triggerJob:jobBoard,spellbook,levelUp,performAbility,getBattleFX:()=>battleFX,renderFrame:()=>render(false),getZoom:()=>cameraZoom,openShop:shop,openInventory:inventory,rollDroppedLoot,getMusicTheme:()=>BGM.key,getMusicStatus:()=>({theme:BGM.key,paused:BGM.node?.paused??true,ready:BGM.node?.readyState??0}),roll4d6,rollStatSet,autoAssign,createHero:newHero,levelThreshold,mod};
 if(window.__ASHEN_TEST__){window.AshenRealms.test={previewCreation:creationStats,modifyGame:fn=>{fn(G);refreshHud()},setLevel:(index,level)=>{const hero=G.party[index];while(hero.level<level)levelUp(hero);refreshHud()},addAlly:role=>{G.party.push(newHero(role, 'Human',role));refreshHud()},modifyCombat:fn=>{fn(combat);renderCombatMenu()},runEnemy:enemyAct,resolveWin:winCombat,refresh:refreshHud};}
 })();
