@@ -1,6 +1,24 @@
 # Overnight development progress
 
-Branch: `feature/visual-overhaul`. Latest implementation commit: `12f20b08a1c96421a0f827fa4de64b9c28136d58`, pushed to GitHub. A progress-only commit follows; use `git rev-parse HEAD` for the final checkout hash.
+Branch: `feature/visual-overhaul`. Latest implementation commit: `decf44d53907a5cb75b20ed053656b6876b5145e`. The new combat overhaul is **local only, not pushed**, as requested. A progress-record commit follows; `git rev-parse HEAD` reports the final checkout hash.
+
+## Wilderness battle / tactical formation update — 14 October 2026
+
+- Read the entire `Wilderness Background and Battle UI.docx` and inspected all three extracted images. References remain in `design-references/extracted_wilderness_battle_ui/`, untracked.
+- Integrated the supplied realistic forest painting, cropped its black frame, and created matching evening/night lighting edits with built-in ImageGen. Three optimized JPEGs live in `assets/battle/`; exact prompts and provenance are in its README. Existing character artwork is preserved, with subtle illumination grading, row placement and depth ordering.
+- Upgraded commands and class ability cards, portrait initiative indicators, textured dark panels, readable row badges, target information and event details. Initiative remains visible on phones. Bows fire arrows rather than lunging; misses and criticals have distinct battlefield text.
+- Formation is configurable outside combat through **PARTY & FORMATION → PARTY FORMATION** (or `P`, then PARTY FORMATION), saved per character. Class supplies a legacy default; every character can change rows. No character name controls placement.
+- Visible conscious front-row defenders receive four times each rear ally's melee target weight. Screened rear allies receive 25% less melee damage, rounded upward after guard. Rear single-target melee strikes have −2 to hit; bows/spells are exempt. Wisp/shaman magic, bat dives and area attacks bypass protection. An explicit enemy `attackRange` supports ranged exceptions. If defenders fall or hide, cover and the melee penalty end. Solo/all-rear parties remain playable.
+- Initiative still rolls **d20 + DEX modifier each round** and sorts independently of formation. Changes are rejected during combat. Existing stats, progression, equipment, quests and save key/version remain intact.
+- Lighting uses the existing saved `G.steps` journey counter with gradual day/evening/night blends; there is no new timer or gameplay rule. Exact presentation cycle is documented beside the artwork.
+- Files changed: `game.js`, `formation.js`, `index.html`, `combat.css`, `combat-refinements.css`, `package.json`, `tests/{p0,formation}.test.mjs`, `tests/browser/{combat,formation}.spec.mjs`, and `assets/battle/`.
+- Validation: **104/104 unit tests passed**. Full Chromium regression run: **58/59 passed**, exposing a three-pixel phone command overflow. Corrected it; final affected combat/formation/UI run: **22/22 passed**, including the failed case. Strengthened all-command containment checks subsequently passed **10/10 combat tests** at seven sizes, in expanded/windowed views. The other 37 browser cases passed in the full run.
+- Tested real formation UI/save/reload, class-based legacy migration, weighted targeting, cover/guard arithmetic, bows/magic, hidden/fallen defenders, initiative independence, actual item/guard/spell/attack encounter victory, retreat, defeat recovery, background loading, keyboard/focus/log behavior, creation, equipment, navigation and main quest completion. Inspected day/evening/night/transition and desktop/mobile screenshots. No known introduced gameplay regression remains in these tested paths.
+- Syntax checks for game/network/server/formation and `git diff --check` passed. Tests used isolated saves on port 8877; user saves on 8844 were untouched. The pre-existing `package-lock.json` edit and design documents were not staged. Nothing was merged or pushed.
+- Limits: Chromium verification only; extended campaign balance and bespoke attack/cast pose sheets remain future work. Formation and lighting are implemented, not placeholder controls. No build/bundling command exists; the Node server serves the checked production files directly.
+- Launch from `game/`: `npm.cmd start`; open `http://127.0.0.1:8844`. Tests: `npm.cmd test` and `npm.cmd run test:browser`. Existing saves require the same hostname and port.
+
+## Earlier overnight work (historical)
 
 ## Implemented and verified
 
