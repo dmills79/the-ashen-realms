@@ -85,7 +85,8 @@ function background(c,map,loc,sx,sy){
  const s=source(scene);if(s)c.drawImage(s.image,s.x,s.y,s.w,s.h,-sx,-sy,map.w*T,map.h*T);
  return true;
 }
-function getProps(loc){return (scenes[loc]?.props||[]).map(p=>({type:'interiorProp',x:p.bounds[0],y:p.depth,prop:p}))}
+const drawLists=new Map();
+function getProps(loc){if(drawLists.has(loc))return drawLists.get(loc);const list=(scenes[loc]?.props||[]).map(p=>({type:'interiorProp',x:p.bounds[0],y:p.depth,prop:p}));drawLists.set(loc,list);return list}
 function drawProp(c,prop,sx,sy){
  const image=images[Object.hasOwn(tradeSprites,prop.sprite)?'trade':'furniture'];
  if(!ready(image))return;

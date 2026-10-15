@@ -16,8 +16,10 @@ const SPRITE_NAMES=['fighter','rogue','wizard','cleric','goblin','shaman','orc',
 const SPRITE_FRAMES={width:240,height:280,idleA:0,idleB:1,attack:2,cast:3,hurt:4};
 const ASSET_NAMES = [...LPC_NAMES.map(name=>'lpc/'+name+'.png'),...SPRITE_NAMES.map(name=>'sprites/'+name+'.png'),...['hall','smith','inn','tavern','chapel','cottage','bakery'].map(x=>'interiors/'+x+'.png'),'terrain_atlas.png','heroes_atlas.png','enemies_atlas.png','title_backdrop.jpg','battle_backdrop.jpg','battle_forest.jpg','battle_town.jpg','battle_crypt.jpg','gromclaw_battle.jpg','cinematic/camp_backdrop.jpg','overhaul/battle_crypt.png',...['day','evening','night'].map(n=>'battle/forest_'+n+'.jpg'),...['fighter','cleric','rogue','goblin','orc','shaman'].map(n=>'cinematic/'+n+'.png'),'portrait_fighter.png','portrait_rogue.png','portrait_wizard.png','portrait_cleric.png',...['hall','smith','inn','tavern','chapel','cottage','bakery'].map(x=>'havenmere/'+x+'.png'),'havenmere/outskirts.png'];
 const imagePath = name => window.ASHEN_ASSET_DATA?.[name] || 'assets/' + name;
-for(const name of ASSET_NAMES){ const image = new Image(); ART[name] = image; image.decoding = 'async'; image.src = imagePath(name); }
-const imageReady = name => !!(ART[name]?.complete && ART[name].naturalWidth>0);
+const assetNames=new Set(ASSET_NAMES);
+const artPool=window.AshenScenes?.assetPool(name=>{const image=new Image();image.decoding='async';image.src=imagePath(name);ART[name]=image;return image},24,(name,image)=>{delete ART[name];image.src=''});
+function requestArt(name){if(!assetNames.has(name))return null;if(artPool)return artPool.get(name);if(!ART[name]){const image=new Image();image.src=imagePath(name);ART[name]=image}return ART[name]}
+const imageReady=name=>{const image=requestArt(name);return !!(image?.complete&&image.naturalWidth>0)};
 const TERRAIN_CELLS = {"grass":[[0,0,96,96],[96,0,96,96],[192,0,96,96],[288,0,96,96]],"grass2":[[384,0,96,96],[480,0,96,96],[576,0,96,96],[672,0,96,96]],"path":[[0,96,96,96],[96,96,96,96],[192,96,96,96],[288,96,96,96]],"water":[[384,96,96,96],[480,96,96,96],[576,96,96,96],[672,96,96,96]],"forest":[[0,192,96,96],[96,192,96,96]],"mountain":[[192,192,96,96],[288,192,96,96]],"woodFloor":[[384,192,96,96],[480,192,96,96],[576,192,96,96]],"stoneFloor":[[672,192,96,96],[0,288,96,96],[96,288,96,96]],"rug":[[192,288,96,96]],"floor":[[288,288,96,96],[384,288,96,96],[480,288,96,96]],"wall":[[576,288,96,96],[672,288,96,96]],"insideWall":[[0,384,96,96],[96,384,96,96]],"wallTrim":[[192,384,96,96]],"bridge":[[288,384,96,96]],"fence":[[384,384,96,96]],"building":[[480,384,96,96]],"door":[[576,384,96,96]],"exitDoor":[[672,384,96,96]],"fountain":[[0,480,96,96]],"pillar":[[96,480,96,96]],"books":[[192,480,96,96]],"forge":[[288,480,96,96]],"anvil":[[384,480,96,96]],"rack":[[480,480,96,96]],"crate":[[576,480,96,96]],"bed":[[672,480,96,96]],"hearth":[[0,576,96,96]],"table":[[96,576,96,96]],"plant":[[192,576,96,96]],"barrel":[[288,576,96,96]],"window":[[384,576,96,96]],"altar":[[480,576,96,96]],"rune":[[576,576,96,96]],"exit":[[672,576,96,96]],"townGate":[[0,672,96,96]],"cryptGate":[[96,672,96,96]]};
 const ROLE_ROW = {Fighter:0,Rogue:1,Wizard:2,Cleric:3};
 const DIRECTION_ROW = {down:0,left:1,right:2,up:3};
@@ -506,10 +508,10 @@ function initMaps(){
  for(const [x,y,w,h] of [[5,4,5,4],[23,5,4,4],[5,15,6,4],[22,15,5,4]])rect(camp,x,y,w,h,'building');
  for(const [x,y] of [[4,8],[13,7],[20,8],[25,14],[13,17]])camp.tiles[y][x]='barrel';
  camp.tiles[10][2]='exit';camp.tiles[10][23]='rune';camp.tiles[8][17]='altar';
- maps.town=town;maps.wild=wild;maps.crypt=crypt;maps.camp=camp;
+ maps.town=town;maps.wild=wild;maps.crypt=crypt;maps.camp=camp;window.AshenScenes?.install(maps);
 }
 /* ----------------------- EXPLORATION AND EVENTS ----------------------- */
-function entities(){if(!G)return [];const base=staticEntities(),decorated=window.AshenNPCs&&G.world?window.AshenNPCs.decorate(base,G.world.clock,performance.now()):base;return decorated.concat(window.AshenNPCs?.entities(G.location)||[])}
+function entities(){if(!G)return [];const base=staticEntities();window.AshenScenes?.observeNPCs(G.location,base);const decorated=window.AshenNPCs&&G.world?window.AshenNPCs.decorate(base,G.world.clock,performance.now()):base;return decorated.concat(window.AshenNPCs?.entities(G.location)||[])}
 function staticEntities(){if(!G)return[];
  if(G.location==='town')return [
  {x:10,y:14,name:'Town Crier',kind:'crier',symbol:'i',col:'#c7d4de'},
@@ -735,7 +737,7 @@ function attackMod(hero,magic=false){return mod(hero.stats[magic?(hero.role==='C
 function beginCombat(types){
  if(!G||mode!=='explore'||!Array.isArray(types)||!types.length)return;
  window.AshenSprites?.clear();
- window.AshenSprites?.prepare(types);
+ window.AshenSprites?.prepare([...types,...G.party.map(h=>h.role.toLowerCase())]);
  clearTimeout(toastTimeout);$('toast').classList.remove('show');
  clearCombatProtection();mode='combat';closeModal();combatSession++;cancelAutoTurn();combatTactic='manual';combatAnimating=false;battleFX=null;battleNumbers=[];battleMenu='commands';
  combat={enemies:types.map((type,i)=>({...BESTIARY[type],id:'e'+i,original:type,maxHp:BESTIARY[type].hp,hp:BESTIARY[type].hp})),queue:[],turn:0,round:0,log:[],isBoss:types.includes('boss')||types.includes('warboss'),bossType:types.includes('warboss')?'warboss':types.includes('boss')?'boss':null};
@@ -1450,6 +1452,7 @@ function interiorCamera(m,zoom){
  return {viewW,viewH,visibleW,visibleH,scrollX:axis(focus.x*T+12,m.w*T,viewW,visibleW/zoom),scrollY:axis(focus.y*T+12-.02*safeH/zoom,m.h*T,viewH,safeH/zoom)};
 }
 function drawLocation(){
+ window.AshenScenes?.enter(G.location);
  const m=maps[G.location],interior=['hall','smith','inn','tavern','chapel','cottage','bakery'].includes(G.location);
  const localZoom=interior?Math.max(cameraZoom,Math.min(W/(m.w*T),H/(m.h*T))):cameraZoom;
  const viewW=W/localZoom,viewH=H/localZoom;
@@ -1507,7 +1510,7 @@ function drawLocation(){
  // Every actor shares one ground-depth pass; walking behind an NPC no longer paints over them.
  const drawables=entities().map(entity=>({type:'entity',x:entity.x,y:entity.y,entity}));
  drawables.push(...(window.AshenEnvironment?.getDecorations(m,G.location)||[]));
- drawables.push(...(window.AshenInteriors?.getProps(G.location)||[]));
+ drawables.push(...(window.AshenScenes?.cached(G.location,()=>window.AshenInteriors?.getProps(G.location)||[])||window.AshenInteriors?.getProps(G.location)||[]));
  drawables.push(...(window.AshenInteractions?.props(G.location,G.world)||[]));
  if(trail.length>2)G.party.slice(1).forEach((hero,i)=>{
   const step=trail[Math.min(trail.length-1,(i+1)*3)];
@@ -1522,9 +1525,9 @@ function drawLocation(){
  drawables.sort((a,b)=>(window.AshenGrounding?.depth(a)??a.y)-(window.AshenGrounding?.depth(b)??b.y)||a.x-b.x);
  for(const actor of drawables){
   if(actor.type==='interactiveProp'){window.AshenInteractions.draw(ctx,actor,scrollX,scrollY);continue}
-  if(actor.type==='interiorProp'){window.AshenInteriors.drawProp(ctx,actor.prop,scrollX,scrollY);continue}
+  if(actor.type==='interiorProp'){const [x,y,w,h]=actor.prop.bounds;if(!window.AshenScenes||window.AshenScenes.visible([x*T,y*T,w*T,h*T],{x:scrollX,y:scrollY,w:viewW,h:viewH}))window.AshenInteriors.drawProp(ctx,actor.prop,scrollX,scrollY);continue}
   const sx=(actor.renderX??actor.x)*T-scrollX+12,sy=(actor.renderY??actor.y)*T-scrollY+12;
-  if(sx< -60||sy< -60||sx>viewW+60||sy>viewH+60)continue;
+  const margin=actor.height||60;if(sx< -margin||sy< -margin||sx>viewW+margin||sy>viewH+margin)continue;
   if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;if(actor.prop)window.AshenPresentation?.piece(ctx,actor.prop,sx,sy,47,20,near?.4:1);else window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1);continue}
   if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-12,actor.motion);continue}
   if(actor.hero){
@@ -1883,6 +1886,6 @@ const presentation=window.AshenTitle?.preferences();
 if(presentation){audioEnabled=presentation.sound;cameraZoom=presentation.zoom;$('soundBtn').textContent=$('worldSoundBtn').textContent=audioEnabled?'SOUND ON':'SOUND OFF';$('zoomBtn').textContent=$('worldZoomBtn').textContent=`ZOOM ${Math.round(cameraZoom*100)}%`;}
 initMaps();refreshHud();mainMenu();requestAnimationFrame(render);requestAnimationFrame(updateFrame);
 // Expose a small test/debug surface; no effect on normal play.
-window.AshenRealms={enterBuilding,leaveBuilding,getState:()=>G?JSON.parse(JSON.stringify(G)):null,networkState:()=>G?{name:G.party[0]?.name,loc:G.location,x:G.x,y:G.y,dir:G.dir,role:G.party[0]?.role,level:G.party[0]?.level,mode}:null,getMode:()=>mode,openFormation:formationMenu,setFormation,newGame:startGame,move:moveCommand,interact,action,beginCombat,save:saveGame,load:loadGame,closeModal,getMap:()=>G?.location,getCombat:()=>combat?JSON.parse(JSON.stringify(combat)):null,battleAction,setCombatTactic,getCombatTactic:()=>combatTactic,walkable,getMapData:loc=>maps[loc],getAbilities:()=>G?G.party.map(h=>({role:h.role,level:h.level,known:knownAbilities(h).map(a=>a.id),points:h.talentPoints})):[],triggerJob:jobBoard,spellbook,levelUp,performAbility,getBattleFX:()=>battleFX,renderFrame:()=>render(false),getZoom:()=>cameraZoom,openShop:shop,openInventory:inventory,rollDroppedLoot,getMusicTheme:()=>BGM.key,getMusicStatus:()=>({theme:BGM.key,paused:BGM.node?.paused??true,ready:BGM.node?.readyState??0}),roll4d6,rollStatSet,autoAssign,createHero:newHero,levelThreshold,mod};
+window.AshenRealms={getRenderResources:()=>({artTextures:artPool?.size()??Object.keys(ART).length,scenes:window.AshenScenes?.metrics(),lights:window.AshenLighting?.resources(),actors:window.AshenAnimation?.size()}),enterBuilding,leaveBuilding,getState:()=>G?JSON.parse(JSON.stringify(G)):null,networkState:()=>G?{name:G.party[0]?.name,loc:G.location,x:G.x,y:G.y,dir:G.dir,role:G.party[0]?.role,level:G.party[0]?.level,mode}:null,getMode:()=>mode,openFormation:formationMenu,setFormation,newGame:startGame,move:moveCommand,interact,action,beginCombat,save:saveGame,load:loadGame,closeModal,getMap:()=>G?.location,getCombat:()=>combat?JSON.parse(JSON.stringify(combat)):null,battleAction,setCombatTactic,getCombatTactic:()=>combatTactic,walkable,getMapData:loc=>maps[loc],getAbilities:()=>G?G.party.map(h=>({role:h.role,level:h.level,known:knownAbilities(h).map(a=>a.id),points:h.talentPoints})):[],triggerJob:jobBoard,spellbook,levelUp,performAbility,getBattleFX:()=>battleFX,renderFrame:()=>render(false),getZoom:()=>cameraZoom,openShop:shop,openInventory:inventory,rollDroppedLoot,getMusicTheme:()=>BGM.key,getMusicStatus:()=>({theme:BGM.key,paused:BGM.node?.paused??true,ready:BGM.node?.readyState??0}),roll4d6,rollStatSet,autoAssign,createHero:newHero,levelThreshold,mod};
 if(window.__ASHEN_TEST__){window.AshenRealms.test={interiorView:()=>interiorCamera(maps[G.location],Math.max(cameraZoom,Math.min(W/(maps[G.location].w*T),H/(maps[G.location].h*T)))),entities:()=>entities(),previewCreation:creationStats,modifyGame:fn=>{fn(G);refreshHud()},setLevel:(index,level)=>{const hero=G.party[index];while(hero.level<level)levelUp(hero);refreshHud()},addAlly:role=>{G.party.push(newHero(role, 'Human',role));refreshHud()},modifyCombat:fn=>{fn(combat);renderCombatMenu()},runEnemy:enemyAct,resolveWin:winCombat,refresh:refreshHud};}
 })();

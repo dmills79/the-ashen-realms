@@ -1,7 +1,7 @@
 /* Cached, restrained Canvas light masks; explicit sources stay in scene coordinates. */
 (function(){
 'use strict';
-const masks=new Map();let quality='auto';
+const masks=new Map(),motionPreference=window.matchMedia?.('(prefers-reduced-motion: reduce)');let quality='auto';
 try{const value=localStorage.getItem('ashen-realms-lighting-v1');if(['auto','full','low','off'].includes(value))quality=value}catch(e){}
 const fire=new Image();fire.decoding='async';fire.src='assets/living_world/fire_cycle.png';
 const sources={
@@ -16,7 +16,7 @@ const sources={
 function resolved(){return quality==='auto'?(window.innerWidth<700?'low':'full'):quality}
 function mask(color){if(masks.has(color))return masks.get(color);const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const c=canvas.getContext('2d'),g=c.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,color);g.addColorStop(.3,color+'9a');g.addColorStop(1,color+'00');c.fillStyle=g;c.fillRect(0,0,128,128);masks.set(color,canvas);return canvas}
 function lightSources(loc,map){if(sources[loc])return sources[loc].lights;if(loc==='town')return (map.buildings||[]).map(b=>[b.doorX+.5,b.doorY+.7,35,.13]);if(loc==='crypt')return [[8.5,5.5,52,.15],[8.5,25.5,52,.15],[32.5,23.5,52,.15]];return []}
-function flames(c,loc,sx,sy,now){if(resolved()==='off'||!fire.complete||!fire.naturalWidth)return;const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;const index=reduced?0:Math.floor(now/125)%8,fw=fire.naturalWidth/4,fh=fire.naturalHeight/2;for(const[x,y,w,h]of sources[loc]?.fires||[])c.drawImage(fire,(index%4)*fw,Math.floor(index/4)*fh,fw,fh,x*24-sx-w/2,y*24-sy-h,w,h)}
+function flames(c,loc,sx,sy,now){if(resolved()==='off'||!fire.complete||!fire.naturalWidth)return;const reduced=motionPreference?.matches;const index=reduced?0:Math.floor(now/125)%8,fw=fire.naturalWidth/4,fh=fire.naturalHeight/2;for(const[x,y,w,h]of sources[loc]?.fires||[])c.drawImage(fire,(index%4)*fw,Math.floor(index/4)*fh,fw,fh,x*24-sx-w/2,y*24-sy-h,w,h)}
 function draw(c,map,loc,sx,sy,w,h,clock,now,objects={}){
  const level=resolved();if(level==='off')return;const t=window.AshenWorldTime.read(clock),inside=!!sources[loc],dark=loc==='crypt'?.16:inside?t.ambient*.3:t.ambient;
  c.save();if(dark>0){c.globalAlpha=dark;c.fillStyle=inside?'#181c28':'#142337';c.fillRect(0,0,w,h)}c.globalCompositeOperation='screen';

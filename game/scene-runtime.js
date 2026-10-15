@@ -1,0 +1,15 @@
+/* Shared scene contracts and bounded render-resource caches. Rules stay in game.js. */
+(function(){
+'use strict';
+const records=new Map(),layers=new Map();let active=null;
+function assetPool(load,limit=32,dispose=()=>{}){if(!Number.isInteger(limit)||limit<1)throw RangeError('Invalid asset cache limit');const entries=new Map();return {get(id){if(entries.has(id)){const value=entries.get(id);entries.delete(id);entries.set(id,value);return value}const value=load(id);entries.set(id,value);while(entries.size>limit){const key=entries.keys().next().value;dispose(key,entries.get(key));entries.delete(key)}return value},size:()=>entries.size,clear(){for(const[id,value]of entries)dispose(id,value);entries.clear()}}}
+function install(maps){records.clear();layers.clear();active=null;for(const[id,map]of Object.entries(maps)){const interior=window.AshenInteriors?.scenes[id];records.set(id,{id,name:map.name,map,kind:interior?'interior':id==='crypt'?'dungeon':'outdoor',bounds:{x:0,y:0,width:map.w*24,height:map.h*24},background:interior?.background??(id==='crypt'?'cached-masonry':'continuous-materials'),foreground:interior?.foreground??null,props:interior?.props||[],collision:{tiles:map.tiles,footprints:interior?.props.map(p=>p.footprint)||[]},lighting:window.AshenLighting?.sources[id]||null,ambience:id==='crypt'?'crypt':id==='wild'||id==='camp'?'wilderness':id==='tavern'||id==='inn'?'tavern':'havenmere',npcSchedules:window.AshenNPCs?.definitions[id]||[],spawns:[],interactions:window.AshenInteractions?.forScene(id)||[],portals:[],encounters:['wild','crypt','camp'].includes(id)?{source:'existing-step-encounters',region:id}:null,questTriggers:id==='crypt'?['leverA','leverB','gate','boss']:id==='camp'?['scouts','warboss']:id==='tavern'?['merchant','rogue']:[]})}
+ const town=maps.town;if(town)for(const b of town.buildings||[]){records.get('town').portals.push({cell:[b.doorX,b.doorY],target:b.room,arrival:[8,10]});records.get(b.room)?.portals.push({cell:[8,13],target:'town',arrival:[b.doorX,b.doorY+1]})}
+ for(const[id,cell,target,arrival]of [['town',[28,16],'wild',[9,16]],['wild',[7,16],'town',[26,16]],['wild',[37,22],'crypt',[3,15]],['wild',[42,23],'camp',[3,10]],['crypt',[2,15],'wild',[35,22]],['camp',[2,10],'wild',[41,23]]])records.get(id)?.portals.push({cell,target,arrival});
+}
+function enter(id){active=id;if(layers.has(id)){const value=layers.get(id);layers.delete(id);layers.set(id,value)}}
+function cached(id,factory){if(!layers.has(id)){layers.set(id,factory());while(layers.size>4)layers.delete(layers.keys().next().value)}return layers.get(id)}
+function observeNPCs(id,entities){const scene=records.get(id);if(scene&&!scene.spawns.length)scene.spawns=entities.map(e=>({kind:e.kind,name:e.name,x:e.x,y:e.y,talk:e.talk??null,questCritical:['elder','cleric','rogue','merchant','shop','inn'].includes(e.kind)}))}
+function visible([x,y,w,h],view){return x+w>=view.x&&y+h>=view.y&&x<=view.x+view.w&&y<=view.y+view.h}
+window.AshenScenes={install,enter,cached,get:id=>records.get(id),observeNPCs,visible,assetPool,metrics:()=>({active,registered:records.size,cachedScenes:layers.size})};
+})();
