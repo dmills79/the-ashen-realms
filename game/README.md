@@ -1,5 +1,7 @@
 # The Ashen Realms — Visual Overhaul Preview
 
+Building interiors now use authored painterly architecture, transparent furniture sprites, shared depth sorting and aligned navigation footprints. The Wayfarer Tavern has a bar, seated patrons, hearth, storage and clear walkways; six other buildings have distinct plans. See [interior environments](INTERIOR_ENVIRONMENTS.md) for assets, scene authoring, verification and remaining art refinements.
+
 Milestone 2 adds 16 illustrated character/enemy animation sheets, a manifest-driven renderer, and an animation preview at `http://127.0.0.1:8844/characters.html`. The original portraits, artwork fallbacks, campaign, combat rules, and save key remain intact. Milestone 1 provides the responsive combat layout and structured event log.
 
 See [the character art pipeline](CHARACTER_ART_PIPELINE.md) for the delivered artwork, preview, validation commands, and remaining animation/art limitations. The LPC integration notes below describe the preceding release; the new illustrated sheets now render first, with those original assets retained as fallbacks.

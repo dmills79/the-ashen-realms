@@ -1,0 +1,118 @@
+{
+  "version": 2,
+  "tileSize": 24,
+  "files": {
+    "tavern": "tavern_shell.png",
+    "architecture": "architecture_atlas.png",
+    "furniture": "furniture_atlas.png",
+    "trade": "trade_atlas.png"
+  },
+  "atlasSize": [
+    1448,
+    1086
+  ],
+  "sprites": {
+    "bar": [
+      8,
+      54,
+      463,
+      247
+    ],
+    "table": [
+      476,
+      74,
+      354,
+      228
+    ],
+    "chair": [
+      869,
+      54,
+      150,
+      247
+    ],
+    "bench": [
+      1075,
+      121,
+      365,
+      170
+    ],
+    "barrel": [
+      88,
+      337,
+      240,
+      331
+    ],
+    "crates": [
+      417,
+      355,
+      317,
+      318
+    ],
+    "bed": [
+      791,
+      307,
+      268,
+      385
+    ],
+    "anvil": [
+      1107,
+      362,
+      318,
+      329
+    ],
+    "forge": [
+      8,
+      673,
+      378,
+      373
+    ],
+    "workbench": [
+      393,
+      787,
+      390,
+      255
+    ],
+    "altar": [
+      781,
+      682,
+      357,
+      358
+    ],
+    "bookcase": [
+      1168,
+      684,
+      263,
+      361
+    ]
+  },
+  "tradeAtlasSize": [
+    1254,
+    1254
+  ],
+  "tradeSprites": {
+    "bakeryCounter": [
+      8,
+      165,
+      702,
+      393
+    ],
+    "kneading": [
+      726,
+      136,
+      515,
+      420
+    ],
+    "gaming": [
+      104,
+      642,
+      466,
+      483
+    ],
+    "reception": [
+      650,
+      670,
+      578,
+      438
+    ]
+  }
+}
