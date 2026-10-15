@@ -52,11 +52,11 @@ function crypt(c,m,sx,sy,w,h){
  }
  const cw=Math.min(w,m.w*T-sx),ch=Math.min(h,m.h*T-sy);c.drawImage(entry.surface,sx*2,sy*2,cw*2,ch*2,0,0,cw,ch);return true;
 }
-function npc(c,kind,x,y,time=0,height=39){
+function npc(c,kind,x,y,time=0,height=39,options={}){
  const names={elder:'scholar',archivist:'scholar',shop:'smith_npc',apprentice:'smith_npc',baker:'baker_npc',breadApprentice:'baker_npc',inn:'innkeeper',keeper:'innkeeper',crier:'crier',villager:'farmer',merchant:'merchant',pilgrim:'pilgrim',healer:'pilgrim',acolyte:'pilgrim',resident:'farmer',guard:'guard',traveler:'traveler'};
  const name=names[kind];if(!name)return false;const image=load(name);if(!image)return false;
  const sway=Math.sin(time/650+x)*.25,h=height;
- c.save();c.fillStyle='#050e1870';c.beginPath();c.ellipse(x,y,8,2.5,0,0,Math.PI*2);c.fill();
+ c.save();if(options.shadow!==false)window.AshenGrounding?.shadow(c,x,y,{width:8,height:2.5});
  c.drawImage(image,x-h*image.naturalWidth/image.naturalHeight/2+sway,y-h,h*image.naturalWidth/image.naturalHeight,h);c.restore();return true;
 }
 function smoke(c,x,y,time=0){

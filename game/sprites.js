@@ -31,7 +31,7 @@
     const asset=manifest.characters[id],index=animationFrame(asset,state,time),frame=asset.frames[index],image=images.get(id);
     const [sx,sy,width,sourceHeight]=frame.rect,visualHeight=height??asset.heightInBattle,scale=visualHeight/asset.referenceHeight;
     ctx.save();ctx.globalAlpha*=alpha;
-    if(shadow){ctx.fillStyle='#02070b70';ctx.beginPath();ctx.ellipse(x,y+1,Math.max(3,asset.frames[0].rect[2]*scale*.28),Math.max(1,visualHeight*.035),0,0,Math.PI*2);ctx.fill()}
+    if(shadow)window.AshenGrounding?.shadow(ctx,x,y,{width:Math.max(3,asset.frames[0].rect[2]*scale*.28),height:Math.max(1.5,visualHeight*.045)});
     ctx.translate(x,y);if(facing!==asset.facing)ctx.scale(-1,1);
     ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     const isolated=isolatedFrame(id,index,image);

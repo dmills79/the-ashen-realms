@@ -41,7 +41,7 @@ function draw(ctx,hero,x,y,{direction='down',height=44,walking=false,time=0,stat
   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const bob=reduced?0:walking?Math.sin(time/65)*.8:Math.sin(time/520)*.18;
   ctx.save();ctx.globalAlpha*=hero.hp===0?.45:1;
-  ctx.fillStyle='#030b1390';ctx.beginPath();ctx.ellipse(x,y+1,w*.32,h*.055,0,0,Math.PI*2);ctx.fill();
+  window.AshenGrounding?.shadow(ctx,x,y,{width:w*.32,height:h*.065});
   if(state==='death'){ctx.translate(x,y);ctx.rotate(direction==='left'?-.8:.8);ctx.translate(-x,-y)}
   if(state==='hit')ctx.globalAlpha*=.7+.3*Math.sin(time/28)**2;
   ctx.drawImage(image,x-w/2,y-h-bob,w,h);

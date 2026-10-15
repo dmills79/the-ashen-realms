@@ -1321,7 +1321,7 @@ function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1,h
  ctx.restore()
 }
 
-function drawEntity(e,sx,sy){if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+21+(e.seated?10:e.behindBar?24:0),performance.now(),e.seated?34:40)){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+21,roles[e.kind],'npc','down',e.seated?.8:1,companion)}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+21,'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy-4+bob+(e.behindBar?24:0),12,e.col,'center')}return}
+function drawEntity(e,sx,sy){if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),performance.now(),e.seated?34:40,{shadow:!e.seated&&!e.behindBar})){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+12,roles[e.kind],'npc','down',e.seated?.8:1,companion)}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+12,'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy+12+(window.AshenGrounding?.offset(e)??0)-(e.seated?34:40)-7+bob,12,e.col,'center')}return}
  if(e.kind==='townGate'||e.kind==='cryptGate'||e.kind==='exit')return;
  if(e.kind==='satchel'){pix(sx+5,sy+10,15,10,'#895b3f');pix(sx+7,sy+7,11,4,'#d3ae76');pix(sx+13,sy+11,3,3,'#e7c77e');return}
  if(e.kind.includes('Chest')||e.kind==='cryptChestA'||e.kind==='cryptChestB'){pix(sx+3,sy+8,19,13,'#8c5b3d');pix(sx+3,sy+9,19,4,'#c39156');pix(sx+12,sy+8,3,14,'#e3bb75');pix(sx+11,sy+14,5,4,'#625248');return}
@@ -1497,13 +1497,13 @@ function drawLocation(){
  for(const peer of window.AshenNetwork?.getOthers?.()||[]){
   if(peer.loc===G.location&&Number.isFinite(peer.x)&&Number.isFinite(peer.y))drawables.push({type:'peer',x:peer.x,y:peer.y,peer});
  }
- drawables.sort((a,b)=>a.y-b.y||a.x-b.x);
+ drawables.sort((a,b)=>(window.AshenGrounding?.depth(a)??a.y)-(window.AshenGrounding?.depth(b)??b.y)||a.x-b.x);
  for(const actor of drawables){
   if(actor.type==='interiorProp'){window.AshenInteriors.drawProp(ctx,actor.prop,scrollX,scrollY);continue}
-  const sx=actor.x*T-scrollX+12,sy=actor.y*T-scrollY+22;
+  const sx=actor.x*T-scrollX+12,sy=actor.y*T-scrollY+12;
   if(sx< -60||sy< -60||sx>viewW+60||sy>viewH+60)continue;
   if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;if(actor.prop)window.AshenPresentation?.piece(ctx,actor.prop,sx,sy,47,20,near?.4:1);else window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1);continue}
-  if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-22);continue}
+  if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-12);continue}
   if(actor.hero){
    if(!window.AshenSprites?.ready(actor.hero.role.toLowerCase())&&actor.type==='leader')pix(sx-6,sy-2,12,3,'#172625');
    drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',G.dir,1,actor.hero);
