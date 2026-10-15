@@ -10,3 +10,5 @@ test('combat damage waits for the shared attack impact',async({page})=>{
  await page.waitForTimeout(320);expect(await page.evaluate(()=>window.AshenRealms.getCombat().enemies[0].hp)).toBe(200);
  await page.waitForTimeout(210);expect(await page.evaluate(()=>window.AshenRealms.getCombat().enemies[0].hp)).toBeLessThan(200);await page.evaluate(()=>Math.random=window.savedRandom);
 });
+
+test('facing a service gate operates it without recruiting the patron behind the player',async({page})=>{await begin(page);await page.evaluate(()=>{const a=window.AshenRealms;a.test.modifyGame(g=>{g.x=11;g.y=6;g.dir='up'});a.interact()});expect(await page.evaluate(()=>window.AshenRealms.walkable('tavern',11,5))).toBe(false);expect(await page.evaluate(()=>window.AshenRealms.getState().party.length)).toBe(1)});

@@ -346,6 +346,7 @@ function normalizeSave(data){
   }
   data.dir??='down';requireValid(['up','down','left','right'].includes(data.dir));
   if(window.AshenWorldTime)data.world=window.AshenWorldTime.world(data.world,data.steps);
+  if(data.world)window.AshenInteractions?.validate(data.world);
   data.version=5;return data;
 }
 function entitiesForSave(data){const previous=G;try{G=data;return entities()}finally{G=previous}}
@@ -559,8 +560,8 @@ function staticEntities(){if(!G)return[];
   {x:27,y:21,name:'Obsidian Gate',kind:'gate',symbol:G.flags.gate?'◌':'▣',col:'#cf88a1'}
  ];
 }
-function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(window.AshenNPCs?.blocks(loc,x,y))return false;if(loc==='town'&&maps.town.props&&['trees','market','cart','well'].some(k=>maps.town.props[k].some(p=>p[0]===x&&p[1]===y)))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
-function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}const previous={location:G.location,x:G.x,y:G.y,dir:G.dir,steps:G.steps,stepCounter,silentSteps:G.party.map(h=>h.silentSteps||0)};lastSpriteStepAt=performance.now();const motionId=G.location+':'+G.party[0].id;window.AshenAnimation?.sample(motionId,G.x,G.y,G.dir,lastSpriteStepAt);window.AshenAnimation?.move(motionId,x,y,G.dir,lastSpriteStepAt);G.x=x;G.y=y;G.steps++;stepCounter++;const silent=G.party.some(h=>h.hp>0&&h.silentSteps>0);G.party.forEach(h=>{if(h.silentSteps>0)h.silentSteps--});updateTownDistrict();
+function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(window.AshenInteractions?.blocks(loc,x,y,G?.world))return false;if(window.AshenNPCs?.blocks(loc,x,y))return false;if(loc==='town'&&maps.town.props&&['trees','market','cart','well'].some(k=>maps.town.props[k].some(p=>p[0]===x&&p[1]===y)))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
+function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;if(G.world?.seat)window.AshenInteractions?.stand(G.world);G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}const previous={location:G.location,x:G.x,y:G.y,dir:G.dir,steps:G.steps,stepCounter,silentSteps:G.party.map(h=>h.silentSteps||0)};lastSpriteStepAt=performance.now();const motionId=G.location+':'+G.party[0].id;window.AshenAnimation?.sample(motionId,G.x,G.y,G.dir,lastSpriteStepAt);window.AshenAnimation?.move(motionId,x,y,G.dir,lastSpriteStepAt);G.x=x;G.y=y;G.steps++;stepCounter++;const silent=G.party.some(h=>h.hp>0&&h.silentSteps>0);G.party.forEach(h=>{if(h.silentSteps>0)h.silentSteps--});updateTownDistrict();
  if(G.location==='town'){
   const entrance=maps.town.buildings.find(b=>b.doorX===x&&b.doorY===y);
   if(entrance){enterBuilding(entrance.room);return}
@@ -570,13 +571,14 @@ function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1
  if(G.location==='crypt'&&x===24&&y===15&&!G.flags.trial){G.flags.trial=true;trapCheck();return}
  if(['wild','crypt','camp'].includes(G.location)&&stepCounter>5&&G.steps%4===0&&Math.random()<(G.location==='crypt'?.42:G.location==='camp'?.32:.28)*(silent?.5:1)){stepCounter=0;const pool=G.location==='wild'?['slime','wolf','goblin','orc','bandit']:G.location==='camp'?['goblin','orc','shaman']:['wisp','bone','bat','sentinel'];const n=Math.random()<.48?1:Math.random()<.77?2:3;const types=Array.from({length:n},()=>pool[rand(pool.length)-1]);beginCombat(types)}
  if(G.steps%20===0)saveGame(true);refreshHud();SFX.play('foot');}
-function changeMap(loc,x,y){window.AshenAnimation?.clear();G.location=loc;G.x=x;G.y=y;stepCounter=0;fx=[];updateTownDistrict();SFX.play('warp');refreshHud();saveGame(true);toast(maps[loc].name)}
+function changeMap(loc,x,y){window.AshenInteractions?.stand(G.world);window.AshenAnimation?.clear();G.location=loc;G.x=x;G.y=y;stepCounter=0;fx=[];updateTownDistrict();SFX.play('warp');refreshHud();saveGame(true);toast(maps[loc].name)}
 function enterBuilding(room){if(!maps[room])return;changeMap(room,8,10);G.dir='up';uiLog(`Entered ${maps[room].name}.`);toast(`${maps[room].name} · E to speak`)}
 function leaveBuilding(){const b=maps.town.buildings.find(b=>b.room===G.location);if(!b)return;changeMap('town',b.doorX,b.doorY+1);G.dir='down'}
-function doorHint(){if(!G)return '';const dx={left:-1,right:1,up:0,down:0}[G.dir],dy={left:0,right:0,up:-1,down:1}[G.dir];const x=G.x+dx,y=G.y+dy;
+function doorHint(){if(!G)return '';if(G.world?.seat)return 'E / MOVE · STAND UP';const dx={left:-1,right:1,up:0,down:0}[G.dir],dy={left:0,right:0,up:-1,down:1}[G.dir];const x=G.x+dx,y=G.y+dy;
  if(G.location==='town'){const b=maps.town.buildings.find(b=>b.doorX===x&&b.doorY===y);if(b)return `E / MOVE · ENTER ${b.kind}`}
  if(['hall','smith','inn','tavern','chapel','cottage','bakery'].includes(G.location)&&x===8&&y===13)return 'E / MOVE · EXIT TO HAVENMERE';
- const entity=entities().find(e=>Math.abs((e.talk?.x??e.x)-G.x)+Math.abs((e.talk?.y??e.y)-G.y)<=1);return entity?'E · TALK / INTERACT':''}
+ const faced=window.AshenInteractions?.nearby(G.location,G.x,G.y,dx,dy,G.world);if(faced?.cell[0]===G.x+dx&&faced?.cell[1]===G.y+dy)return window.AshenInteractions.hint(faced,G.world);
+ const entity=entities().find(e=>Math.abs((e.talk?.x??e.x)-G.x)+Math.abs((e.talk?.y??e.y)-G.y)<=1);if(entity)return 'E · TALK / INTERACT';const object=window.AshenInteractions?.nearby(G.location,G.x,G.y,dx,dy,G.world);return object?window.AshenInteractions.hint(object,G.world):''}
 function locationEntry(loc,x,y,description,origin=null){
  if(!G||mode!=='explore'||isOverlay())return;
  const source=origin||{location:G.location,x:G.x,y:G.y,dir:G.dir,steps:G.steps,stepCounter};
@@ -597,12 +599,18 @@ function locationEntry(loc,x,y,description,origin=null){
 function enterCrypt(origin=null){locationEntry('crypt',3,15,'A single iron bell tolls somewhere below, though no rope has moved for a hundred years. Two rune-seals sustain the Warden’s binding. Break them to enter the burial hall.',origin)}
 function enterCamp(origin=null){locationEntry('camp',3,10,'Ragged banners stir above the warcamp. Beyond the fires, scouts keep watch while Gruk Bloodtusk gathers the clans. The road grows quiet behind you.',origin)}
 
-function interact(){if(mode!=='explore'||isOverlay()||!G)return;const dx={left:-1,right:1,up:0,down:0}[G.dir],dy={left:0,right:0,up:-1,down:1}[G.dir];if(G.location==='town'){
+function interact(){if(mode!=='explore'||isOverlay()||!G)return;if(G.world?.seat){window.AshenInteractions.stand(G.world);saveGame(true);refreshHud();return}const dx={left:-1,right:1,up:0,down:0}[G.dir],dy={left:0,right:0,up:-1,down:1}[G.dir];if(G.location==='town'){
  const entrance=maps.town.buildings.find(b=>b.doorX===G.x+dx&&b.doorY===G.y+dy);
  if(entrance){enterBuilding(entrance.room);return}
  }
  if(['hall','smith','inn','tavern','chapel','cottage','bakery'].includes(G.location)&&G.x+dx===8&&G.y+dy===13){leaveBuilding();return}
- let nearby=entities().map(e=>({...e,d:Math.abs((e.talk?.x??e.x)-G.x)+Math.abs((e.talk?.y??e.y)-G.y),f:(e.talk?.x??e.x)===G.x+dx&&(e.talk?.y??e.y)===G.y+dy})).filter(e=>e.d<=1).sort((a,b)=>Number(b.f)-Number(a.f)||a.d-b.d);if(nearby.length){window.AshenNPCs?.talk(nearby[0].id);action(nearby[0].kind);return}dialog('THE STILLNESS','You examine your surroundings. The air carries the promise of adventure, but nothing nearby calls for your attention.')}
+ let nearby=entities().map(e=>({...e,d:Math.abs((e.talk?.x??e.x)-G.x)+Math.abs((e.talk?.y??e.y)-G.y),f:(e.talk?.x??e.x)===G.x+dx&&(e.talk?.y??e.y)===G.y+dy})).filter(e=>e.d<=1).sort((a,b)=>Number(b.f)-Number(a.f)||a.d-b.d);const facedObject=window.AshenInteractions?.nearby(G.location,G.x,G.y,dx,dy,G.world);if(!nearby[0]?.f&&facedObject?.cell[0]===G.x+dx&&facedObject?.cell[1]===G.y+dy&&useEnvironment(dx,dy))return;if(nearby.length){window.AshenNPCs?.talk(nearby[0].id);action(nearby[0].kind);return}if(useEnvironment(dx,dy))return;dialog('THE STILLNESS','You examine your surroundings. The air carries the promise of adventure, but nothing nearby calls for your attention.')}
+function useEnvironment(dx,dy){
+ const object=window.AshenInteractions?.nearby(G.location,G.x,G.y,dx,dy,G.world);if(!object||!G.world)return false;
+ const result=window.AshenInteractions.perform(object,G.world,G,(x,y)=>entities().some(e=>e.x===x&&e.y===y));
+ if(result.inspect)dialog(object.name.toUpperCase(),result.text);else toast(result.text);
+ saveGame(true);refreshHud();return true;
+}
 function action(kind){switch(kind){
  case 'visitor':dialog('WAYFARER TRAVELER','“A warm hearth, a little bread, and a safe road tomorrow. There are worse places to pass the evening.”');return;
  case 'patrol':dialog('HAVENMERE WATCH','“Keep the high street clear. The eastern road grows less forgiving after sunset.”');return;
@@ -1338,7 +1346,7 @@ function drawEntity(e,sx,sy,motion=null){if(e.ambient){drawSprite(sx+12,sy+12,e.
  if(e.kind==='gate'){pix(sx+2,sy,20,24,G.flags.gate?'#5b555f':'#2b222e');for(let k=0;k<4;k++)pix(sx+5+k*4,sy+2,2,19,G.flags.gate?'#786777':'#ad647b');return}
 }
 function paintSceneLights(loc,scrollX,scrollY,w,h){
- if(window.AshenLighting&&G.world){window.AshenLighting.draw(ctx,maps[loc],loc,scrollX,scrollY,w,h,G.world.clock,performance.now());return}
+ if(window.AshenLighting&&G.world){window.AshenLighting.draw(ctx,maps[loc],loc,scrollX,scrollY,w,h,G.world.clock,performance.now(),G.world.objects);return}
  if(window.AshenInteriors?.has(loc)){window.AshenInteriors.lights(ctx,loc,scrollX,scrollY,animTick);return}
  const pools=[];
  if(loc==='town'){
@@ -1430,7 +1438,7 @@ function drawAtmosphericEmbers(location,viewW,viewH){
  ctx.restore();
 }
 function interiorCamera(m,zoom){
- const focus=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.x,G.y,G.dir,performance.now())||G;
+ const focus=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.world?.seat?.scene===G.location?G.world.seat.cell.x:G.x,G.world?.seat?.scene===G.location?G.world.seat.cell.y:G.y,G.dir,performance.now())||G;
  const frame=canvas.getBoundingClientRect?.();
  const cover=frame?.width>0&&frame?.height>0&&!document.documentElement.classList.contains('world-windowed');
  const visibleW=cover?Math.min(W,H*frame.width/frame.height):W;
@@ -1446,7 +1454,7 @@ function drawLocation(){
  const localZoom=interior?Math.max(cameraZoom,Math.min(W/(m.w*T),H/(m.h*T))):cameraZoom;
  const viewW=W/localZoom,viewH=H/localZoom;
  const roomView=interior?interiorCamera(m,localZoom):null;
- const focus=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.x,G.y,G.dir,performance.now())||G;
+ const focus=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.world?.seat?.scene===G.location?G.world.seat.cell.x:G.x,G.world?.seat?.scene===G.location?G.world.seat.cell.y:G.y,G.dir,performance.now())||G;
  const scrollX=roomView?roomView.scrollX:clamp(focus.x*T-viewW/2+T/2,0,Math.max(0,m.w*T-viewW));
  const scrollY=roomView?roomView.scrollY:clamp(focus.y*T-(G.location==='town'?.73:.52)*viewH+T/2,0,Math.max(0,m.h*T-viewH));
  const startX=Math.max(0,Math.floor(scrollX/T)),startY=Math.max(0,Math.floor(scrollY/T));
@@ -1500,25 +1508,30 @@ function drawLocation(){
  const drawables=entities().map(entity=>({type:'entity',x:entity.x,y:entity.y,entity}));
  drawables.push(...(window.AshenEnvironment?.getDecorations(m,G.location)||[]));
  drawables.push(...(window.AshenInteriors?.getProps(G.location)||[]));
+ drawables.push(...(window.AshenInteractions?.props(G.location,G.world)||[]));
  if(trail.length>2)G.party.slice(1).forEach((hero,i)=>{
   const step=trail[Math.min(trail.length-1,(i+1)*3)];
   if(step?.loc===G.location)drawables.push({type:'follower',x:step.x,y:step.y,direction:step.dir||G.dir,hero});
  });
- drawables.push({type:'leader',x:G.x,y:G.y,hero:G.party[0]});
+ const seat=G.world?.seat?.scene===G.location?G.world.seat:null;
+ drawables.push({type:'leader',x:seat?.cell.x??G.x,y:seat?.cell.y??G.y,seated:!!seat,hero:G.party[0]});
  for(const peer of window.AshenNetwork?.getOthers?.()||[]){
   if(peer.loc===G.location&&Number.isFinite(peer.x)&&Number.isFinite(peer.y))drawables.push({type:'peer',x:peer.x,y:peer.y,peer});
  }
- for(const actor of drawables){if(actor.type==='interiorProp'||actor.type==='landscape')continue;const id=G.location+':'+(actor.hero?.id||actor.peer?.id||actor.entity?.id||actor.entity?.kind+':'+actor.x+':'+actor.y);actor.motion=window.AshenAnimation?.sample(id,actor.x,actor.y,actor.direction||actor.peer?.dir||actor.entity?.dir||G.dir,performance.now());actor.renderX=actor.motion?.x??actor.x;actor.renderY=actor.motion?.y??actor.y;}
+ for(const actor of drawables){if(actor.type==='interiorProp'||actor.type==='interactiveProp'||actor.type==='landscape')continue;const id=G.location+':'+(actor.hero?.id||actor.peer?.id||actor.entity?.id||actor.entity?.kind+':'+actor.x+':'+actor.y);actor.motion=window.AshenAnimation?.sample(id,actor.x,actor.y,actor.direction||actor.peer?.dir||actor.entity?.dir||G.dir,performance.now());actor.renderX=actor.motion?.x??actor.x;actor.renderY=actor.motion?.y??actor.y;}
  drawables.sort((a,b)=>(window.AshenGrounding?.depth(a)??a.y)-(window.AshenGrounding?.depth(b)??b.y)||a.x-b.x);
  for(const actor of drawables){
+  if(actor.type==='interactiveProp'){window.AshenInteractions.draw(ctx,actor,scrollX,scrollY);continue}
   if(actor.type==='interiorProp'){window.AshenInteriors.drawProp(ctx,actor.prop,scrollX,scrollY);continue}
   const sx=(actor.renderX??actor.x)*T-scrollX+12,sy=(actor.renderY??actor.y)*T-scrollY+12;
   if(sx< -60||sy< -60||sx>viewW+60||sy>viewH+60)continue;
   if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;if(actor.prop)window.AshenPresentation?.piece(ctx,actor.prop,sx,sy,47,20,near?.4:1);else window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1);continue}
   if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-12,actor.motion);continue}
   if(actor.hero){
+   if(actor.seated&&window.AshenSeating?.draw(ctx,actor.hero,sx,sy+18))continue;
    if(!window.AshenSprites?.ready(actor.hero.role.toLowerCase())&&actor.type==='leader')pix(sx-6,sy-2,12,3,'#172625');
-   drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',actor.motion?.direction||actor.direction||G.dir,1,actor.hero,actor.motion);
+   if(actor.seated&&actor.motion){actor.motion.walking=false;actor.motion.shadow=false}
+   drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',actor.seated?'down':actor.motion?.direction||actor.direction||G.dir,actor.seated?.82:1,actor.hero,actor.motion);
    continue;
   }
   const peer=actor.peer;
@@ -1803,7 +1816,7 @@ function renderWorldHud(){
 let lastWorldUpdate=0;
 function render(schedule=true){
  const worldNow=performance.now(),worldDelta=lastWorldUpdate?worldNow-lastWorldUpdate:0;lastWorldUpdate=worldNow;
- if(schedule!==false&&G?.world){const active=mode==='explore'&&!isOverlay()&&!document.hidden;window.AshenWorldTime?.advance(G.world.clock,worldDelta,active);const motion=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.x,G.y,G.dir,worldNow);window.AshenNPCs?.update(G.location,worldDelta,{clock:G.world.clock,player:{x:G.x,y:G.y,visualX:Math.round(motion?.x??G.x),visualY:Math.round(motion?.y??G.y)},map:maps[G.location],walkable:(x,y)=>walkable(G.location,x,y)},active)}
+ if(schedule!==false&&G?.world){const active=mode==='explore'&&!isOverlay()&&!document.hidden;window.AshenWorldTime?.advance(G.world.clock,worldDelta,active);const motion=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.world?.seat?.scene===G.location?G.world.seat.cell.x:G.x,G.world?.seat?.scene===G.location?G.world.seat.cell.y:G.y,G.dir,worldNow);window.AshenNPCs?.update(G.location,worldDelta,{clock:G.world.clock,player:{x:G.x,y:G.y,visualX:Math.round(motion?.x??G.x),visualY:Math.round(motion?.y??G.y)},map:maps[G.location],walkable:(x,y)=>walkable(G.location,x,y)},active)}
  animTick++;
  document.documentElement.classList.toggle('cinematic-battle',mode==='combat'&&!!combat);
  document.documentElement.classList.toggle('world-explore',mode==='explore'&&!!G);

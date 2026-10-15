@@ -13,3 +13,5 @@ test('seated and counter actors sort by their actual raised foot placement',()=>
  assert.ok(Math.abs((api?.depth?.({y:7,entity:{seated:true}})??0)-8.25)<.00001);
  assert.equal(api?.depth?.({type:'interiorProp',y:99,prop:{depth:6}}),6);
 });
+
+test('a seated player sorts in front of the bench at their visible boot position',()=>assert.equal(api.depth({y:9,seated:true}),10.25));
