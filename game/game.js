@@ -234,7 +234,7 @@ function newHero(name,ancestry,role,level=1,assigned=null,rolls=null,appearance=
  const derived=creationStats(ancestry,role,assigned,rolls);
  return {id:Math.random().toString(36).slice(2,8),name,ancestry,role,row:Formation.defaultRow({role}),appearance:appearance==='female'?'female':'male',silentSteps:0,level,talentPoints:0,talents:{might:0,focus:0,vigor:0,ward:0},xp:0,xpTotal:0,ancestryRuleSet:window.AshenCharacterRules.version,ancestryModifiers:ANCESTRIES[ancestry].stats.slice(),classModifiers:CLASS_TRAINING[role].stats.slice(),rolls,assigned:assigned.slice(),...derived,hp:derived.maxHp,mp:derived.maxMp,gear:{weapon:null,armor:null},poison:0,defending:false};
 }
-function startGame(name,ancestry,role,assigned=null,rolls=null,appearance='male'){G={version:5,location:'town',x:15,y:11,dir:'up',party:[newHero(name||'Wanderer',ancestry,role,1,assigned,rolls,appearance)],bag:{potion:4,ether:2,salve:2,ration:3},gold:45,flags:{elder:false,ritual:false,leverA:false,leverB:false,gate:false,boss:false,ending:null,satchelFound:false,satchelReturned:false,shrine:false,starterChest:false,cryptChestA:false,cryptChestB:false,trial:false},log:[],steps:0,battles:0,jobs:{goblin:{state:'none',count:0},orc:{state:'none',count:0}}};mode='explore';window.AshenAnimation?.clear();window.AshenIdentity?.prepare(G.party[0]);closeModal();trail=[];lastTownDistrict='';uiLog('A new adventurer arrives in Havenmere.');uiLog('Enter the northern Great Hall and speak to Elder Maelin.');refreshHud();saveGame(true);toast('Chapter I · The Hollow Bell');SFX.play('start')}
+function startGame(name,ancestry,role,assigned=null,rolls=null,appearance='male'){G={version:5,location:'town',x:15,y:11,dir:'up',party:[newHero(name||'Wanderer',ancestry,role,1,assigned,rolls,appearance)],bag:{potion:4,ether:2,salve:2,ration:3},gold:45,flags:{elder:false,ritual:false,leverA:false,leverB:false,gate:false,boss:false,ending:null,satchelFound:false,satchelReturned:false,shrine:false,starterChest:false,cryptChestA:false,cryptChestB:false,trial:false},log:[],steps:0,battles:0,jobs:{goblin:{state:'none',count:0},orc:{state:'none',count:0}}};mode='explore';if(window.AshenWorldTime)G.world={clock:{minutes:540,day:1,rate:2},objects:{}};window.AshenNPCs?.clear();window.AshenAnimation?.clear();window.AshenIdentity?.prepare(G.party[0]);closeModal();trail=[];lastTownDistrict='';uiLog('A new adventurer arrives in Havenmere.');uiLog('Enter the northern Great Hall and speak to Elder Maelin.');refreshHud();saveGame(true);toast('Chapter I · The Hollow Bell');SFX.play('start')}
 function showModal(html,onChoice){document.documentElement.classList.remove('title-menu-open','tavern-creation-open');$('modal').setAttribute('data-screen','dialog');modalCallback=onChoice;$('modal').innerHTML=html;$('overlay').classList.remove('hidden');$('modal').scrollTop=0;$('modal').querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.action;modalCallback?.(action,btn)}))}
 function closeModal(){window.AshenTavern?.close();document.documentElement.classList.remove('title-menu-open');$('overlay').classList.add('hidden');$('modal').innerHTML='';modalCallback=null}
 function dialog(title,body,choices=[['Continue','close']],callback=null){showModal(`<h2>${title}</h2><p class="narrative">${body}</p><div class="choices">${choices.map(([label,id])=>`<button data-action="${id}">${label}</button>`).join('')}</div>`,(a)=>{closeModal();if(a!=='close')callback?.(a);else callback?.('close')})}
@@ -249,8 +249,10 @@ function mainMenu(focus=null){
 }
 function titleSettings(focus=null,fromTitle=mode==='title'){
  const paused=window.AshenTitle?.preferences().motionPaused||false;
- showModal(`<section class="title-settings" aria-label="Presentation settings"><span class="settings-eyebrow">THE ASHEN REALMS</span><h2>SETTINGS</h2><div class="settings-row"><div><strong>Sound & music</strong><small>Battle effects and music during your journey.</small></div><button data-action="sound" role="switch" aria-label="Sound and music" aria-checked="${audioEnabled}">${audioEnabled?'ON':'OFF'}</button></div><div class="settings-row"><label for="musicVolume">Music volume</label><input id="musicVolume" type="range" min="0" max="100" value="${Math.round((window.AshenAudio?.preferences().music??.55)*100)}" aria-label="Music volume"></div><div class="settings-row"><label for="effectsVolume">Effects volume</label><input id="effectsVolume" type="range" min="0" max="100" value="${Math.round((window.AshenAudio?.preferences().effects??.7)*100)}" aria-label="Effects volume"></div><div class="settings-row"><div><strong>Title atmosphere</strong><small>Slow camera drift, mist and embers. Your device’s reduced-motion preference is always respected.</small></div><button data-action="motion" role="switch" aria-label="Title atmosphere" aria-checked="${!paused}">${paused?'PAUSED':'AUTO'}</button></div><div class="settings-row"><div><strong>World zoom</strong><small>Choose the exploration view. Combat keeps its own framing.</small></div><button data-action="zoom" aria-label="World zoom ${Math.round(cameraZoom*100)} percent">${Math.round(cameraZoom*100)}%</button></div><button class="settings-return" data-action="back">${fromTitle?'← RETURN TO TITLE':'← RETURN TO GAME'}</button></section>`,a=>{
+ showModal(`<section class="title-settings" aria-label="Presentation settings"><span class="settings-eyebrow">THE ASHEN REALMS</span><h2>SETTINGS</h2><div class="settings-row"><div><strong>Sound & music</strong><small>Battle effects and music during your journey.</small></div><button data-action="sound" role="switch" aria-label="Sound and music" aria-checked="${audioEnabled}">${audioEnabled?'ON':'OFF'}</button></div><div class="settings-row"><label for="musicVolume">Music volume</label><input id="musicVolume" type="range" min="0" max="100" value="${Math.round((window.AshenAudio?.preferences().music??.55)*100)}" aria-label="Music volume"></div><div class="settings-row"><label for="effectsVolume">Effects volume</label><input id="effectsVolume" type="range" min="0" max="100" value="${Math.round((window.AshenAudio?.preferences().effects??.7)*100)}" aria-label="Effects volume"></div><div class="settings-row"><div><strong>Title atmosphere</strong><small>Slow camera drift, mist and embers. Your device’s reduced-motion preference is always respected.</small></div><button data-action="motion" role="switch" aria-label="Title atmosphere" aria-checked="${!paused}">${paused?'PAUSED':'AUTO'}</button></div><div class="settings-row"><div><strong>World zoom</strong><small>Choose the exploration view. Combat keeps its own framing.</small></div><button data-action="zoom" aria-label="World zoom ${Math.round(cameraZoom*100)} percent">${Math.round(cameraZoom*100)}%</button></div><div class="settings-row"><div><strong>Environmental lighting</strong><small>Cached light quality for your device.</small></div><button data-action="lighting">${window.AshenLighting?.quality().toUpperCase()||'AUTO'}</button></div><div class="settings-row"><div><strong>World time</strong><small>Time advances while exploring.</small></div><button data-action="time" ${G?'':'disabled'}>${G?.world?.clock?.rate===0?'PAUSED':G?.world?.clock?.rate===.5?'SLOW':'NORMAL'}</button></div><button class="settings-return" data-action="back">${fromTitle?'← RETURN TO TITLE':'← RETURN TO GAME'}</button></section>`,a=>{
   if(a==='back'){if(fromTitle)mainMenu('settings');else closeModal();return}
+  if(a==='lighting')window.AshenLighting?.cycleQuality();
+  if(a==='time'&&G?.world){const rates=[2,.5,0];G.world.clock.rate=rates[(rates.indexOf(G.world.clock.rate)+1)%rates.length];saveGame(true)}
   if(a==='sound')SFX.toggle();
   if(a==='motion')window.AshenTitle?.save({motionPaused:!paused});
   if(a==='zoom')$('zoomBtn').click();
@@ -343,6 +345,7 @@ function normalizeSave(data){
     }
   }
   data.dir??='down';requireValid(['up','down','left','right'].includes(data.dir));
+  if(window.AshenWorldTime)data.world=window.AshenWorldTime.world(data.world,data.steps);
   data.version=5;return data;
 }
 function entitiesForSave(data){const previous=G;try{G=data;return entities()}finally{G=previous}}
@@ -505,7 +508,8 @@ function initMaps(){
  maps.town=town;maps.wild=wild;maps.crypt=crypt;maps.camp=camp;
 }
 /* ----------------------- EXPLORATION AND EVENTS ----------------------- */
-function entities(){if(!G)return[];
+function entities(){if(!G)return [];const base=staticEntities(),decorated=window.AshenNPCs&&G.world?window.AshenNPCs.decorate(base,G.world.clock,performance.now()):base;return decorated.concat(window.AshenNPCs?.entities(G.location)||[])}
+function staticEntities(){if(!G)return[];
  if(G.location==='town')return [
  {x:10,y:14,name:'Town Crier',kind:'crier',symbol:'i',col:'#c7d4de'},
  {x:23,y:14,name:'Mara, villager',kind:'villager',symbol:'i',col:'#dac6b0'}
@@ -555,7 +559,7 @@ function entities(){if(!G)return[];
   {x:27,y:21,name:'Obsidian Gate',kind:'gate',symbol:G.flags.gate?'◌':'▣',col:'#cf88a1'}
  ];
 }
-function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(loc==='town'&&maps.town.props&&['trees','market','cart','well'].some(k=>maps.town.props[k].some(p=>p[0]===x&&p[1]===y)))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
+function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(window.AshenNPCs?.blocks(loc,x,y))return false;if(loc==='town'&&maps.town.props&&['trees','market','cart','well'].some(k=>maps.town.props[k].some(p=>p[0]===x&&p[1]===y)))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
 function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}const previous={location:G.location,x:G.x,y:G.y,dir:G.dir,steps:G.steps,stepCounter,silentSteps:G.party.map(h=>h.silentSteps||0)};lastSpriteStepAt=performance.now();const motionId=G.location+':'+G.party[0].id;window.AshenAnimation?.sample(motionId,G.x,G.y,G.dir,lastSpriteStepAt);window.AshenAnimation?.move(motionId,x,y,G.dir,lastSpriteStepAt);G.x=x;G.y=y;G.steps++;stepCounter++;const silent=G.party.some(h=>h.hp>0&&h.silentSteps>0);G.party.forEach(h=>{if(h.silentSteps>0)h.silentSteps--});updateTownDistrict();
  if(G.location==='town'){
   const entrance=maps.town.buildings.find(b=>b.doorX===x&&b.doorY===y);
@@ -598,8 +602,10 @@ function interact(){if(mode!=='explore'||isOverlay()||!G)return;const dx={left:-
  if(entrance){enterBuilding(entrance.room);return}
  }
  if(['hall','smith','inn','tavern','chapel','cottage','bakery'].includes(G.location)&&G.x+dx===8&&G.y+dy===13){leaveBuilding();return}
- let nearby=entities().map(e=>({...e,d:Math.abs((e.talk?.x??e.x)-G.x)+Math.abs((e.talk?.y??e.y)-G.y),f:(e.talk?.x??e.x)===G.x+dx&&(e.talk?.y??e.y)===G.y+dy})).filter(e=>e.d<=1).sort((a,b)=>Number(b.f)-Number(a.f)||a.d-b.d);if(nearby.length){action(nearby[0].kind);return}dialog('THE STILLNESS','You examine your surroundings. The air carries the promise of adventure, but nothing nearby calls for your attention.')}
+ let nearby=entities().map(e=>({...e,d:Math.abs((e.talk?.x??e.x)-G.x)+Math.abs((e.talk?.y??e.y)-G.y),f:(e.talk?.x??e.x)===G.x+dx&&(e.talk?.y??e.y)===G.y+dy})).filter(e=>e.d<=1).sort((a,b)=>Number(b.f)-Number(a.f)||a.d-b.d);if(nearby.length){window.AshenNPCs?.talk(nearby[0].id);action(nearby[0].kind);return}dialog('THE STILLNESS','You examine your surroundings. The air carries the promise of adventure, but nothing nearby calls for your attention.')}
 function action(kind){switch(kind){
+ case 'visitor':dialog('WAYFARER TRAVELER','“A warm hearth, a little bread, and a safe road tomorrow. There are worse places to pass the evening.”');return;
+ case 'patrol':dialog('HAVENMERE WATCH','“Keep the high street clear. The eastern road grows less forgiving after sunset.”');return;
  case 'elder': if(G.flags.boss&&!G.flags.ending){dialog('ELDER MAELIN','You return with the Ember Shard. Maelin stares into its faint glow. “We can return this power to the earth, or keep it to defend Havenmere. Both choices will echo through the realm.”',[['Seal the shard beneath Havenmere','seal'],['Keep the shard as a guardian','keep'],['I need time to decide','close']],a=>{if(a==='seal'||a==='keep')finishQuest(a)});return}
  if(G.flags.ending){dialog('ELDER MAELIN',G.flags.ending==='seal'?'“The bell is silent, but goblin scouts gather beyond the eastern road. The town crier has new contracts. Investigate the Gromclaw camp.”':'“Guard that light, and watch the eastern road. Gruk Bloodtusk rallies orcs and goblins beneath a broken banner.”');return}
  if(!G.flags.elder){G.flags.elder=true;G.gold+=15;uiLog('Main quest begun: The Hollow Bell. +15 gold.');dialog('ELDER MAELIN','“The dead stir beneath Emberfall Crypt, and the village has heard a bell no living hand has rung. Take this coin for supplies. Find the crypt beyond the eastern road; break its twin rune-seals and silence the Warden. Sister Elowen is here in the hall; you will find Rook at the Wayfarer Tavern.”');saveGame(true);return}
@@ -1322,7 +1328,7 @@ function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1,h
  ctx.restore()
 }
 
-function drawEntity(e,sx,sy){if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),performance.now(),e.seated?34:40,{shadow:!e.seated&&!e.behindBar})){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),roles[e.kind],'npc','down',e.seated?.8:1,companion,{walking:false,gait:0,shadow:!e.seated&&!e.behindBar})}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy+12+(window.AshenGrounding?.offset(e)??0)-(e.seated?34:40)-7+bob,12,e.col,'center')}return}
+function drawEntity(e,sx,sy,motion=null){if(e.ambient){drawSprite(sx+12,sy+12,e.role,'npc',e.dir,1,e.hero,motion);return}if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenNPCArt?.draw(ctx,e,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),e.kind==='rogue'&&e.seated?30:e.seated?34:40)&&!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),performance.now(),e.seated?34:40,{shadow:!e.seated&&!e.behindBar})){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),roles[e.kind],'npc','down',e.seated?.8:1,companion,{walking:false,gait:0,shadow:!e.seated&&!e.behindBar})}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy+12+(window.AshenGrounding?.offset(e)??0)-(e.seated?34:40)-7+bob,12,e.col,'center')}return}
  if(e.kind==='townGate'||e.kind==='cryptGate'||e.kind==='exit')return;
  if(e.kind==='satchel'){pix(sx+5,sy+10,15,10,'#895b3f');pix(sx+7,sy+7,11,4,'#d3ae76');pix(sx+13,sy+11,3,3,'#e7c77e');return}
  if(e.kind.includes('Chest')||e.kind==='cryptChestA'||e.kind==='cryptChestB'){pix(sx+3,sy+8,19,13,'#8c5b3d');pix(sx+3,sy+9,19,4,'#c39156');pix(sx+12,sy+8,3,14,'#e3bb75');pix(sx+11,sy+14,5,4,'#625248');return}
@@ -1332,6 +1338,7 @@ function drawEntity(e,sx,sy){if(e.kind==='warboss'||e.kind==='campScout'){drawEn
  if(e.kind==='gate'){pix(sx+2,sy,20,24,G.flags.gate?'#5b555f':'#2b222e');for(let k=0;k<4;k++)pix(sx+5+k*4,sy+2,2,19,G.flags.gate?'#786777':'#ad647b');return}
 }
 function paintSceneLights(loc,scrollX,scrollY,w,h){
+ if(window.AshenLighting&&G.world){window.AshenLighting.draw(ctx,maps[loc],loc,scrollX,scrollY,w,h,G.world.clock,performance.now());return}
  if(window.AshenInteriors?.has(loc)){window.AshenInteriors.lights(ctx,loc,scrollX,scrollY,animTick);return}
  const pools=[];
  if(loc==='town'){
@@ -1453,6 +1460,7 @@ function drawLocation(){
  const landscape=G.location==='crypt'?window.AshenPresentation?.crypt(ctx,m,scrollX,scrollY,viewW,viewH):window.AshenEnvironment?.draw(ctx,m,G.location,scrollX,scrollY,viewW,viewH);
  for(let y=startY;y<=Math.min(m.h-1,startY+Math.ceil(viewH/T)+1);y++)for(let x=startX;x<=Math.min(m.w-1,startX+Math.ceil(viewW/T)+1);x++){const tile=m.tiles[y][x];if(landscape&&((G.location==='crypt'&&['wall','floor'].includes(tile))||(G.location!=='crypt'&&window.AshenEnvironment.handles(tile)&&tile!=='fence')))continue;drawTile(tile,Math.floor(x*T-scrollX),Math.floor(y*T-scrollY),x,y,G.location)}
  }
+ window.AshenLighting?.flames(ctx,G.location,scrollX,scrollY,performance.now());
  if(G.location==='town'){
   // True transparent architectural illustrations: gables, doors, mullioned windows,
   // chimneys, stone foundations, signs, roof shingles and cast shadows.
@@ -1507,7 +1515,7 @@ function drawLocation(){
   const sx=(actor.renderX??actor.x)*T-scrollX+12,sy=(actor.renderY??actor.y)*T-scrollY+12;
   if(sx< -60||sy< -60||sx>viewW+60||sy>viewH+60)continue;
   if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;if(actor.prop)window.AshenPresentation?.piece(ctx,actor.prop,sx,sy,47,20,near?.4:1);else window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1);continue}
-  if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-12);continue}
+  if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-12,actor.motion);continue}
   if(actor.hero){
    if(!window.AshenSprites?.ready(actor.hero.role.toLowerCase())&&actor.type==='leader')pix(sx-6,sy-2,12,3,'#172625');
    drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',actor.motion?.direction||actor.direction||G.dir,1,actor.hero,actor.motion);
@@ -1675,7 +1683,7 @@ function drawBackdropTown(){
  ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
 }
 function drawBackdropWild(){
- const light=Formation.lighting(G?.steps),path=n=>'battle/forest_'+n+'.jpg';
+ const light=window.AshenWorldTime?.battleLighting(G?.world?.clock)||Formation.lighting(G?.steps),path=n=>'battle/forest_'+n+'.jpg';
  if(!drawCombatBackdrop(path(light.from))&&!drawCombatBackdrop(path('day'))){ctx.fillStyle='#1b2336';ctx.fillRect(0,0,battleWidth,H)}
  if(light.blend>0&&imageReady(path(light.to))){ctx.save();ctx.globalAlpha=light.blend;drawCombatBackdrop(path(light.to));ctx.restore()}
  const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'#07101808');shade.addColorStop(.65,'#07101800');shade.addColorStop(1,'#07101835');ctx.fillStyle=shade;ctx.fillRect(0,0,battleWidth,H);
@@ -1715,7 +1723,7 @@ function drawBattle(){
  for(let i=0;i<18;i++){const x=(i*67+Math.sin(animTick/43+i)*10)%battleWidth,y=(i*27+animTick*.14)%220;ctx.fillStyle=scene==='camp'?'#f1b77384':scene==='crypt'?'#9fb8d939':'#acc3d039';ctx.fillRect(x,y,1.4,1.4)}
  const moving=(actor,base)=>{if(!battleFX||battleFX.actorId!==actor.id)return base;const p=clamp((performance.now()-battleFX.startTime)/battleFX.duration,0,1),move=p<.3?p/.3:p<.55?1:p<.9?(1-(p-.55)/.35):0,t=battleFX.targets[0];if(!t)return base;if(!['slash'].includes(battleFX.kind))return base;return{x:base.x+(t.x-base.x)*Math.min(.76,move*.76),y:base.y+(t.y-base.y)*move*.21}};
  const immersive=document.documentElement.classList.contains('cinematic-battle');
- const light=Formation.lighting(G.steps),tones={day:1,evening:.91,night:.68};
+ const light=window.AshenWorldTime?.battleLighting(G.world?.clock)||Formation.lighting(G.steps),tones={day:1,evening:.91,night:.68};
  const brightness=battleScene()==='wild'?tones[light.from]*(1-light.blend)+tones[light.to]*light.blend:1;
  const actorFilter=brightness<1?`brightness(${brightness}) saturate(${.7+.3*brightness})`:'none';
  for(let i=0;i<combat.enemies.length;i++){
@@ -1778,6 +1786,7 @@ function renderCinemaHud(){
 let lastWorldHudKey='';
 function renderWorldHud(){
  const hud=$('worldHud');if(!hud||!G||mode!=='explore')return;
+ const clockLabel=G.world&&window.AshenWorldTime?window.AshenWorldTime.read(G.world.clock):null;const clockNode=$('worldClock');if(clockNode&&clockLabel){const label='DAY '+G.world.clock.day+' · '+clockLabel.label+' '+clockLabel.phase.toUpperCase();if(clockNode.textContent!==label)clockNode.textContent=label}
  const key=[G.location,G.gold,...G.party.map(h=>[h.id,h.name,h.role,h.hp,h.maxHp,h.mp,h.maxMp,h.level].join(':'))].join('|');
  if(key!==lastWorldHudKey){lastWorldHudKey=key;
   $('worldPartyRoster').innerHTML=G.party.map((h,i)=>`<div class="world-party-row ${h.hp<=0?'knocked-out':''}"><img src="${heroPortrait(h)}" alt="${escapeHtml(h.role)} portrait"><div class="world-party-row-info"><strong>${escapeHtml(h.name)}</strong><small>LV ${h.level} · ${h.role.toUpperCase()}</small><div class="party-mini-bar"><span>HP</span><i><em style="width:${clamp(100*h.hp/h.maxHp,0,100)}%"></em></i><b>${h.hp}/${h.maxHp}</b></div><div class="party-mini-bar mp"><span>MP</span><i><em style="width:${clamp(100*h.mp/h.maxMp,0,100)}%"></em></i><b>${h.mp}/${h.maxMp}</b></div></div></div>`).join('');
@@ -1791,7 +1800,10 @@ function renderWorldHud(){
  }
 }
 
+let lastWorldUpdate=0;
 function render(schedule=true){
+ const worldNow=performance.now(),worldDelta=lastWorldUpdate?worldNow-lastWorldUpdate:0;lastWorldUpdate=worldNow;
+ if(schedule!==false&&G?.world){const active=mode==='explore'&&!isOverlay()&&!document.hidden;window.AshenWorldTime?.advance(G.world.clock,worldDelta,active);const motion=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.x,G.y,G.dir,worldNow);window.AshenNPCs?.update(G.location,worldDelta,{clock:G.world.clock,player:{x:G.x,y:G.y,visualX:Math.round(motion?.x??G.x),visualY:Math.round(motion?.y??G.y)},map:maps[G.location],walkable:(x,y)=>walkable(G.location,x,y)},active)}
  animTick++;
  document.documentElement.classList.toggle('cinematic-battle',mode==='combat'&&!!combat);
  document.documentElement.classList.toggle('world-explore',mode==='explore'&&!!G);

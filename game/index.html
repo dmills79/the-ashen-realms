@@ -43,7 +43,7 @@
           <div class="world-topactions"><button id="worldViewBtn" title="Open the windowed dashboard and LAN lobby">DASHBOARD</button><button id="worldZoomBtn" title="Change map zoom">ZOOM 75%</button><button id="worldSaveBtn">SAVE</button><button id="worldSoundBtn">SOUND ON</button><button id="worldMenuBtn">HELP</button></div>
           <div class="world-location"><span class="location-pin">◇</span><span id="worldLocation">HAVENMERE</span><small id="worldGold">45 GOLD</small></div>
           <button class="world-quest" id="worldQuestBtn"><small>ACTIVE QUEST <span>↕</span></small><b id="worldQuest">AN UNQUIET MORNING</b><span id="worldQuestDesc">Enter Havenmere's Great Hall.</span></button>
-          <button class="world-map" id="worldMapBtn" title="Open map"><canvas id="worldMini" width="200" height="104"></canvas><span>AREA MAP ↗</span></button>
+          <button class="world-map" id="worldMapBtn" title="Open map"><canvas id="worldMini" width="200" height="104"></canvas><span>AREA MAP ↗<small id="worldClock" class="world-clock"></small></span></button>
           <button class="world-hero world-roster" id="worldPartyBtn" title="Inspect party, formation and training"><span class="world-roster-label">ADVENTURING PARTY <span id="worldPartyCount">SOLO ADVENTURER</span></span><span class="world-roster-rows" id="worldPartyRoster"></span><span class="world-roster-action">PARTY & FORMATION ↗</span></button>
           <div class="world-actions"><button id="worldBagBtn"><span>I</span> INVENTORY</button><button id="worldSkillsBtn"><span>K</span> SPELLS</button><button id="worldJournalBtn"><span>J</span> JOURNAL</button></div>
           <div class="world-keyhelp">WASD MOVE <span>·</span> E INTERACT <span>·</span> TAB QUEST <span>·</span> H HIDE HUD</div>
@@ -92,6 +92,10 @@
 <script src="grounding.js"></script>
 <script src="animation.js"></script>
 <script src="effects.js"></script>
+<script src="world-time.js"></script>
+<script src="lighting.js"></script>
+<script src="npc-behavior.js"></script>
+<script src="npc-art.js"></script>
 <script src="sprites.js"></script>
 <script src="environment.js"></script>
 <script src="interiors.js"></script>
