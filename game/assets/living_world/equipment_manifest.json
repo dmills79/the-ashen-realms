@@ -1,0 +1,57 @@
+{
+  "src": "assets/living_world/equipment_atlas.png",
+  "items": {
+    "iron": {
+      "rect": [
+        188,
+        12,
+        210,
+        730
+      ],
+      "grip": [
+        294,
+        610
+      ],
+      "referenceLength": 722
+    },
+    "ashblade": {
+      "rect": [
+        654,
+        12,
+        236,
+        738
+      ],
+      "grip": [
+        771,
+        610
+      ],
+      "referenceLength": 728
+    },
+    "runestaff": {
+      "rect": [
+        1236,
+        10,
+        105,
+        740
+      ],
+      "grip": [
+        1288,
+        500
+      ],
+      "referenceLength": 729
+    },
+    "oakbow": {
+      "rect": [
+        1664,
+        2,
+        154,
+        746
+      ],
+      "grip": [
+        1715,
+        386
+      ],
+      "referenceLength": 736
+    }
+  }
+}

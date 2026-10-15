@@ -14,7 +14,7 @@ const launch=process.platform==='win32'?{executablePath:path.join(process.env.PL
 const browser=await chromium.launch({headless:true,...launch}),cases=[],results=[];
 const helper={expect};
 vm.runInNewContext((await readFile(path.join(root,'tests/browser/creation-helpers.mjs'),'utf8')).replace(/^import .*;\r?$/mg,'').replaceAll('export ','')+';globalThis.result=finishCreation',helper);
-for(const file of ['living-world','interiors','environment','combat','formation','ui','world-scenes']){
+for(const file of ['living-world','interiors','environment','combat','formation','ui','world-scenes','completion']){
  const test=(name,fn)=>cases.push({file,name,fn});test.setTimeout=()=>{};
  const prefix=root.replaceAll('\\','/')+'artifacts/';
  const source=(await readFile(path.join(root,'tests/browser/'+file+'.spec.mjs'),'utf8')).replace(/^import .*;\r?$/mg,'').replaceAll("'artifacts/","'"+prefix).replaceAll('`artifacts/','`'+prefix);

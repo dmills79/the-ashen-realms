@@ -6,7 +6,7 @@ The existing Canvas 2D renderer, 24-pixel navigation grid, game rules and save k
 
 scene-runtime.js registers all eleven locations with map bounds, layers, independent scenic footprints, lights, ambience identifiers, spawn observations, NPC schedules, interactions, portals and encounter/quest metadata. game.js still owns the established quest, inventory, combat and transition rules. Scene metadata describes those rules rather than silently replacing them.
 
-interiors.js owns authored room shells, furniture source rectangles, floor footprints and explicit prop depths. world-props.js owns crypt and camp scenery and its independent footprints. environment.js owns route-aware forest trees and cached terrain materials. Tree trunks block their own cells; the road corridor and its one-cell shoulder remain clear. Do not add collision to the painted canopy silhouette.
+interiors.js owns authored high-resolution room shells, independent timber/column foregrounds, furniture source rectangles, floor footprints and explicit prop depths. architecture.js registers town buildings and solid furniture in the actor depth pass; masonry.js derives cached continuous dungeon wall runs from existing blocked cells. world-props.js owns crypt and camp scenery and its independent footprints. environment.js owns route-aware forest trees and cached terrain materials. Tree trunks block their own cells; the road corridor and its one-cell shoulder remain clear. Do not add collision to the painted canopy silhouette.
 
 All positions use grid cells. Character feet use the cell center. Animation positions are presentation-only; the integer player cell remains authoritative for movement, LAN presence and encounters. Props sort at their floor base. Explicit south foreground architecture renders afterward. Near-player canopy and crypt arch fades preserve visibility.
 
@@ -37,4 +37,8 @@ Canonical browser command: npm.cmd run test:browser. The worker runner stalled o
 
 node tools/benchmark-living-world.mjs measures a settled 180-frame tavern RAF sample plus warmed render-call CPU timings. It records host and limitations in artifacts/living-world/benchmark.json. Start the server on 8844 first; changing origin changes the browser's save storage.
 
-See LIVING_WORLD_ASSETS.md for unfinished artwork and LIVING_WORLD_PROGRESS.md for milestone evidence.
+CharacterMotion lazily loads identity-matched PNG sheets with 12 desktop / 6 small-viewport atlas entries and 48 / 24 isolated frame canvases. Numeric ambient pose references use the same measured-frame renderer and exclusions. Equipment artwork follows actual inventory selection; missing corpse hand anchors suppress held gear rather than floating it.
+
+NPC route waypoints can specify action, duration and a real seat. Seating reserves the seat and its standing anchor; actors cannot pass through player or NPC occupancy. Routes depart through authored doors when schedules end. Quest NPC identities/dialog remain at accessible anchors.
+
+See LIVING_WORLD_ASSETS.md for delivered artwork and optional refinements and LIVING_WORLD_PROGRESS.md for milestone evidence.

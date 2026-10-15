@@ -25,7 +25,7 @@ function createHarness(role='Wizard',level=5){
     requestAnimationFrame:noop,setTimeout:(fn,ms)=>{const id=++nextTimer;pending.set(id,{fn,at:clock+ms});return id},clearTimeout:id=>pending.delete(id),
     performance:{now:()=>clock},Math:math};
   const end=gameSource.lastIndexOf('})();');assert.ok(end>=0);
-  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,castFieldSpell,trapCheck,knownAbilities,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,battleActionInfo,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
+  const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,castFieldSpell,trapCheck,knownAbilities,illustratedActorState,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,battleActionInfo,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
   vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../formation.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
   const api=sandbox.window.AshenRealms,engine=sandbox.window.__engine;
   api.newGame('Audit','Human',role);api.closeModal();
@@ -36,7 +36,7 @@ function createHarness(role='Wizard',level=5){
   function advance(ms){const endTime=clock+ms;let count=0;for(;;){const entry=[...pending].filter(([,t])=>t.at<=endTime).sort((a,b)=>a[1].at-b[1].at||a[0]-b[0])[0];if(!entry)break;if(++count>10000)throw Error('Timer loop');pending.delete(entry[0]);clock=entry[1].at;entry[1].fn()}clock=endTime}
   function ally(role='Cleric'){const h=api.createHero('Companion','Human',role);h.id='a'+engine.getGame().party.length;h.stats=[10,10,10,10,10,10];h.hp=h.maxHp=100;h.mp=h.maxMp=100;engine.getGame().party.push(h);return h}
   function ability(id){return engine.abilities[hero.role].find(a=>a.id===id)}
-  return {api,engine,hero,node,storage,random,enemy,battle,advance,ally,ability};
+  return {api,engine,hero,node,storage,random,enemy,battle,advance,ally,ability,window:sandbox.window};
 }
 
 test('action inspector derives weapon damage and rear accuracy from actual gear and formation',()=>{
@@ -430,4 +430,9 @@ test('older saves on a changed riverbank relocate to dry ground without losing q
 test('Runic Flare spends actual MP and applies Runestaff spell damage to its target',()=>{
  const h=createHarness('Fighter'),foe=h.enemy();h.hero.gear.weapon='runestaff';h.battle([foe]);h.random([.5]);
  const ability=h.engine.knownAbilities(h.hero).find(a=>a.id==='runeflare');h.api.performAbility(h.hero,ability,[foe]);assert.equal(h.hero.mp,96);h.advance(500);assert.equal(foe.hp,92);
+});
+
+test('combat preloads customized action sheets before the first player command',()=>{const h=createHarness('Fighter'),prepared=[];h.window.AshenCharacterMotion={prepare:(heroes,kind)=>prepared.push({ids:heroes.map(x=>x.id),kind})};h.api.beginCombat(['orc']);assert.equal(prepared.length,1);assert.equal(prepared[0].kind,'combat');assert.equal(prepared[0].ids[0],h.hero.id)});
+test('guard triggers a defend pose that persists between transient reactions without changing defense rules',()=>{
+ const h=createHarness('Fighter'),foe=h.enemy(),events=[];let reaction=null;h.window.AshenSprites={react:(id,state)=>events.push([id,state]),reaction:()=>reaction};h.battle([foe]);h.api.battleAction('guard');assert.equal(h.hero.defending,true);assert.deepEqual(events,[[h.hero.id,'defend']]);const state=h.engine.illustratedActorState(h.hero);assert.equal(state.state,'defend');assert.equal(state.duration,Infinity);assert.equal(state.time,0);reaction={state:'hit',startedAt:1000};assert.equal(h.engine.illustratedActorState(h.hero).state,'hit');h.hero.hp=0;assert.equal(h.engine.illustratedActorState(h.hero).state,'death');
 });

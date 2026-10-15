@@ -7,6 +7,10 @@ for(const name of ['ancient_oak','woodland_ground','havenmere_gate']){
  const image=new Image();image.onload=()=>{art[name]=image;caches=new WeakMap()};image.src='assets/environment_v3/'+name+'.png';
 }
 for(const name of ['cobblestone','gravel','rock','cliff','oak','pine','willow','snag','fallen_log','ferns','brambles','heather','bridge']){const image=new Image();image.onload=()=>{art[name]=image;caches=new WeakMap()};image.src='assets/overhaul/'+name+'.png'}
+// Transparent 3x2 atlas: three north-facing strips followed by three NW corners.
+// Rotations and feather masks are baked once per decoded atlas, never per frame.
+const edgeArt=new Image(),edgeSprites=new Map(),edgePlans=new WeakMap(),contourCache=new WeakMap();
+edgeArt.decoding='async';edgeArt.onload=()=>{edgeSprites.clear();caches=new WeakMap()};edgeArt.src='assets/living_world/terrain_edges.png';
 const outdoors=new Set(['town','wild','camp']);
 const roads=new Set(['path','plaza','townGate','cryptGate','bridge','fountain']);
 const surfaces=new Set(['grass','grass2','forest','mountain','water','path','plaza','townGate','cryptGate','bridge','building','door','fence','fountain','barrel','altar','rune','exit']);
@@ -30,24 +34,52 @@ function material(c,w,h,loc){
   c.fillRect(x+noise(x,y,8)*3,y+noise(x,y,7)*3,.4+n*.7,.4+n*.5);
  }
 }
+
+// Marching squares samples navigation-cell centers at iso .5. Ambiguous diagonal
+// samples remain separate islands, preserving both wet and dry center points.
+function contours(m,kind){
+ let entries=contourCache.get(m);if(!entries){entries=new Map();contourCache.set(m,entries)}
+ if(entries.has(kind))return entries.get(kind);
+ const filled=(x,y)=>kind==='water'?['water','bridge'].includes(m.tiles[y]?.[x]):roads.has(m.tiles[y]?.[x]);
+ const pairs=[[],[[3,0]],[[0,1]],[[3,1]],[[1,2]],[[3,0],[1,2]],[[0,2]],[[3,2]],[[2,3]],[[2,0]],[[0,1],[2,3]],[[2,1]],[[1,3]],[[1,0]],[[0,3]],[]];
+ const segments=[],key=p=>p.x+','+p.y;
+ for(let y=-1;y<m.h;y++)for(let x=-1;x<m.w;x++){
+  const values=[filled(x,y),filled(x+1,y),filled(x+1,y+1),filled(x,y+1)],code=values.reduce((n,v,i)=>n+(v?1<<i:0),0);
+  if(!pairs[code].length)continue;
+  const corners=[{x:(x+.5)*T,y:(y+.5)*T},{x:(x+1.5)*T,y:(y+.5)*T},{x:(x+1.5)*T,y:(y+1.5)*T},{x:(x+.5)*T,y:(y+1.5)*T}],edges=[{x:(x+1)*T,y:(y+.5)*T},{x:(x+1.5)*T,y:(y+1)*T},{x:(x+1)*T,y:(y+1.5)*T},{x:(x+.5)*T,y:(y+1)*T}];
+  const positive=corners.filter((_,i)=>values[i]);
+  for(const [ea,eb] of pairs[code]){
+   let a=edges[ea],b=edges[eb];const middle={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+   const inside=code===5||code===10?positive.reduce((best,p)=>Math.hypot(p.x-middle.x,p.y-middle.y)<Math.hypot(best.x-middle.x,best.y-middle.y)?p:best):{x:positive.reduce((n,p)=>n+p.x,0)/positive.length,y:positive.reduce((n,p)=>n+p.y,0)/positive.length};
+   if((b.x-a.x)*(inside.y-a.y)-(b.y-a.y)*(inside.x-a.x)<0)[a,b]=[b,a];
+   segments.push({a,b});
+  }
+ }
+ const byStart=new Map(segments.map(s=>[key(s.a),s])),loops=[];
+ while(byStart.size){const first=byStart.values().next().value,loop=[],start=key(first.a);let segment=first;
+  while(segment){loop.push(segment.a);byStart.delete(key(segment.a));if(key(segment.b)===start)break;segment=byStart.get(key(segment.b));}
+  if(loop.length>=3)loops.push(loop);
+ }
+ entries.set(kind,loops);return loops;
+}
+function contourPath(c,loops){
+ c.beginPath();
+ for(const loop of loops){const last=loop[loop.length-1],first=loop[0];c.moveTo((last.x+first.x)/2,(last.y+first.y)/2);
+  for(let i=0;i<loop.length;i++){const p=loop[i],next=loop[(i+1)%loop.length];c.quadraticCurveTo(p.x,p.y,(p.x+next.x)/2,(p.y+next.y)/2)}c.closePath();
+ }
+}
+function contourSamples(loop){
+ const samples=[];
+ for(let i=0;i<loop.length;i++){
+  const prev=loop[(i+loop.length-1)%loop.length],p=loop[i],next=loop[(i+1)%loop.length],a={x:(prev.x+p.x)/2,y:(prev.y+p.y)/2},b={x:(p.x+next.x)/2,y:(p.y+next.y)/2};
+  for(let n=0;n<6;n++){const t=n/6,u=1-t;samples.push({x:u*u*a.x+2*u*t*p.x+t*t*b.x,y:u*u*a.y+2*u*t*p.y+t*t*b.y})}
+ }
+ return samples;
+}
+
 function paintRoad(c,m,loc){
- if(loc==='wild'&&m.id==='wild'){
-  c.save();c.lineJoin='round';c.lineCap='round';
-  c.beginPath();
-  for(let x=5.5*T;x<=20.5*T;x+=3){const y=(17+Math.sin((x/T-5.5)/15*Math.PI)*2)*T;if(x===5.5*T)c.moveTo(x,y);else c.lineTo(x,y)}
-  c.lineTo(24.5*T,17*T);c.bezierCurveTo(26*T,18*T,24.3*T,21*T,25*T,23*T);
-  c.bezierCurveTo(29*T,23.8*T,33*T,22.2*T,37.5*T,23*T);c.lineTo(42.5*T,23.5*T);
-  const verge=window.AshenMaterials?.texture('forest',256);c.strokeStyle=verge?c.createPattern(verge,'repeat'):'#4d5843';c.lineWidth=52;c.stroke();
-  c.strokeStyle='#89775b';c.lineWidth=44;
-  if(art.gravel){const texture=document.createElement('canvas');texture.width=texture.height=96;texture.getContext('2d').drawImage(art.gravel,0,0,96,96);c.strokeStyle=c.createPattern(texture,'repeat')}
-  const trail=window.AshenMaterials?.texture('trail',160);if(trail)c.strokeStyle=c.createPattern(trail,'repeat');c.stroke();c.strokeStyle='#c5b18b10';c.lineWidth=28;c.stroke();c.restore();return;
- }
- c.save();c.beginPath();
- for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)if(roads.has(m.tiles[y][x])){
-  const top=roads.has(m.tiles[y-1]?.[x]),bottom=roads.has(m.tiles[y+1]?.[x]),left=roads.has(m.tiles[y]?.[x-1]),right=roads.has(m.tiles[y]?.[x+1]);
-  c.roundRect(x*T,y*T,T,T,[!top&&!left?5:0,!top&&!right?5:0,!bottom&&!right?5:0,!bottom&&!left?5:0]);
- }
- c.clip();c.fillStyle=loc==='town'?'#817965':loc==='camp'?'#665841':'#817357';c.fillRect(0,0,m.w*T,m.h*T);
+ c.save();contourPath(c,contours(m,'road'));
+ c.clip('evenodd');c.fillStyle=loc==='town'?'#817965':loc==='camp'?'#665841':'#817357';c.fillRect(0,0,m.w*T,m.h*T);
  for(let y=0;y<m.h*T;y+=3)for(let x=0;x<m.w*T;x+=4){const n=noise(x,y,15);c.fillStyle=n>.5?'#d6c79c24':'#302d242f';ellipse(c,x+n*3,y+noise(x,y,16)*3,.5+n*1.5,.4+n*.6,c.fillStyle)}
  const surface=art[loc==='town'?'cobblestone':'gravel'];
  if(surface){const texture=document.createElement('canvas');texture.width=texture.height=96;texture.getContext('2d').drawImage(surface,0,0,96,96);c.fillStyle=c.createPattern(texture,'repeat');c.fillRect(0,0,m.w*T,m.h*T)}
@@ -62,40 +94,14 @@ function paintRoad(c,m,loc){
   }
  }
  c.restore();
- // Soft verge stays inside road cells, preserving readable collision boundaries.
- for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){
-  if(!roads.has(m.tiles[y][x]))continue;
-  for(const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
-   const adjacent=m.tiles[y+dy]?.[x+dx];if(!['grass','grass2','forest'].includes(adjacent))continue;
-   const sx=x*T,sy=y*T,vertical=dx!==0;
-   const a=vertical?(dx<0?sx:sx+T):(dy<0?sy:sy+T),b=a-(dx+dy)*5;
-   const g=vertical?c.createLinearGradient(a,0,b,0):c.createLinearGradient(0,a,0,b);
-   g.addColorStop(0,'#365340b0');g.addColorStop(1,'#36534000');c.fillStyle=g;
-   c.fillRect(vertical?Math.min(a,b):sx,vertical?sy:Math.min(a,b),vertical?5:T,vertical?T:5);
-   // Uneven worn verges gently wander within each still-walkable corridor.
-   const edge=window.AshenMaterials?.texture('forest',256);c.fillStyle=edge?c.createPattern(edge,'repeat'):'#354d3e';c.beginPath();for(let k=0;k<=T;k+=2){const variation=3+2*Math.sin((vertical?sy+k:sx+k)/21)+noise(x,y,k)*2;const u=vertical?a-(dx*variation):sx+k,v=vertical?sy+k:a-(dy*variation);if(k===0)c.moveTo(u,v);else c.lineTo(u,v)}c.lineTo(vertical?a:sx+T,vertical?sy+T:a);c.lineTo(vertical?a:sx,vertical?sy:a);c.closePath();c.fill();
-  }
- }
 }
+
 function paintRiver(c,m){
- if(m.id==='wild'){
-  // A continuous curve follows the channel's cell centers. All blocked water centers
-  // remain under water; traversable neighboring centers remain on dry banks.
-  c.save();c.lineJoin='round';c.lineCap='round';c.beginPath();
-  for(let y=-24;y<=29*T-24;y+=3){const x=(21.5+Math.sin((y/T-16)/7)*3)*T;if(y===-24)c.moveTo(x,y);else c.lineTo(x,y)}
-  const bank=window.AshenMaterials?.texture('trail',160),water=window.AshenMaterials?.texture('stream',128);c.strokeStyle=bank?c.createPattern(bank,'repeat'):'#526b50';c.lineWidth=82;c.stroke();c.strokeStyle=water?c.createPattern(water,'repeat'):'#244f5d';c.lineWidth=71;c.stroke();
-  for(const offset of [-19,-7,10,22]){c.beginPath();for(let y=-24;y<=29*T-24;y+=3){const x=(21.5+Math.sin((y/T-16)/7)*3)*T+offset+Math.sin(y/18+offset)*1.8;if(y===-24)c.moveTo(x,y);else c.lineTo(x,y)}c.strokeStyle='#a1c8c51b';c.lineWidth=.8;c.stroke()}
-  if(art.ferns)for(let y=0;y<29*T-24;y+=15){const center=(21.5+Math.sin((y/T-16)/7)*3)*T;for(const side of [-1,1]){const bx=center+side*(37+noise(y,side)*4);c.drawImage(art.ferns,bx-5,y-6,11,11)}}
-  c.restore();
- }else for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)if(m.tiles[y][x]==='water'){
-  const sx=x*T,sy=y*T;c.fillStyle='#193d49';c.fillRect(sx,sy,T,T);
-  for(let i=0;i<6;i++){c.strokeStyle=i%2?'#78a5aa18':'#092d392a';c.lineWidth=1;c.beginPath();c.moveTo(sx+i*4,sy);c.bezierCurveTo(sx+i*4+3,sy+8,sx+i*4-3,sy+16,sx+i*4,sy+T);c.stroke()}
-  for(const dx of [-1,1])if(m.tiles[y]?.[x+dx]!=='water'){
-   const edge=sx+(dx>0?T:0),g=c.createLinearGradient(edge,0,edge-dx*8,0);
-   c.fillStyle='#8d9475';c.beginPath();for(let k=0;k<=T;k+=2){const bend=4+3*Math.sin((sy+k)/38)+noise(x,y,k)*2;const px=edge-dx*bend;if(k===0)c.moveTo(px,sy+k);else c.lineTo(px,sy+k)}c.lineTo(edge,sy+T);c.lineTo(edge,sy);c.closePath();c.fill();
-   g.addColorStop(0,'#b5ba947a');g.addColorStop(.3,'#5b7d6970');g.addColorStop(1,'#193d4900');c.fillStyle=g;c.fillRect(edge-(dx>0?8:0),sy,8,T);
-  }
- }
+ c.save();contourPath(c,contours(m,'water'));
+ c.clip('evenodd');c.fillStyle='#244f5d';c.fillRect(0,0,m.w*T,m.h*T);
+ const water=window.AshenMaterials?.texture('stream',128);if(water){c.fillStyle=c.createPattern(water,'repeat');c.fillRect(0,0,m.w*T,m.h*T)}
+ c.restore();
+ paintTransitions(c,m,m.id);
  // One continuous deck across the existing crossing, including its path approach.
  if(m.tiles[16]?.[21]==='bridge'){
   const x=20*T,y=16*T,w=4*T,h=2*T;
@@ -106,6 +112,47 @@ function paintRiver(c,m){
   for(const yy of [y+1,y+h-3]){c.fillStyle='#342e28';c.fillRect(x-4,yy,w+8,3);c.fillStyle='#b4a583';c.fillRect(x-4,yy,w+8,1);for(let px=x;px<=x+w;px+=24){c.fillStyle='#433a2e';c.fillRect(px-2,yy-3,4,7)}}
  }
 }
+
+function transitions(m,loc){
+ let byLocation=edgePlans.get(m);if(!byLocation){byLocation=new Map();edgePlans.set(m,byLocation)}
+ if(byLocation.has(loc))return byLocation.get(loc);
+ const list=[];
+ for(const kind of ['road','water'])for(const loop of contours(m,kind)){
+  const samples=contourSamples(loop);let gap=0;
+  for(let i=0;i<samples.length;i++){
+   const a=samples[i],b=samples[(i+1)%samples.length],dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy);if(!length)continue;
+   for(let distance=gap;distance<length;distance+=12){
+    const t=distance/length,px=a.x+dx*t,py=a.y+dy*t,nx=-dy/length,ny=dx/length;
+    const candidates=[];for(let yy=Math.floor(py/T)-1;yy<=Math.floor(py/T)+1;yy++)for(let xx=Math.floor(px/T)-1;xx<=Math.floor(px/T)+1;xx++){
+     const tile=m.tiles[yy]?.[xx],matches=kind==='water'?tile==='water':['path','plaza'].includes(tile);if(matches)candidates.push({x:xx,y:yy,d:Math.hypot((xx+.5)*T-(px+nx*5),(yy+.5)*T-(py+ny*5))});
+    }
+    candidates.sort((p,q)=>p.d-q.d);const owner=candidates[0];if(!owner||owner.d>20)continue;
+    if(kind==='road'&&[[0,-1],[1,0],[0,1],[-1,0]].some(([xx,yy])=>['bridge','door','exitDoor','townGate','cryptGate'].includes(m.tiles[owner.y+yy]?.[owner.x+xx])))continue;
+    // Dress only a terrain boundary; masonry and bridge contacts stay clean.
+    const outside=m.tiles[Math.floor((py-ny*5)/T)]?.[Math.floor((px-nx*5)/T)];
+    if(!['grass','grass2','forest'].includes(outside))continue;
+    list.push({x:owner.x,y:owner.y,px,py,angle:Math.atan2(dy,dx),cell:kind==='water'?2:loc==='town'?0:1,width:6});
+   }
+   gap=(gap-length)%12;if(gap<0)gap+=12;
+  }
+ }
+ byLocation.set(loc,list);return list;
+}
+function edgeSprite(cell){
+ if(edgeSprites.has(cell))return edgeSprites.get(cell);
+ const canvas=document.createElement('canvas');canvas.width=48;canvas.height=12;
+ const g=canvas.getContext('2d'),cw=edgeArt.naturalWidth/3,ch=edgeArt.naturalHeight/2;
+ g.drawImage(edgeArt,cell%3*cw,Math.floor(cell/3)*ch,cw,ch,0,0,48,12);
+ // Alpha comes from the authored artwork; no opaque band or generated gradient.
+ edgeSprites.set(cell,canvas);return canvas;
+}
+function paintTransitions(c,m,loc){
+ if(!edgeArt.complete||!edgeArt.naturalWidth)return;
+ c.save();c.globalAlpha=.8;
+ for(const p of transitions(m,loc)){c.save();c.translate(p.px,p.py);c.rotate(p.angle);c.drawImage(edgeSprite(p.cell),-12,-3,24,6);c.restore()}
+ c.restore();
+}
+
 function paintVegetation(c,m){
  for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){
   const tile=m.tiles[y][x],sx=x*T,sy=y*T;
@@ -168,16 +215,16 @@ function getDecorations(m,loc){
   if(m.tiles[y][x]!=='forest'||noise(x,y,32)<.39)continue;
   let nearRoad=false;
   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(roads.has(m.tiles[y+dy]?.[x+dx]))nearRoad=true;
-  if(!nearRoad)list.push({type:'landscape',x:x+.12,y:y+.15,height:73+noise(x,y,33)*31});
+  if(!nearRoad)list.push({type:'landscape',x:x+.12,y:y+.15,height:73+noise(x,y,33)*31,variant:noise(x,y,71)});
  }
  decorations.set(m,list);return list;
 }
 function blocks(m,loc,x,y){if(loc!=='wild')return false;let cells=trunks.get(m);if(!cells){cells=new Set(getDecorations(m,loc).map(p=>Math.floor(p.x)+','+Math.floor(p.y)));trunks.set(m,cells)}return cells.has(x+','+y)}
-function tree(c,x,y,height=52,alpha=1){
+function tree(c,x,y,height=52,alpha=1,variant=0){
  if(!art.ancient_oak)return false;
  c.save();c.globalAlpha=alpha;
  ellipse(c,x+7,y+1,height*.34,height*.09,'#081b2360');
- const options=['oak','pine','willow','snag'];const chosen=options[Math.floor(noise(x,y,71)*options.length)];const image=art[chosen]||art.ancient_oak,width=height*image.naturalWidth/image.naturalHeight;
+ const options=['oak','pine','willow','snag'];const chosen=options[Math.min(options.length-1,Math.floor(Math.abs(variant%1)*options.length))];const image=art[chosen]||art.ancient_oak,width=height*image.naturalWidth/image.naturalHeight;
  c.drawImage(image,x-width/2,y-height,width,height);c.restore();return true;
 }
 function gate(c,x,y){
@@ -185,5 +232,5 @@ function gate(c,x,y){
  ellipse(c,x+3,y-9,64,11,'#0b20244a');
  c.drawImage(art.havenmere_gate,x-75,y-106,150,100);return true;
 }
-window.AshenEnvironment={draw,animate,tree,gate,getDecorations,blocks,handles:tile=>surfaces.has(tile),noise};
+window.AshenEnvironment={draw,animate,tree,gate,getDecorations,blocks,handles:tile=>surfaces.has(tile),noise,transitions,contours};
 })();

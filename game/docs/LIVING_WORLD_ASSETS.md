@@ -1,43 +1,30 @@
-# Living World Art Pipeline and Remaining Assets
+# Living World Art Pipeline
 
-Use detailed painterly dark fantasy art, natural materials and restrained illumination. Keep a steep overhead south-facing camera and north-up room axes. Do not replace missing production sprites with geometric illustrations.
+Detailed painterly dark fantasy art uses a steep overhead, north-up camera, natural materials and restrained light. Existing artwork and LPC attribution are retained. No external game artwork was downloaded. Original generation prompts and source paths are in assets/living_world/generation.json.
 
-## Original assets delivered
+## Completed production assets
 
-All files below live in assets/living_world/. generation.json records built-in ImageGen prompts and edits. Existing artwork and LPC attribution remain intact.
+The existing tavern shell, furnishings, trade props, town buildings, forest vegetation and battle paintings remain the foundation. This completion adds57 original PNG assets:
 
-| Asset | Actual pixels | Layout and purpose |
-| --- | --- | --- |
-| fire_cycle.png | 1774 x 887 | 4 x 2 real flame frames; fixed base; fireplace/candle/forge/camp/crypt flames |
-| tavern_npc_poses.png | 1254 x 1254 | 3 x 3; keeper working, Pella and Rook seated idle/drinking/conversation |
-| interaction_atlas.png | 1536 x 1024 | Explicit measured crops; gate open/closed, chest open/closed, lantern, noticeboard |
-| seated_male.png | 1254 x 1254 | 2 x 2; Human Fighter/Rogue/Wizard/Cleric seated poses |
-| seated_female.png | 1254 x 1254 | Matching female Human seated poses |
-| world_materials.png | 1254 x 1254 | 2 x 2; forest soil, trail gravel, stream, crypt stone. Reusable texture samples |
-| world_props.png | 1536 x 1024 | 3 x 2; banner, stone/log fire, satchel, sign, rune seal, closed crypt gate |
-| world_states.png | 1774 x 887 | Measured unequal content bounds: open gate [60,0,910,887], spent seal [1080,0,630,887] |
+- 32 identity-matched walk atlases cover four ancestries, four classes and both appearances, with four cardinal facings.28 have six distinct phases per direction; four have five actual phases. No frames are duplicated to meet a requested grid.
+- 8 ancestry/appearance combat atlases each provide all four classes with windup, melee impact, cast preparation/release, hit, defend, death and ranged release artwork. These are timed key poses, not claims of continuous six-frame attack animation.
+- 6 non-Human seated atlases provide class-specific idle, drinking and conversation poses. Existing Human seated artwork remains supported.
+- One ambient action atlas provides standing drink/serve/converse and seated idle/drink/converse poses for the actual Rogue and Cleric traveler identities.
+- Six high-resolution, furniture-free room shells replace the low-resolution secondary interior panels: hall, smith, inn, chapel, cottage and bakery.
+- Structural atlas and continuous dungeon wall sprites supply independent timber partitions, columns and masonry foregrounds.
+- Terrain transition atlas supplies painted trail banks, paving fringes and river banks along cached smoothed map contours.
+- Equipment atlas provides iron sword, Ashblade, runestaff and oak bow selected from actual inventory equipment. Unmeasured corpse hands suppress held gear.
 
-No external third-party game art was newly downloaded. Generated atlas layouts are inspected rather than assumed. Source padding and foot anchors are independent from draw size. Alpha samples were verified in browser; the image-generation preview backdrop is not reliable evidence of an opaque PNG.
+## Registration and rendering
 
-The existing tavern shell, seven distinct interior layouts, furniture/trade atlases, town architecture, forest trees/undergrowth and battle illustrations were retained. Secondary room shell panels are roughly 580 x 452 at a 432 x 336 logical room size; they are not newly generated individual high-resolution room paintings.
+Run node tools/measure-motion-atlases.mjs --ambient assets/living_world/ambient_poses.png from game/. The dependency-free PNG decoder measures full-body alpha components and absolute foot anchors; strong-alpha seeds separate faint bridges between neighboring figures. Crops may cross nominal cells. Row-run exclusion masks remove foreign neighboring pixels without clipping complete limbs. Bounded runtime frame canvases apply these masks once. measurement-report.json records dimensions, real frame counts and errors; an invalid/incomplete directory cannot overwrite the final manifest.
 
-## Remaining production art
+The four five-row layouts are explicitly declared in the measuring tool; actual component row positions handle the empty bottom margin. No missing phase is synthesized. Manifests contain measured source rectangles and common standing reference heights, so defeated bodies retain scale. Active combat poses also contain visually calibrated source-pixel hand anchors and weapon angles; these anatomical points are estimates rather than alpha measurements. The runtime never borrows another ancestry or appearance.
 
-These are concrete limitations, not completed animations or final worldwide art sign-off.
+Town buildings, furniture and dungeon walls enter the same foot-depth pass as actors. Inn wall pieces sample continuous artwork in separate depth bands. Collision uses authored floor footprints independently of alpha silhouettes. Room shell and structural art switch together after decoding. Town roads, doors, protected quest approaches and existing map geometry remain intact.
 
-| Required asset | Dimensions / orientation | Frames and placement |
-| --- | --- | --- |
-| Extended identity walk cycles | 128 x 160 RGBA per frame; 4 cardinal views | 6-8 frames per view for each existing ancestry/class/gender identity; fixed foot center at 64,148. Existing cardinal standing + alternate stride is a real two-pose cycle, with limited fluidity. Eight-direction art is absent. |
-| Customized combat actions | 192 x 192 RGBA; matching current illustrated body identity | Female Human and all non-Human variants: melee, ranged, cast, hit, defend/dodge, death; 6-8 action frames and explicit impact marker. Current matching standard male class atlases provide action poses; customized identities retain their appearance rather than being replaced with mismatched bodies. |
-| Non-Human seated poses | 192 x 192 RGBA; south-facing overhead | 3 seated idle/drink/converse frames per class and gender; fixed seat/floor anchors. Current original seated player art covers Humans. |
-| Ambient traveler action poses | 128 x 160 RGBA; 4 views | 3 standing drink/serve/converse poses, 3 chair poses; bind to explicitly reserved seats. Current travelers walk with real frames and pause at destinations; no complete serving or eating animation is claimed. |
-| Interior foreground partitions | 512 x 512 RGBA modules; south and side walls | Separate inn partitions/door frames, cottage alcoves, hall/chapel columns, consistent with existing shells. These remain baked into secondary room backgrounds and cannot provide complete per-wall actor occlusion. |
-| Outdoor architecture foreground | 512-1024 RGBA per building | Roof/eave/canopy cutouts and ground/trunk-only layers matching existing town buildings and trees. The forest fades protect readability; all outdoor roofs are not yet individually sorted foreground layers. |
-| Dungeon structural set | 256 x 256 RGBA modules | North/east/west wall caps, corners, arch piers and rubble in the same overhead perspective. Existing masonry is textured and props depth-sort, but corridor wall silhouettes still follow the old geometric room plan. |
-| Terrain edge transitions | 256 x 256 RGBA tileable masks/textures | Authored grass-to-paving, mud-to-trail and irregular river-bank transitions; no thick uniform edge outline. Current sampled materials improve detail but seams and repeated town/camp road shapes remain visible at large zoom. |
+## Remaining limitations and future asset briefs
 
-Full-resolution authored secondary shells and distinct camp tent variants would further reduce repetition. They must preserve existing room boundaries, doorway cells and clear routes, or include an explicitly reviewed geometry revision.
+All currently required identity/action/structural asset categories are supplied. Four directions are supported; optional diagonal art would require four additional views for every identity at the same measured foot anchor. Additional in-between combat frames could improve fluidity, but actual impact/release timing already matches gameplay. Optional alternate camp tents, more tree species and terrain material variants would reduce repetition. These are future refinements, not represented as delivered artwork.
 
-## Acceptance boundary
-
-The tavern is the polished functional reference. The reusable systems and a first world visual pass are implemented. Milestone F still needs the structural foreground and terrain-edge art above before every environment can honestly be called equal to the tavern. No static mockup replaces gameplay. No unsupported hardware, mobile GPU, Firefox or Safari performance claim is made.
+The game retains its existing grid-based overhead movement and authored map topology. Outdoor textures remain reusable materials and can repeat at high zoom; complete roof interiors are not simulated. NPC behavior is supported for authored current roles and schedules; the engine does not invent homes or dialogue for nonexistent residents. Performance observations are host-specific; GPU memory and Safari/Firefox/mobile hardware performance have not been certified.

@@ -1,3 +1,7 @@
+# Living World completion
+
+The current Canvas 2D game now includes identity-matched directional walking/action artwork, inventory-selected weapon sprites, active NPC routines with real seating, dynamic saved world lighting, interactive persistent objects, independent architectural foregrounds and upgraded world scenery. See [the environment engine](docs/ENVIRONMENT_ENGINE.md), [asset pipeline](docs/LIVING_WORLD_ASSETS.md), and [milestone evidence](docs/LIVING_WORLD_PROGRESS.md). Existing campaign mechanics, save key and LPC credits are preserved.
+
 # The Ashen Realms — Visual Overhaul Preview
 
 Building interiors now use authored painterly architecture, transparent furniture sprites, shared depth sorting and aligned navigation footprints. The Wayfarer Tavern has a bar, seated patrons, hearth, storage and clear walkways; six other buildings have distinct plans. See [interior environments](INTERIOR_ENVIRONMENTS.md) for assets, scene authoring, verification and remaining art refinements.

@@ -10,10 +10,11 @@ const camp=[];
 for(const [i,[x,y,w,h]]of [[5,4,5,4],[23,5,4,4],[5,15,6,4],[22,15,5,4]].entries())camp.push({type:'sceneProp',id:'tent-'+i,sprite:'camp_entry',x,y,depth:y+h,bounds:[x,y,w,h],footprints:[[x,y+1,w,h-1]]});
 for(const [x,y]of [[7,3],[23,4],[18,9],[24,17]])camp.push({type:'sceneProp',id:'banner-'+x,sprite:'banner',x,y,depth:y+1.8,bounds:[x+.5-39/48,y+1.8-67/24,39/24,67/24],footprints:[[x,y+1,1,1]]});
 for(const [x,y]of [[12,7],[19,14],[25,11]])camp.push({type:'sceneProp',id:'fire-'+x,sprite:'campfire',x,y,depth:y+1,bounds:[x+.5-38/48,y+1-34/24,38/24,34/24],footprints:[[x,y,1,1]]});
+const cryptLists=new WeakMap();
 let campConfigured=false;
-function forScene(loc,map){if(loc==='camp'&&map&&!campConfigured){for(let y=0;y<map.h;y++)for(let x=0;x<map.w;x++)if(map.tiles[y][x]==='barrel')camp.push({type:'sceneProp',id:'barrel-'+x+'-'+y,sprite:'barrels',x,y,depth:y+1,bounds:[x-.1,y-.4,1.2,1.5],footprints:[[x,y,1,1]]});campConfigured=true}return loc==='crypt'?crypt:loc==='camp'?camp:[]}
+function forScene(loc,map){if(loc==='crypt'&&map){if(!cryptLists.has(map))cryptLists.set(map,[...crypt,...(window.AshenMasonry?.forScene(map)||[])]);return cryptLists.get(map)}if(loc==='camp'&&map&&!campConfigured){for(let y=0;y<map.h;y++)for(let x=0;x<map.w;x++)if(map.tiles[y][x]==='barrel')camp.push({type:'sceneProp',id:'barrel-'+x+'-'+y,sprite:'barrels',x,y,depth:y+1,bounds:[x-.1,y-.4,1.2,1.5],footprints:[[x,y,1,1]]});campConfigured=true}return loc==='crypt'?crypt:loc==='camp'?camp:[]}
 
 const blocks=(loc,x,y)=>forScene(loc).some(p=>p.footprints.some(([px,py,w,h])=>x>=px&&x<px+w&&y>=py&&y<py+h));
-function draw(c,p,sx,sy,player){const [x,y,w,h]=p.bounds;if(['banner','campfire'].includes(p.sprite)){window.AshenWorldArt?.draw(c,p.sprite,(x+w/2)*24-sx,(y+h)*24-sy,w*24,h*24);return}window.AshenPresentation?.piece(c,p.sprite,(x+w/2)*24-sx,(y+h)*24-sy,w*24,h*24,p.sprite==='arch'&&player&&Math.abs(player.x-(p.x))<2&&Math.abs(player.y-p.y)<2?.35:1)}
+function draw(c,p,sx,sy,player){if(p.masonry)return window.AshenMasonry?.draw(c,p,sx,sy)||false;const [x,y,w,h]=p.bounds;if(['banner','campfire'].includes(p.sprite)){window.AshenWorldArt?.draw(c,p.sprite,(x+w/2)*24-sx,(y+h)*24-sy,w*24,h*24);return}window.AshenPresentation?.piece(c,p.sprite,(x+w/2)*24-sx,(y+h)*24-sy,w*24,h*24,p.sprite==='arch'&&player&&Math.abs(player.x-(p.x))<2&&Math.abs(player.y-p.y)<2?.35:1)}
 window.AshenWorldProps={forScene,blocks,draw};
 })();

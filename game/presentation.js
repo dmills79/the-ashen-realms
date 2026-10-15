@@ -27,9 +27,10 @@ function flame(c,x,y,size,time=0){
  c.restore();
 }
 function crypt(c,m,sx,sy,w,h){
- const floor=load('crypt_floor'),masonry=load('masonry');load('sarcophagus');load('statue');load('pillar');load('arch');
+ const structural=window.AshenMasonry?.ready()||false,masonryRevision=window.AshenMasonry?.revision()??0;
+ const floor=load('crypt_floor'),masonry=structural?null:load('masonry');load('sarcophagus');load('statue');load('pillar');load('arch');
  let entry=cryptCache.get(m);
- if(!entry||entry.revision!==revision||entry.materialRevision!==(window.AshenMaterials?.revision()??0)){
+ if(!entry||entry.revision!==revision||entry.masonryRevision!==masonryRevision||entry.structural!==structural||entry.materialRevision!==(window.AshenMaterials?.revision()??0)){
   const surface=document.createElement('canvas');surface.width=m.w*T*2;surface.height=m.h*T*2;const g=surface.getContext('2d');g.scale(2,2);
   g.fillStyle='#141b24';g.fillRect(0,0,m.w*T,m.h*T);
   g.save();g.beginPath();for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)if(m.tiles[y][x]!=='wall')g.rect(x*T,y*T,T,T);g.clip();
@@ -39,14 +40,14 @@ function crypt(c,m,sx,sy,w,h){
   let stone='#3a4149';
   if(masonry){const tile=document.createElement('canvas');tile.width=128;tile.height=96;tile.getContext('2d').drawImage(masonry,0,0,128,96);stone=g.createPattern(tile,'repeat')}
   // Wall edges are cut from the actual carved rooms; opening centers remain unpainted.
-  for(let y=1;y<m.h-1;y++)for(let x=1;x<m.w-1;x++)if(m.tiles[y][x]==='wall'){
+  if(!structural)for(let y=1;y<m.h-1;y++)for(let x=1;x<m.w-1;x++)if(m.tiles[y][x]==='wall'){
    const floorAt=(dx,dy)=>m.tiles[y+dy]?.[x+dx]!=='wall';
    if(floorAt(0,1)){
     g.fillStyle=stone;g.fillRect(x*T,y*T-8,T,32);g.fillStyle='#8c8a7045';g.fillRect(x*T,y*T-8,T,2);
     g.fillStyle='#070e1a45';g.fillRect(x*T,(y+1)*T,T,7);
    }else if(floorAt(1,0)||floorAt(-1,0)){g.fillStyle=stone;g.fillRect(x*T,y*T,T,T);g.fillStyle='#10172275';g.fillRect(x*T,y*T,T,T)}
   }
-  entry={revision,materialRevision:window.AshenMaterials?.revision()??0,surface};cryptCache.set(m,entry);
+  entry={revision,masonryRevision,structural,materialRevision:window.AshenMaterials?.revision()??0,surface};cryptCache.set(m,entry);
  }
  const cw=Math.min(w,m.w*T-sx),ch=Math.min(h,m.h*T-sy);c.drawImage(entry.surface,sx*2,sy*2,cw*2,ch*2,0,0,cw,ch);return true;
 }

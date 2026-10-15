@@ -565,7 +565,7 @@ function staticEntities(){if(!G)return[];
   {x:27,y:21,name:'Obsidian Gate',kind:'gate',symbol:G.flags.gate?'◌':'▣',col:'#cf88a1'}
  ];
 }
-function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(window.AshenWorldProps?.blocks(loc,x,y)||window.AshenEnvironment?.blocks(m,loc,x,y))return false;if(window.AshenInteractions?.blocks(loc,x,y,G?.world))return false;if(window.AshenNPCs?.blocks(loc,x,y))return false;if(loc==='town'&&maps.town.props&&['trees','market','cart','well'].some(k=>maps.town.props[k].some(p=>p[0]===x&&p[1]===y)))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&!(e.kind==='gate'&&G?.flags.gate)&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
+function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(window.AshenWorldProps?.blocks(loc,x,y)||window.AshenEnvironment?.blocks(m,loc,x,y)||window.AshenArchitecture?.blocks(m,loc,x,y))return false;if(window.AshenInteractions?.blocks(loc,x,y,G?.world))return false;if(window.AshenNPCs?.blocks(loc,x,y))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&!(e.kind==='gate'&&G?.flags.gate)&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
 function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;if(G.world?.seat)window.AshenInteractions?.stand(G.world);G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}const previous={location:G.location,x:G.x,y:G.y,dir:G.dir,steps:G.steps,stepCounter,silentSteps:G.party.map(h=>h.silentSteps||0)};lastSpriteStepAt=performance.now();const motionId=G.location+':'+G.party[0].id;window.AshenAnimation?.sample(motionId,G.x,G.y,G.dir,lastSpriteStepAt);window.AshenAnimation?.move(motionId,x,y,G.dir,lastSpriteStepAt);G.x=x;G.y=y;G.steps++;stepCounter++;const silent=G.party.some(h=>h.hp>0&&h.silentSteps>0);G.party.forEach(h=>{if(h.silentSteps>0)h.silentSteps--});updateTownDistrict();
  if(G.location==='town'){
   const entrance=maps.town.buildings.find(b=>b.doorX===x&&b.doorY===y);
@@ -741,6 +741,7 @@ function beginCombat(types){
  if(!G||mode!=='explore'||!Array.isArray(types)||!types.length)return;
  window.AshenSprites?.clear();
  window.AshenSprites?.prepare([...types,...G.party.map(h=>h.role.toLowerCase())]);
+ window.AshenCharacterMotion?.prepare(G.party,'combat');
  clearTimeout(toastTimeout);$('toast').classList.remove('show');
  clearCombatProtection();mode='combat';closeModal();combatSession++;cancelAutoTurn();combatTactic='manual';combatAnimating=false;battleFX=null;battleNumbers=[];battleMenu='commands';
  combat={enemies:types.map((type,i)=>({...BESTIARY[type],id:'e'+i,original:type,maxHp:BESTIARY[type].hp,hp:BESTIARY[type].hp})),queue:[],turn:0,round:0,log:[],isBoss:types.includes('boss')||types.includes('warboss'),bossType:types.includes('warboss')?'warboss':types.includes('boss')?'boss':null};
@@ -905,7 +906,7 @@ function battleAction(a){
  if(a.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===a.slice(8));if(!ability||hero.mp<ability.mp)return;if(ability.kind==='self'){performAbility(hero,ability,[hero]);return}if(ability.kind==='aoe'||ability.kind==='allies'||ability.kind==='buff'){performAbility(hero,ability,ability.kind==='aoe'?combat.enemies.filter(e=>e.hp>0):G.party.filter(h=>h.hp>0));return}currentTargetAction='ability:'+ability.id;battleMenu=ability.kind==='ally'?'ally':'enemy';renderCombatMenu();return}
  if(a==='item'){battleMenu='items';currentTargetAction=null;renderCombatMenu();return}
  if(a.startsWith('item:')){const id=a.slice(5);if(!Object.hasOwn(ITEMS,id)||ITEMS[id].kind!=='consumable'||!G.bag[id])return;if(ITEMS[id].target==='party'){combatUseItem(G.party.indexOf(hero),id);return}currentTargetAction=a;battleMenu='ally';renderCombatMenu();return}
- if(a==='guard'){hero.defending=true;hero.mp=Math.min(hero.maxMp,hero.mp+1);combatLog(`${hero.name} guards until their next turn and recovers 1 MP.`,false,{type:'status',actor:hero.name});SFX.play('guard');battleMenu='commands';nextTurn();return}
+ if(a==='guard'){hero.defending=true;window.AshenSprites?.react(hero.id,'defend');hero.mp=Math.min(hero.maxMp,hero.mp+1);combatLog(`${hero.name} guards until their next turn and recovers 1 MP.`,false,{type:'status',actor:hero.name});SFX.play('guard');battleMenu='commands';nextTurn();return}
  if(a==='flee'){if(combat.isBoss){combatLog('The warleader blocks your escape!',true);SFX.play('bump');nextTurn();return}if(rand(100)<=75){combatLog('The party escapes!');endCombat();SFX.play('warp');stepCounter=0;saveGame(true);return}combatLog('Escape failed!');nextTurn();return}
  if(a.startsWith('target:')){const enemy=combat.enemies.find(e=>e.id===a.slice(7));if(enemy&&enemy.hp>0){if(currentTargetAction==='attack')queueCinematic(hero.gear.weapon==='oakbow'?'arrow':'slash',hero,[enemy],()=>hitAttack(hero,enemy),'ally');else if(currentTargetAction?.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===currentTargetAction.slice(8));if(ability)performAbility(hero,ability,[enemy])}}return}
  if(a.startsWith('ally:')){const target=G.party.find(h=>h.id===a.slice(5));if(!target)return;if(currentTargetAction?.startsWith('item:'))combatUseItem(G.party.indexOf(target),currentTargetAction.split(':')[1]);else if(currentTargetAction?.startsWith('ability:')){const ability=knownAbilities(hero).find(x=>x.id===currentTargetAction.slice(8));if(ability)performAbility(hero,ability,[target])}return}
@@ -1105,7 +1106,7 @@ function drawGloamwoodRoad(sx,sy,x,y){
  }
 }
 function drawTile(t,sx,sy,x,y,loc){
- if(loc==='camp'&&t==='fence'&&window.AshenPresentation?.piece(ctx,'fence',sx+12,sy+24,29,30))return;
+ if((loc==='camp'||loc==='town')&&t==='fence'&&window.AshenPresentation?.piece(ctx,'fence',sx+12,sy+24,29,30))return;
  const regions=TERRAIN_CELLS[t];
  if(loc==='wild'&&t==='path'){drawGloamwoodRoad(sx,sy,x,y);return;}
  if(loc==='town' && ['path','plaza','grass','grass2','fence','building','door'].includes(t)){drawHavenmereGround(t,sx,sy,x,y);return;}
@@ -1203,26 +1204,6 @@ function drawFurnitureTile(t,sx,sy,time){
  if(t==='barrel'){pix(sx+4,sy+3,16,20,'#79503b');pix(sx+5,sy+4,14,18,'#ba8a57');pix(sx+4,sy+8,16,3,'#43424a');pix(sx+4,sy+17,16,3,'#43424a');pix(sx+11,sy+6,2,12,'#d3a374')}
 }
 // Reforged gate, watchtowers, village furnishings and moving civilians.
-function drawHavenmereArchitecture(scrollX,scrollY){
- window.AshenEnvironment?.gate(ctx,28.5*T-scrollX,17*T-scrollY);
-}
-
-function drawVillageLife(scrollX,scrollY){
- // Animated ambience, not game entities: existing NPC interaction and collision are untouched.
- const routes=[[[13,9],[13,10],[13,11],[14,11]],[[16,13],[17,13],[18,13]],[[17,19],[18,19],[18,20]],[[24,12],[24,13],[25,13]]];
- const now=animTick/48;
- for(let j=0;j<routes.length;j++){
-  const path=routes[j],k=(now/(1.4+j*.3)+j*1.8)%((path.length-1)*2),u=Math.floor(k),f=k-u;
-  const ping=i=>i<path.length?i:(path.length*2-2-i),a=path[ping(u)],b=path[ping((u+1)%((path.length-1)*2))];
-  const x=(a[0]+(b[0]-a[0])*f+.5)*T-scrollX,y=(a[1]+(b[1]-a[1])*f+.5)*T-scrollY;
-  if(Math.abs(x)>W/cameraZoom+45||y< -35||y>H/cameraZoom+35)continue;
-  ctx.fillStyle='#092025a0';ctx.beginPath();ctx.ellipse(x,y+10,5,2,0,0,7);ctx.fill();
-  if(window.AshenPresentation?.npc(ctx,['traveler','merchant','farmer','pilgrim'][j],x,y+10,performance.now(),35))continue;
-  ctx.save();ctx.translate(x,y);ctx.fillStyle=['#a2876d','#9a9bb0','#789f80','#b78569'][j];ctx.fillRect(-3,-3,6,10);
-  ctx.fillStyle='#c4a27d';ctx.beginPath();ctx.arc(0,-6,3.6,0,7);ctx.fill();
-  ctx.fillStyle=['#574338','#4b5661','#433f39','#5b483d'][j];ctx.fillRect(-3,-11,6,3);ctx.fillStyle='#342d29';ctx.fillRect(-3,7,2,4);ctx.fillRect(1,7,2,4);ctx.restore();
- }
-}
 function drawGloamwoodOutskirts(scrollX,scrollY){
  // World-map settlement has a proper silhouette, fortified gate and rooftops.
  const tx=7*T-scrollX,ty=16*T-scrollY;
@@ -1235,17 +1216,6 @@ function drawGloamwoodOutskirts(scrollX,scrollY){
  }
  // A waystone tells you how to enter. It is visible and distinct from the floor tiles.
  const x=tx+47,y=ty-2;window.AshenWorldArt?.draw(ctx,'sign',x+12,y+10,31,41);
-}
-
-function drawTownDecor(scrollX,scrollY){
- const props=maps.town.props||{},P=(x,y)=>[(x+.5)*T-scrollX,(y+1)*T-scrollY];
- for(const [group,name,width] of [['lamps','lantern',18],['cart','wagon',42],['crates','crates',20],['benches','bench',29],['flowerbeds','flowers',30],['hedges','fence',28]]){
-  for(const [tx,ty] of props[group]||[]){const [x,y]=P(tx,ty);window.AshenPresentation?.piece(ctx,name,x,y,width);if(name==='lantern')window.AshenPresentation?.flame(ctx,x-3,y-21,3,performance.now())}
- }
- for(const [tx,ty] of props.trees||[]){const [x,y]=P(tx,ty);window.AshenEnvironment?.tree(ctx,x,y,56)}
- window.AshenPresentation?.piece(ctx,'fountain',20*T-scrollX,17*T-scrollY,63,53);
- window.AshenPresentation?.piece(ctx,'barrels',4.5*T-scrollX,15.8*T-scrollY,28);
- for(const [tx,ty] of props.market||[]){const[x,y]=P(tx,ty);window.AshenPresentation?.piece(ctx,'market',x,y,55,43)}
 }
 
 function drawInteriorDecor(room,scrollX,scrollY){
@@ -1342,7 +1312,11 @@ function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1,h
  ctx.restore()
 }
 
-function drawEntity(e,sx,sy,motion=null){if(e.ambient){drawSprite(sx+12,sy+12,e.role,'npc',e.dir,1,e.hero,motion);return}if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenNPCArt?.draw(ctx,e,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),e.kind==='rogue'&&e.seated?30:e.seated?34:40)&&!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),performance.now(),e.seated?34:40,{shadow:!e.seated&&!e.behindBar})){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),roles[e.kind],'npc','down',e.seated?.8:1,companion,{walking:false,gait:0,shadow:!e.seated&&!e.behindBar})}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy+12+(window.AshenGrounding?.offset(e)??0)-(e.seated?34:40)-7+bob,12,e.col,'center')}return}
+function drawEntity(e,sx,sy,motion=null){if(e.ambient){
+ const x=sx+12,y=sy+12+(e.seated?18:0);
+ if(window.AshenAmbientArt?.drawAmbient(ctx,e,x,y,{time:performance.now(),height:e.seated?34:40})){if(!e.seated)window.AshenGrounding?.shadow(ctx,x,y,{width:8,height:2.5});return}
+ drawSprite(x,y,e.role,'npc',e.dir,e.seated?.8:1,e.hero,motion);return;
+}if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenNPCArt?.draw(ctx,e,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),e.kind==='rogue'&&e.seated?30:e.seated?34:40)&&!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),performance.now(),e.seated?34:40,{shadow:!e.seated&&!e.behindBar})){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),roles[e.kind],'npc','down',e.seated?.8:1,companion,{walking:false,gait:0,shadow:!e.seated&&!e.behindBar})}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy+12+(window.AshenGrounding?.offset(e)??0)-(e.seated?34:40)-7+bob,12,e.col,'center')}return}
  if(e.kind==='townGate'||e.kind==='cryptGate'||e.kind==='exit')return;
  if(window.AshenWorldArt?.entity(ctx,e,sx+12,sy+24,G.flags))return;
  if(e.kind==='satchel'){pix(sx+5,sy+10,15,10,'#895b3f');pix(sx+7,sy+7,11,4,'#d3ae76');pix(sx+13,sy+11,3,3,'#e7c77e');return}
@@ -1455,46 +1429,17 @@ function drawLocation(){
  for(let y=startY;y<=Math.min(m.h-1,startY+Math.ceil(viewH/T)+1);y++)for(let x=startX;x<=Math.min(m.w-1,startX+Math.ceil(viewW/T)+1);x++){const tile=m.tiles[y][x];if(landscape&&(G.location==='crypt'||(G.location!=='crypt'&&window.AshenEnvironment.handles(tile)&&tile!=='fence')))continue;drawTile(tile,Math.floor(x*T-scrollX),Math.floor(y*T-scrollY),x,y,G.location)}
  }
  if(G.location!=='camp')window.AshenLighting?.flames(ctx,G.location,scrollX,scrollY,performance.now());
- if(G.location==='town'){
-  // True transparent architectural illustrations: gables, doors, mullioned windows,
-  // chimneys, stone foundations, signs, roof shingles and cast shadows.
-  m.buildings.forEach(b=>{
-   const sx=Math.floor(b.x*T-scrollX),sy=Math.floor(b.y*T-scrollY),ww=b.w*T,hh=b.h*T;
-   if(sx+ww<0||sy+hh<0||sx>viewW||sy>viewH)return;
-   const src='havenmere/'+b.room+'.png';
-   if(window.AshenPresentation?.piece(ctx,b.room,sx+ww/2,sy+hh,ww,hh)){
-    if(['smith','tavern','bakery','cottage'].includes(b.room))window.AshenPresentation.smoke(ctx,sx+ww*.7,sy+hh*.14,performance.now());
-   }else if(imageReady(src)){
-    ctx.save();ctx.fillStyle='#09171a3d';ctx.beginPath();ctx.ellipse(sx+ww*.53,sy+hh*.88,ww*.48,hh*.13,0,0,Math.PI*2);ctx.fill();
-    ctx.drawImage(ART[src],sx,sy,ww,hh);
-    ctx.restore();
-   }else{
-    pix(sx+4,sy+16,ww-8,hh-20,'#a99680');pix(sx,sy,ww,hh*.68,'#68596a');
-    pix(sx+ww/2-12,sy+hh-24,24,24,'#4c3837');
-    textDraw(b.kind,sx+ww/2,sy+hh-27,9,'#ffe4ad','center');
-   }
-   // A true entry marker placed on the physically reachable front tile.
-   const dx=(b.doorX+.5)*T-scrollX,dy=(b.doorY+1)*T-scrollY;
-   const flicker=.68+.18*Math.sin(animTick/19+b.x);
-   const halo=ctx.createRadialGradient(dx,dy-3,1,dx,dy-3,26);
-   halo.addColorStop(0,`rgba(255,209,122,${flicker*.28})`);halo.addColorStop(1,'rgba(255,209,122,0)');
-   ctx.fillStyle=halo;ctx.fillRect(dx-28,dy-29,56,54);
-  });
-  drawTownDecor(scrollX,scrollY);
-  drawHavenmereArchitecture(scrollX,scrollY);
-  drawTownDistrictSigns(scrollX,scrollY);
- }
-
  if(G.location==='wild'){drawGloamwoodOutskirts(scrollX,scrollY);window.AshenPresentation?.piece(ctx,'crypt_entry',37.5*T-scrollX,22.9*T-scrollY,104,105);window.AshenPresentation?.piece(ctx,'camp_entry',42.5*T-scrollX,24*T-scrollY,93,68);const words=[{x:37,y:20,t:'EMBERFALL CRYPT'},{x:41,y:25,t:'GROMCLAW CAMP'}];for(const label of words)textDraw(label.t,label.x*T-scrollX+12,label.y*T-scrollY,9,'#f7d6ac','center')}
  if(['hall','smith','inn','tavern','chapel','cottage','bakery'].includes(G.location)){drawInteriorDecor(G.location,scrollX,scrollY)}
  if(G.location==='camp')drawCampDecor(scrollX,scrollY);
  if(G.location==='crypt'){drawCryptDecor(scrollX,scrollY);const pulses=[{x:8,y:5},{x:8,y:25},{x:32,y:23}];for(const p of pulses){const sx=p.x*T-scrollX+12,sy=p.y*T-scrollY+12;const r=13+Math.sin(animTick/12)*4;const gr=ctx.createRadialGradient(sx,sy,0,sx,sy,r*3);gr.addColorStop(0,'#b4748050');gr.addColorStop(1,'#b4748000');ctx.fillStyle=gr;ctx.fillRect(sx-r*3,sy-r*3,r*6,r*6)}}
- if(G.location==='town'){drawVillageLife(scrollX,scrollY);window.AshenPresentation?.piece(ctx,'horse',9*T-scrollX,10*T-scrollY,42);window.AshenPresentation?.piece(ctx,'dog',18*T-scrollX+Math.sin(animTick/180)*9,19*T-scrollY,20);window.AshenPresentation?.npc(ctx,'guard',27.5*T-scrollX,16.8*T-scrollY,performance.now(),42);window.AshenPresentation?.piece(ctx,'flowers',7.5*T-scrollX,5.7*T-scrollY,25)}
+
  // Every actor shares one ground-depth pass; walking behind an NPC no longer paints over them.
  const drawables=entities().map(entity=>({type:'entity',x:entity.x,y:entity.y,entity}));
  drawables.push(...(window.AshenEnvironment?.getDecorations(m,G.location)||[]));
  drawables.push(...(window.AshenScenes?.cached(G.location,()=>window.AshenInteriors?.getProps(G.location)||[])||window.AshenInteriors?.getProps(G.location)||[]));
  drawables.push(...(window.AshenWorldProps?.forScene(G.location,m)||[]));
+ drawables.push(...(window.AshenArchitecture?.forScene(m,G.location)||[]));
  drawables.push(...(window.AshenInteractions?.props(G.location,G.world)||[]));
  if(trail.length>2)G.party.slice(1).forEach((hero,i)=>{
   const step=trail[Math.min(trail.length-1,(i+1)*3)];
@@ -1508,15 +1453,15 @@ function drawLocation(){
  for(const actor of drawables){if(actor.type==='sceneProp'||actor.type==='interiorProp'||actor.type==='interactiveProp'||actor.type==='landscape')continue;const id=G.location+':'+(actor.hero?.id||actor.peer?.id||actor.entity?.id||actor.entity?.kind+':'+actor.x+':'+actor.y);actor.motion=window.AshenAnimation?.sample(id,actor.x,actor.y,actor.direction||actor.peer?.dir||actor.entity?.dir||G.dir,performance.now());actor.renderX=actor.motion?.x??actor.x;actor.renderY=actor.motion?.y??actor.y;}
  drawables.sort((a,b)=>(window.AshenGrounding?.depth(a)??a.y)-(window.AshenGrounding?.depth(b)??b.y)||a.x-b.x);
  for(const actor of drawables){
-  if(actor.type==='sceneProp'){const [x,y,w,h]=actor.bounds;if(window.AshenScenes.visible([x*T,y*T,w*T,h*T],{x:scrollX,y:scrollY,w:viewW,h:viewH}))window.AshenWorldProps.draw(ctx,actor,scrollX,scrollY,G);continue}
+  if(actor.type==='sceneProp'){const [x,y,w,h]=actor.bounds;if(window.AshenScenes.visible([x*T,y*T,w*T,h*T],{x:scrollX,y:scrollY,w:viewW,h:viewH})){if(actor.architecture)window.AshenArchitecture.draw(ctx,actor,scrollX,scrollY);else window.AshenWorldProps.draw(ctx,actor,scrollX,scrollY,G)}continue}
   if(actor.type==='interactiveProp'){window.AshenInteractions.draw(ctx,actor,scrollX,scrollY);continue}
   if(actor.type==='interiorProp'){const [x,y,w,h]=actor.prop.bounds;if(!window.AshenScenes||window.AshenScenes.visible([x*T,y*T,w*T,h*T],{x:scrollX,y:scrollY,w:viewW,h:viewH}))window.AshenInteriors.drawProp(ctx,actor.prop,scrollX,scrollY);continue}
   const sx=(actor.renderX??actor.x)*T-scrollX+12,sy=(actor.renderY??actor.y)*T-scrollY+12;
   const margin=actor.height||60;if(sx< -margin||sy< -margin||sx>viewW+margin||sy>viewH+margin)continue;
-  if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;if(actor.prop)window.AshenPresentation?.piece(ctx,actor.prop,sx,sy,47,20,near?.4:1);else window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1);continue}
+  if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;if(actor.prop)window.AshenPresentation?.piece(ctx,actor.prop,sx,sy,47,20,near?.4:1);else window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1,actor.variant);continue}
   if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-12,actor.motion);continue}
   if(actor.hero){
-   if(actor.seated&&window.AshenSeating?.draw(ctx,actor.hero,sx,sy+18))continue;
+   if(actor.seated&&window.AshenSeating?.draw(ctx,actor.hero,sx,sy+18,36,{state:'idle',time:performance.now()}))continue;
    if(!window.AshenSprites?.ready(actor.hero.role.toLowerCase())&&actor.type==='leader')pix(sx-6,sy-2,12,3,'#172625');
    if(actor.seated&&actor.motion){actor.motion.walking=false;actor.motion.shadow=false}
    drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',actor.seated?'down':actor.motion?.direction||actor.direction||G.dir,actor.seated?.82:1,actor.hero,actor.motion);
@@ -1560,11 +1505,13 @@ function illustratedActorState(actor){
  if(actor.hp<=0)return {state:'death',time:reaction?now-reaction.startedAt:700};
  if(reaction)return {state:reaction.state,time:now-reaction.startedAt};
  if(battleFX&&battleFX.actorId===actor.id)return {state:['slash','arrow'].includes(battleFX.kind)?'attack':'cast',time:now-battleFX.startTime};
+ if(actor.defending)return {state:'defend',time:0,duration:Infinity};
  return {state:'idle',time:now+hash((actor.id||'').length,actor.role?.length||actor.type?.length||0)*1500};
 }
 function drawIllustratedActor(actor,x,y,kind='ally',scale=1){
  const name=kind==='ally'?actor.role.toLowerCase():actor.type;
  const state=illustratedActorState(actor);
+ if(kind==='ally'&&window.AshenCharacterMotion?.drawAction(ctx,actor,x,y,{...state,kind:battleFX?.actorId===actor.id?battleFX.kind:'slash',height:85*scale}))return true;
  if(kind==='ally'&&(state.state==='idle'||actor.ancestry!=='Human'||actor.appearance==='female')&&window.AshenIdentity?.draw(ctx,actor,x,y,{direction:'right',height:85*scale,time:state.time,state:state.state}))return true;
  const asset=window.AshenSprites?.manifest.characters[name];
  if(!asset)return false;
@@ -1786,7 +1733,7 @@ function renderCinemaHud(){
    const unit=q.side==='ally'?G.party.find(h=>h.id===q.id):combat.enemies.find(e=>e.id===q.id);
    return unit?.hp>0?`<span class="initiative-actor ${q.side} ${unit.id===actor?.id?'current':''}" ${unit.id===actor?.id?'aria-current="step"':''} title="${escapeHtml(unit.name)} · Initiative ${q.roll} · ${q.side==='ally'?Formation.row(unit)+' row':'enemy'}">${q.side==='ally'?`<img src="${heroPortrait(unit)}" alt="">`:`<img src="${enemyPortrait(unit)}" alt="">`}<b>${escapeHtml(unit.name)}</b><small>${q.roll}</small></span>`:'';
  }).join('');
- hud.innerHTML=`<header class="cinema-title"><div class="combat-title"><span class="battle-compass" aria-hidden="true">✧</span><span>THE ASHEN REALMS</span><small>${G.flags.ending?'CHAPTER II':'CHAPTER I'} · ${battleScene().toUpperCase()} ENCOUNTER</small></div><nav class="turn-order" aria-label="Remaining turn order"><span>UP NEXT</span>${initiative}</nav><span class="header-round">ROUND ${combat.round}</span><button id="cinemaMinimize" title="Toggle immersive battle view" aria-label="${document.documentElement.classList.contains('cinema-compact')?'Expand combat view':'Use windowed combat view'}">${document.documentElement.classList.contains('cinema-compact')?'EXPAND':'WINDOWED'}</button></header><section class="cinema-party" aria-label="Party status" style="--party-count:${G.party.length}"><h2 class="combat-section-title">YOUR PARTY</h2><div class="combat-status-list">${party}</div></section><section class="cinema-foes" aria-label="Enemy status"><div class="battle-location"><img src="${imagePath(battleScene()==='crypt'?'overhaul/battle_crypt.png':battleScene()==='camp'?'gromclaw_battle.jpg':battleScene()==='town'?'battle_town.jpg':'battle/forest_'+Formation.lighting(G.steps).from+'.jpg')}" alt=""><strong>${escapeHtml(maps[G.location]?.name||'Battlefield')}</strong><small>${escapeHtml('Defeat '+(combat.isBoss?combat.enemies.find(e=>e.original===combat.bossType)?.name||'the enemy leader':'the enemy party'))}</small></div><h2 class="combat-section-title">ENEMIES</h2><div class="combat-status-list">${foes}</div></section>`;
+ hud.innerHTML=`<header class="cinema-title"><div class="combat-title"><span class="battle-compass" aria-hidden="true">✧</span><span>THE ASHEN REALMS</span><small>${G.flags.ending?'CHAPTER II':'CHAPTER I'} · ${battleScene().toUpperCase()} ENCOUNTER</small></div><nav class="turn-order" aria-label="Remaining turn order"><span>UP NEXT</span>${initiative}</nav><span class="header-round">ROUND ${combat.round}</span><button id="cinemaMinimize" title="Toggle immersive battle view" aria-label="${document.documentElement.classList.contains('cinema-compact')?'Expand combat view':'Use windowed combat view'}">${document.documentElement.classList.contains('cinema-compact')?'EXPAND':'WINDOWED'}</button></header><section class="cinema-party" aria-label="Party status" style="--party-count:${G.party.length}"><h2 class="combat-section-title">YOUR PARTY</h2><div class="combat-status-list">${party}</div></section><section class="cinema-foes" aria-label="Enemy status"><div class="battle-location"><img src="${imagePath(window.AshenInteriors?.has(G.location)?(G.location==='tavern'?'interiors_v2/tavern_shell.png':'living_world/room_'+G.location+'.png'):battleScene()==='crypt'?'overhaul/battle_crypt.png':battleScene()==='camp'?'gromclaw_battle.jpg':battleScene()==='town'?'battle_town.jpg':'battle/forest_'+Formation.lighting(G.steps).from+'.jpg')}" alt=""><strong>${escapeHtml(maps[G.location]?.name||'Battlefield')}</strong><small>${escapeHtml('Defeat '+(combat.isBoss?combat.enemies.find(e=>e.original===combat.bossType)?.name||'the enemy leader':'the enemy party'))}</small></div><h2 class="combat-section-title">ENEMIES</h2><div class="combat-status-list">${foes}</div></section>`;
  $('cinemaMinimize').onclick=()=>document.documentElement.classList.toggle('cinema-compact');
  if(viewFocused)$('cinemaMinimize').focus({preventScroll:true});
 }

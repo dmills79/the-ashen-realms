@@ -61,10 +61,41 @@ const scenes={
   prop('grain','barrel',14.5,10.2,1.2,1.7,[15,11,1,1])
  ],lights:[[15,4,65,.045]]}
 };
+// Measured transparent content rectangles in the 1536x1024 structural atlas.
+const structureRects={timberHorizontal:[20,190,760,300],timberVertical:[869,27,92,502],column:[1210,45,230,490],stoneWall:[20,650,770,280],stoneCorner:[810,590,340,380],rubble:[1140,640,390,320]};
+// Only actual partitions/columns leave the shell. Forge/oven reservations and
+// the cottage boundary hearth remain authored artwork, not generic wall modules.
+const structuralFootprints={inn:scenes.inn.walls,cottage:[scenes.cottage.walls[0]],chapel:scenes.chapel.walls};
+const structures={};
+for(const [loc,scene] of Object.entries(scenes)){
+ scene.loc=loc;
+ structures[loc]=(structuralFootprints[loc]||[]).flatMap(([x,y,w,h],i)=>{
+  if(loc==='chapel'){
+   const p=prop('column-'+i,'column',x,y-1.5,w,h+1.5,[x,y,w,h],y+h);
+   p.structural=true;return [p];
+  }
+  // Side walls sort one floor row at a time: actors can pass on either side.
+  const vertical=h>w,rows=vertical?h:1;
+  return Array.from({length:rows},(_,row)=>{
+   const yy=y+row,hh=vertical?1:h;
+   const sprite=vertical?'timberVertical':'timberHorizontal';
+   const top=vertical&&row>0?yy:yy-1,drawHeight=vertical&&row>0?hh:hh+1;
+   const p=prop('structure-'+i+'-'+row,sprite,x,top,w,drawHeight,[x,yy,w,hh],yy+hh);
+   // Slice a single complete partition through independent floor-depth bands.
+   // Only the first band includes its raised northern silhouette.
+   if(vertical)p.sourceSlice=[row===0?0:(row+1)/(h+1),drawHeight/(h+1)];
+   p.structural=true;return p;
+  });
+ });
+}
 const images={};
 for(const [key,file] of Object.entries({tavern:'tavern_shell.png',architecture:'architecture_atlas.png',furniture:'furniture_atlas.png',trade:'trade_atlas.png'})){
  const image=new Image();image.decoding='async';image.src='assets/interiors_v2/'+file;images[key]=image;
 }
+for(const loc of ['hall','smith','inn','chapel','cottage','bakery']){
+ const image=new Image();image.decoding='async';image.onload=()=>refreshDrawLists();image.src='assets/living_world/room_'+loc+'.png';images['room_'+loc]=image;
+}
+{const image=new Image();image.decoding='async';image.onload=()=>refreshDrawLists();image.src='assets/living_world/structural_atlas.png';images.structural=image}
 const ready=image=>image?.complete&&image.naturalWidth>0;
 function configure(map){
  const scene=scenes[map.id];if(!scene)return;
@@ -73,7 +104,9 @@ function configure(map){
  scene.walls.forEach(block);scene.props.forEach(p=>block(p.footprint));
  map.tiles[13][8]='exitDoor';map.tiles[12][8]='woodFloor';
 }
+function upgraded(scene){return !!(ready(images['room_'+scene.loc])&&ready(images.structural))}
 function source(scene){
+ if(upgraded(scene)){const image=images['room_'+scene.loc];return {image,x:0,y:0,w:image.naturalWidth,h:image.naturalHeight}}
  const image=images[typeof scene.background==='number'?'architecture':'tavern'];
  if(!ready(image))return null;
  if(scene.background==='tavern')return {image,x:0,y:0,w:image.naturalWidth,h:image.naturalHeight};
@@ -86,8 +119,20 @@ function background(c,map,loc,sx,sy){
  return true;
 }
 const drawLists=new Map();
-function getProps(loc){if(drawLists.has(loc))return drawLists.get(loc);const list=(scenes[loc]?.props||[]).map(p=>({type:'interiorProp',x:p.bounds[0],y:p.depth,prop:p}));drawLists.set(loc,list);return list}
+function getProps(loc){
+ const scene=scenes[loc],state=!!scene&&upgraded(scene);let list=drawLists.get(loc);
+ if(!list){list=[];drawLists.set(loc,list)}
+ if(list.upgraded!==state){list.splice(0,list.length,...[...(scene?.props||[]),...(state?structures[loc]:[])].map(p=>({type:'interiorProp',x:p.bounds[0],y:p.depth,prop:p})));list.upgraded=state}
+ return list;
+}
+function refreshDrawLists(){for(const loc of drawLists.keys())getProps(loc)}
 function drawProp(c,prop,sx,sy){
+ if(prop.structural){
+  const image=images.structural;if(!ready(image))return;
+  const [rx,ry,rw,rh]=structureRects[prop.sprite],scaleX=image.naturalWidth/1536,scaleY=image.naturalHeight/1024,[x,y,w,h]=prop.bounds;
+  const [start,fraction]=prop.sourceSlice||[0,1];
+  c.drawImage(image,rx*scaleX,(ry+rh*start)*scaleY,rw*scaleX,rh*fraction*scaleY,x*T-sx,y*T-sy,w*T,h*T);return;
+ }
  const image=images[Object.hasOwn(tradeSprites,prop.sprite)?'trade':'furniture'];
  if(!ready(image))return;
  const [x,y,w,h]=prop.bounds;
@@ -110,5 +155,5 @@ function lights(c,loc,sx,sy,tick){
  }
  c.restore();
 }
-window.AshenInteriors={scenes,sprites,configure,background,getProps,drawProp,foreground,lights,has:loc=>!!scenes[loc],ready:()=>Object.values(images).every(ready)};
+window.AshenInteriors={scenes,sprites,configure,background,getProps,drawProp,foreground,lights,has:loc=>!!scenes[loc],ready:()=>[images.tavern,images.architecture,images.furniture,images.trade].every(ready)};
 })();
