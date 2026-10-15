@@ -24,16 +24,17 @@ document.addEventListener?.('error',event=>{
   const image=event.target;if(image?.tagName!=='IMG'||!image.src.includes('/assets/identity/')||image.dataset.artFallback)return;
   image.dataset.artFallback='true';const role=image.src.match(/fighter|rogue|wizard|cleric/)?.[0]||'fighter';image.src='assets/portrait_'+role+'.png';
 },true);
-const images=new Map(),draws=[];
+const images=new Map(),draws=[],prepared=new Set();
 function load(key){
   if(!images.has(key)){const image=new Image();image.decoding='async';image.src='assets/identity/'+key+'.png';images.set(key,image)}
   const image=images.get(key);return image.complete&&image.naturalWidth>0?image:null;
 }
-function draw(ctx,hero,x,y,{direction='down',height=44,walking=false,time=0,state='idle'}={}){
+function prepare(hero){const key=bodyKey(hero,'down');if(prepared.has(key))return;prepared.add(key);for(const dir of ['up','down','left','right']){load(bodyKey(hero,dir));load(bodyKey(hero,dir)+'_walk')}}
+function draw(ctx,hero,x,y,{direction='down',height=44,walking=false,time=0,state='idle',gait=null,shadow=true}={}){
   const appearance=hero?.appearance==='female'?'female':'male';
   const key=bodyKey(hero,direction);
-  const standing=load(key),stride=walking?load(key+'_walk'):null;
-  const image=walking&&Math.floor(time/110)%2&&stride?stride:standing;
+  const standing=load(key),stride=load(key+'_walk');
+  const image=walking&&Math.floor(gait??time/110)%2&&stride?stride:standing;
   if(!image)return false;
   // Ancestry silhouettes and class costumes share one registry in every game scene.
   const stature=hero.ancestry==='Halfling'?.8:hero.ancestry==='Dwarf'?.88:1;
@@ -41,7 +42,7 @@ function draw(ctx,hero,x,y,{direction='down',height=44,walking=false,time=0,stat
   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const bob=reduced?0:walking?Math.sin(time/65)*.8:Math.sin(time/520)*.18;
   ctx.save();ctx.globalAlpha*=hero.hp===0?.45:1;
-  window.AshenGrounding?.shadow(ctx,x,y,{width:w*.32,height:h*.065});
+  if(shadow)window.AshenGrounding?.shadow(ctx,x,y,{width:w*.32,height:h*.065});
   if(state==='death'){ctx.translate(x,y);ctx.rotate(direction==='left'?-.8:.8);ctx.translate(-x,-y)}
   if(state==='hit')ctx.globalAlpha*=.7+.3*Math.sin(time/28)**2;
   ctx.drawImage(image,x-w/2,y-h-bob,w,h);
@@ -64,5 +65,5 @@ function draw(ctx,hero,x,y,{direction='down',height=44,walking=false,time=0,stat
   if(window.__ASHEN_TEST__){draws.push({id:sprite(hero),state:walking?'walk':state,direction,height:h,result:true,appearance,ancestry:hero.ancestry,src:image.src});if(draws.length>100)draws.shift()}
   return true;
 }
-window.AshenIdentity=Object.freeze({appearances:Object.freeze(appearances),normalize,portrait,sprite,bodyPath,draw,debug:()=>({draws:draws.slice(),loaded:[...images.keys()].filter(k=>images.get(k).complete&&images.get(k).naturalWidth>0)})});
+window.AshenIdentity=Object.freeze({appearances:Object.freeze(appearances),normalize,portrait,sprite,bodyPath,prepare,draw,debug:()=>({draws:draws.slice(),loaded:[...images.keys()].filter(k=>images.get(k).complete&&images.get(k).naturalWidth>0)})});
 })();

@@ -234,7 +234,7 @@ function newHero(name,ancestry,role,level=1,assigned=null,rolls=null,appearance=
  const derived=creationStats(ancestry,role,assigned,rolls);
  return {id:Math.random().toString(36).slice(2,8),name,ancestry,role,row:Formation.defaultRow({role}),appearance:appearance==='female'?'female':'male',silentSteps:0,level,talentPoints:0,talents:{might:0,focus:0,vigor:0,ward:0},xp:0,xpTotal:0,ancestryRuleSet:window.AshenCharacterRules.version,ancestryModifiers:ANCESTRIES[ancestry].stats.slice(),classModifiers:CLASS_TRAINING[role].stats.slice(),rolls,assigned:assigned.slice(),...derived,hp:derived.maxHp,mp:derived.maxMp,gear:{weapon:null,armor:null},poison:0,defending:false};
 }
-function startGame(name,ancestry,role,assigned=null,rolls=null,appearance='male'){G={version:5,location:'town',x:15,y:11,dir:'up',party:[newHero(name||'Wanderer',ancestry,role,1,assigned,rolls,appearance)],bag:{potion:4,ether:2,salve:2,ration:3},gold:45,flags:{elder:false,ritual:false,leverA:false,leverB:false,gate:false,boss:false,ending:null,satchelFound:false,satchelReturned:false,shrine:false,starterChest:false,cryptChestA:false,cryptChestB:false,trial:false},log:[],steps:0,battles:0,jobs:{goblin:{state:'none',count:0},orc:{state:'none',count:0}}};mode='explore';closeModal();trail=[];lastTownDistrict='';uiLog('A new adventurer arrives in Havenmere.');uiLog('Enter the northern Great Hall and speak to Elder Maelin.');refreshHud();saveGame(true);toast('Chapter I · The Hollow Bell');SFX.play('start')}
+function startGame(name,ancestry,role,assigned=null,rolls=null,appearance='male'){G={version:5,location:'town',x:15,y:11,dir:'up',party:[newHero(name||'Wanderer',ancestry,role,1,assigned,rolls,appearance)],bag:{potion:4,ether:2,salve:2,ration:3},gold:45,flags:{elder:false,ritual:false,leverA:false,leverB:false,gate:false,boss:false,ending:null,satchelFound:false,satchelReturned:false,shrine:false,starterChest:false,cryptChestA:false,cryptChestB:false,trial:false},log:[],steps:0,battles:0,jobs:{goblin:{state:'none',count:0},orc:{state:'none',count:0}}};mode='explore';window.AshenAnimation?.clear();window.AshenIdentity?.prepare(G.party[0]);closeModal();trail=[];lastTownDistrict='';uiLog('A new adventurer arrives in Havenmere.');uiLog('Enter the northern Great Hall and speak to Elder Maelin.');refreshHud();saveGame(true);toast('Chapter I · The Hollow Bell');SFX.play('start')}
 function showModal(html,onChoice){document.documentElement.classList.remove('title-menu-open','tavern-creation-open');$('modal').setAttribute('data-screen','dialog');modalCallback=onChoice;$('modal').innerHTML=html;$('overlay').classList.remove('hidden');$('modal').scrollTop=0;$('modal').querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.action;modalCallback?.(action,btn)}))}
 function closeModal(){window.AshenTavern?.close();document.documentElement.classList.remove('title-menu-open');$('overlay').classList.add('hidden');$('modal').innerHTML='';modalCallback=null}
 function dialog(title,body,choices=[['Continue','close']],callback=null){showModal(`<h2>${title}</h2><p class="narrative">${body}</p><div class="choices">${choices.map(([label,id])=>`<button data-action="${id}">${label}</button>`).join('')}</div>`,(a)=>{closeModal();if(a!=='close')callback?.(a);else callback?.('close')})}
@@ -351,7 +351,7 @@ function loadGame(){
   try{data=normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY)))}
   catch(e){toast('No compatible save was found.');if(!G)mainMenu();return}
   // Accept only a fully validated save and invalidate pending encounter callbacks.
-  endCombat();G=data;trail=[];stepCounter=0;lastTownDistrict='';closeModal();refreshHud();
+  endCombat();window.AshenAnimation?.clear();G=data;trail=[];stepCounter=0;lastTownDistrict='';closeModal();refreshHud();
   uiLog('Your journey resumes.');SFX.play('start');toast('Adventure restored');
 }
 function refreshHud(){const party=$('partySummary'),quest=$('questSummary');if(!G){party.innerHTML='<div class="subtle">Begin an adventure to create your hero.</div>';quest.textContent='The road into the realm awaits.';$('coinCount').textContent='0 GOLD';$('locationText').textContent='—';$('proximityHint').textContent='EXPLORE · DISCOVER · CONQUER';return}
@@ -556,7 +556,7 @@ function entities(){if(!G)return[];
  ];
 }
 function walkable(loc,x,y){const m=maps[loc];if(x<0||y<0||x>=m.w||y>=m.h)return false;let t=m.tiles[y][x];if(loc==='town'&&maps.town.props&&['trees','market','cart','well'].some(k=>maps.town.props[k].some(p=>p[0]===x&&p[1]===y)))return false;if(['wall','mountain','water','fence','building','fountain','insideWall','wallTrim','pillar','books','forge','anvil','rack','crate','bed','hearth','table','plant','barrel','window'].includes(t))return false;const npc=entities().find(e=>e.x===x&&e.y===y&&['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice','warboss','campScout','leverA','leverB','altar','gate','satchel','shrine','cryptChestA','cryptChestB','starterChest'].includes(e.kind));if(npc)return false;return true}
-function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}const previous={location:G.location,x:G.x,y:G.y,dir:G.dir,steps:G.steps,stepCounter,silentSteps:G.party.map(h=>h.silentSteps||0)};lastSpriteStepAt=performance.now();G.x=x;G.y=y;G.steps++;stepCounter++;const silent=G.party.some(h=>h.hp>0&&h.silentSteps>0);G.party.forEach(h=>{if(h.silentSteps>0)h.silentSteps--});updateTownDistrict();
+function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1?'right':dx===-1?'left':dy===-1?'up':'down';const x=G.x+dx,y=G.y+dy;if(!walkable(G.location,x,y)){SFX.play('bump');return}const previous={location:G.location,x:G.x,y:G.y,dir:G.dir,steps:G.steps,stepCounter,silentSteps:G.party.map(h=>h.silentSteps||0)};lastSpriteStepAt=performance.now();const motionId=G.location+':'+G.party[0].id;window.AshenAnimation?.sample(motionId,G.x,G.y,G.dir,lastSpriteStepAt);window.AshenAnimation?.move(motionId,x,y,G.dir,lastSpriteStepAt);G.x=x;G.y=y;G.steps++;stepCounter++;const silent=G.party.some(h=>h.hp>0&&h.silentSteps>0);G.party.forEach(h=>{if(h.silentSteps>0)h.silentSteps--});updateTownDistrict();
  if(G.location==='town'){
   const entrance=maps.town.buildings.find(b=>b.doorX===x&&b.doorY===y);
   if(entrance){enterBuilding(entrance.room);return}
@@ -566,7 +566,7 @@ function tryMove(dx,dy){if(mode!=='explore'||isOverlay()||!G)return;G.dir=dx===1
  if(G.location==='crypt'&&x===24&&y===15&&!G.flags.trial){G.flags.trial=true;trapCheck();return}
  if(['wild','crypt','camp'].includes(G.location)&&stepCounter>5&&G.steps%4===0&&Math.random()<(G.location==='crypt'?.42:G.location==='camp'?.32:.28)*(silent?.5:1)){stepCounter=0;const pool=G.location==='wild'?['slime','wolf','goblin','orc','bandit']:G.location==='camp'?['goblin','orc','shaman']:['wisp','bone','bat','sentinel'];const n=Math.random()<.48?1:Math.random()<.77?2:3;const types=Array.from({length:n},()=>pool[rand(pool.length)-1]);beginCombat(types)}
  if(G.steps%20===0)saveGame(true);refreshHud();SFX.play('foot');}
-function changeMap(loc,x,y){G.location=loc;G.x=x;G.y=y;stepCounter=0;fx=[];updateTownDistrict();SFX.play('warp');refreshHud();saveGame(true);toast(maps[loc].name)}
+function changeMap(loc,x,y){window.AshenAnimation?.clear();G.location=loc;G.x=x;G.y=y;stepCounter=0;fx=[];updateTownDistrict();SFX.play('warp');refreshHud();saveGame(true);toast(maps[loc].name)}
 function enterBuilding(room){if(!maps[room])return;changeMap(room,8,10);G.dir='up';uiLog(`Entered ${maps[room].name}.`);toast(`${maps[room].name} · E to speak`)}
 function leaveBuilding(){const b=maps.town.buildings.find(b=>b.room===G.location);if(!b)return;changeMap('town',b.doorX,b.doorY+1);G.dir='down'}
 function doorHint(){if(!G)return '';const dx={left:-1,right:1,up:0,down:0}[G.dir],dy={left:0,right:0,up:-1,down:1}[G.dir];const x=G.x+dx,y=G.y+dy;
@@ -908,10 +908,11 @@ function queueCinematic(kind,actor,targets,resolve,side=null){
  combatAnimating=true;battleMenu='commands';const started=performance.now(),session=combatSession;
  const start=actorSide==='ally'?battleHeroPoint(G.party.indexOf(actor)):battleEnemyPoint(combat.enemies.indexOf(actor));
  const ends=targets.map(t=>t.stats?battleHeroPoint(G.party.indexOf(t)):battleEnemyPoint(combat.enemies.indexOf(t)));
- battleFX={kind,startTime:started,duration:850,source:start,targets:ends,actorSide,targetSide,actorId:actor.id,targetIds:targets.map(t=>t.id)};
+ const timing=window.AshenAnimation?.timing(kind)||{duration:850,impact:480,finish:900};
+ battleFX={kind,startTime:started,duration:timing.duration,source:start,targets:ends,actorSide,targetSide,actorId:actor.id,targetIds:targets.map(t=>t.id)};
  renderCombatMenu();
- setTimeout(()=>{if(mode==='combat'&&combat&&session===combatSession){resolve();refreshHud()}},480);
- setTimeout(()=>{if(session!==combatSession)return;battleFX=null;combatAnimating=false;if(mode==='combat'&&combat)nextTurn()},900)
+ setTimeout(()=>{if(mode==='combat'&&combat&&session===combatSession){resolve();refreshHud()}},timing.impact);
+ setTimeout(()=>{if(session!==combatSession)return;battleFX=null;combatAnimating=false;if(mode==='combat'&&combat)nextTurn()},timing.finish)
 }
 function combatUseItem(index,id){
   if(mode!=='combat'||!combat||combatAnimating||combat.queue[combat.turn]?.side!=='ally')return;
@@ -1267,10 +1268,10 @@ function drawLPC(name,x,y,direction='down',animation='idle',size=60,fade=1){
  ctx.drawImage(img,frame*64,row*64,64,64,x-size*.5,y-size*.91,size,size);
  ctx.restore();return true;
 }
-function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1,hero=null){
+function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1,hero=null,motion=null){
  const lpcName=role.toLowerCase();
- const walking=mode==='explore'&&(palette==='hero'||hero)&&performance.now()-lastSpriteStepAt<180;
- if(hero&&window.AshenIdentity?.draw(ctx,hero,x,y,{direction,height:44*scale,walking,time:performance.now()}))return;
+ const walking=mode==='explore'&&(motion?motion.walking:(palette==='hero'||hero)&&performance.now()-lastSpriteStepAt<180);
+ if(hero&&window.AshenIdentity?.draw(ctx,hero,x,y,{direction,height:44*scale,walking,shadow:motion?.shadow!==false,gait:motion?.gait,time:performance.now()}))return;
  if((direction==='up'||direction==='down')&&drawLPC(lpcName,x,y,direction,walking?'walk':'idle',58*scale))return;
  const asset=window.AshenSprites?.manifest.characters[lpcName];
  if(asset&&window.AshenSprites.ready(lpcName)){
@@ -1321,7 +1322,7 @@ function drawSprite(x,y,role='Fighter',palette='hero',direction='down',scale=1,h
  ctx.restore()
 }
 
-function drawEntity(e,sx,sy){if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),performance.now(),e.seated?34:40,{shadow:!e.seated&&!e.behindBar})){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+12,roles[e.kind],'npc','down',e.seated?.8:1,companion)}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+12,'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy+12+(window.AshenGrounding?.offset(e)??0)-(e.seated?34:40)-7+bob,12,e.col,'center')}return}
+function drawEntity(e,sx,sy){if(e.kind==='warboss'||e.kind==='campScout'){drawEnemy({type:e.kind==='warboss'?'warboss':'goblin',hp:1},sx+12,sy+24,e.kind==='warboss'?.25:.27);textDraw('!',sx+12,sy-12,11,'#ffcf87','center');return}if(['elder','shop','inn','merchant','rogue','cleric','crier','villager','archivist','apprentice','pilgrim','keeper','healer','acolyte','resident','baker','breadApprentice'].includes(e.kind)){const roles={elder:'Wizard',shop:'Fighter',inn:'Cleric',merchant:'Rogue',rogue:'Rogue',cleric:'Cleric',crier:'Fighter',villager:'Cleric',archivist:'Wizard',apprentice:'Fighter',pilgrim:'Cleric',keeper:'Rogue',healer:'Cleric',acolyte:'Cleric',resident:'Rogue',baker:'Cleric',breadApprentice:'Rogue'};if(!window.AshenPresentation?.npc(ctx,e.kind,sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),performance.now(),e.seated?34:40,{shadow:!e.seated&&!e.behindBar})){if(['cleric','rogue'].includes(e.kind)){const companion={role:roles[e.kind],ancestry:e.kind==='cleric'?'Elf':'Halfling',appearance:e.kind==='cleric'?'female':'male',gear:{}};drawSprite(sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),roles[e.kind],'npc','down',e.seated?.8:1,companion,{walking:false,gait:0,shadow:!e.seated&&!e.behindBar})}else drawLPC(roles[e.kind].toLowerCase(),sx+12,sy+12+(window.AshenGrounding?.offset(e)??0),'down','idle',e.seated?44:54)}if(e.symbol==='!'||e.symbol==='i'){const bob=Math.floor(Math.sin(animTick/15)*2);textDraw(e.symbol,sx+11,sy+12+(window.AshenGrounding?.offset(e)??0)-(e.seated?34:40)-7+bob,12,e.col,'center')}return}
  if(e.kind==='townGate'||e.kind==='cryptGate'||e.kind==='exit')return;
  if(e.kind==='satchel'){pix(sx+5,sy+10,15,10,'#895b3f');pix(sx+7,sy+7,11,4,'#d3ae76');pix(sx+13,sy+11,3,3,'#e7c77e');return}
  if(e.kind.includes('Chest')||e.kind==='cryptChestA'||e.kind==='cryptChestB'){pix(sx+3,sy+8,19,13,'#8c5b3d');pix(sx+3,sy+9,19,4,'#c39156');pix(sx+12,sy+8,3,14,'#e3bb75');pix(sx+11,sy+14,5,4,'#625248');return}
@@ -1422,6 +1423,7 @@ function drawAtmosphericEmbers(location,viewW,viewH){
  ctx.restore();
 }
 function interiorCamera(m,zoom){
+ const focus=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.x,G.y,G.dir,performance.now())||G;
  const frame=canvas.getBoundingClientRect?.();
  const cover=frame?.width>0&&frame?.height>0&&!document.documentElement.classList.contains('world-windowed');
  const visibleW=cover?Math.min(W,H*frame.width/frame.height):W;
@@ -1430,15 +1432,16 @@ function interiorCamera(m,zoom){
  // Portrait HUD docks occupy the top and bottom of the physical screen.
  const safeH=cover&&frame.width<frame.height?visibleH*.65:visibleH;
  const axis=(center,size,full,visible)=>size<=visible?(size-full)/2:clamp(center-full/2,-(full-visible)/2,size-full+(full-visible)/2);
- return {viewW,viewH,visibleW,visibleH,scrollX:axis(G.x*T+12,m.w*T,viewW,visibleW/zoom),scrollY:axis(G.y*T+12-.02*safeH/zoom,m.h*T,viewH,safeH/zoom)};
+ return {viewW,viewH,visibleW,visibleH,scrollX:axis(focus.x*T+12,m.w*T,viewW,visibleW/zoom),scrollY:axis(focus.y*T+12-.02*safeH/zoom,m.h*T,viewH,safeH/zoom)};
 }
 function drawLocation(){
  const m=maps[G.location],interior=['hall','smith','inn','tavern','chapel','cottage','bakery'].includes(G.location);
  const localZoom=interior?Math.max(cameraZoom,Math.min(W/(m.w*T),H/(m.h*T))):cameraZoom;
  const viewW=W/localZoom,viewH=H/localZoom;
  const roomView=interior?interiorCamera(m,localZoom):null;
- const scrollX=roomView?roomView.scrollX:clamp(G.x*T-viewW/2+T/2,0,Math.max(0,m.w*T-viewW));
- const scrollY=roomView?roomView.scrollY:clamp(G.y*T-(G.location==='town'?.73:.52)*viewH+T/2,0,Math.max(0,m.h*T-viewH));
+ const focus=window.AshenAnimation?.sample(G.location+':'+G.party[0].id,G.x,G.y,G.dir,performance.now())||G;
+ const scrollX=roomView?roomView.scrollX:clamp(focus.x*T-viewW/2+T/2,0,Math.max(0,m.w*T-viewW));
+ const scrollY=roomView?roomView.scrollY:clamp(focus.y*T-(G.location==='town'?.73:.52)*viewH+T/2,0,Math.max(0,m.h*T-viewH));
  const startX=Math.max(0,Math.floor(scrollX/T)),startY=Math.max(0,Math.floor(scrollY/T));
  ctx.clearRect(0,0,W,H);ctx.save();ctx.scale(localZoom,localZoom);
  const interiorFile='interiors/'+G.location+'.png';
@@ -1491,22 +1494,23 @@ function drawLocation(){
  drawables.push(...(window.AshenInteriors?.getProps(G.location)||[]));
  if(trail.length>2)G.party.slice(1).forEach((hero,i)=>{
   const step=trail[Math.min(trail.length-1,(i+1)*3)];
-  if(step?.loc===G.location)drawables.push({type:'follower',x:step.x,y:step.y,hero});
+  if(step?.loc===G.location)drawables.push({type:'follower',x:step.x,y:step.y,direction:step.dir||G.dir,hero});
  });
  drawables.push({type:'leader',x:G.x,y:G.y,hero:G.party[0]});
  for(const peer of window.AshenNetwork?.getOthers?.()||[]){
   if(peer.loc===G.location&&Number.isFinite(peer.x)&&Number.isFinite(peer.y))drawables.push({type:'peer',x:peer.x,y:peer.y,peer});
  }
+ for(const actor of drawables){if(actor.type==='interiorProp'||actor.type==='landscape')continue;const id=G.location+':'+(actor.hero?.id||actor.peer?.id||actor.entity?.id||actor.entity?.kind+':'+actor.x+':'+actor.y);actor.motion=window.AshenAnimation?.sample(id,actor.x,actor.y,actor.direction||actor.peer?.dir||actor.entity?.dir||G.dir,performance.now());actor.renderX=actor.motion?.x??actor.x;actor.renderY=actor.motion?.y??actor.y;}
  drawables.sort((a,b)=>(window.AshenGrounding?.depth(a)??a.y)-(window.AshenGrounding?.depth(b)??b.y)||a.x-b.x);
  for(const actor of drawables){
   if(actor.type==='interiorProp'){window.AshenInteriors.drawProp(ctx,actor.prop,scrollX,scrollY);continue}
-  const sx=actor.x*T-scrollX+12,sy=actor.y*T-scrollY+12;
+  const sx=(actor.renderX??actor.x)*T-scrollX+12,sy=(actor.renderY??actor.y)*T-scrollY+12;
   if(sx< -60||sy< -60||sx>viewW+60||sy>viewH+60)continue;
   if(actor.type==='landscape'){const near=Math.hypot(actor.x-G.x,actor.y-G.y)<1.8;if(actor.prop)window.AshenPresentation?.piece(ctx,actor.prop,sx,sy,47,20,near?.4:1);else window.AshenEnvironment.tree(ctx,sx,sy,actor.height,near?.28:1);continue}
   if(actor.type==='entity'){drawEntity(actor.entity,sx-12,sy-12);continue}
   if(actor.hero){
    if(!window.AshenSprites?.ready(actor.hero.role.toLowerCase())&&actor.type==='leader')pix(sx-6,sy-2,12,3,'#172625');
-   drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',G.dir,1,actor.hero);
+   drawSprite(sx,sy,actor.hero.role,actor.type==='leader'?'hero':actor.hero.role==='Rogue'?'#93ba9c':'#cfb99e',actor.motion?.direction||actor.direction||G.dir,1,actor.hero,actor.motion);
    continue;
   }
   const peer=actor.peer;
@@ -1551,7 +1555,7 @@ function illustratedActorState(actor){
 function drawIllustratedActor(actor,x,y,kind='ally',scale=1){
  const name=kind==='ally'?actor.role.toLowerCase():actor.type;
  const state=illustratedActorState(actor);
- if(kind==='ally'&&window.AshenIdentity?.draw(ctx,actor,x,y,{direction:'right',height:85*scale,time:state.time,state:state.state}))return true;
+ if(kind==='ally'&&(state.state==='idle'||actor.ancestry!=='Human'||actor.appearance==='female')&&window.AshenIdentity?.draw(ctx,actor,x,y,{direction:'right',height:85*scale,time:state.time,state:state.state}))return true;
  const asset=window.AshenSprites?.manifest.characters[name];
  if(!asset)return false;
  const stature=actor.ancestry==='Halfling'?.82:actor.ancestry==='Dwarf'?.9:1;
@@ -1625,7 +1629,7 @@ function drawEnemyBattlePlate(enemy,point){
 }
 function drawBattleFX(){
  const now=performance.now();
- if(battleFX){
+ if(battleFX&&!window.AshenEffects?.draw(ctx,battleFX,now)){
   const e=battleFX,p=clamp((now-e.startTime)/e.duration,0,1);
   const col={fire:'#ffb65d',meteor:'#ffe48a',ice:'#a9f7ff',arcane:'#bd94ff',holy:'#ffe8a6',shadow:'#bca3e9',slash:'#fff7d5'}[e.kind]||'#f6d2a0';
   e.targets.forEach((t,i)=>{
@@ -1748,7 +1752,7 @@ function drawTitle(){
  else{ctx.fillStyle='#091321';ctx.fillRect(0,0,W,H)}
 }
 let trail=[];
-function rememberStep(){if(!G)return;trail.unshift({loc:G.location,x:G.x,y:G.y});trail=trail.slice(0,18)}
+function rememberStep(){if(!G)return;trail.unshift({loc:G.location,x:G.x,y:G.y,dir:G.dir});trail=trail.slice(0,18)}
 let lastScreenMode=null;
 let previousCinemaHud='';
 function renderCinemaHud(){
