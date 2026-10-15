@@ -67,6 +67,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}])test(`roo
  await page.setViewportSize(viewport);await begin(page);
  for(const loc of ['tavern','hall','smith','inn','chapel','cottage','bakery']){
   await page.evaluate(loc=>window.AshenRealms.enterBuilding(loc),loc);
+  await page.waitForFunction(loc=>({hall:['scholar'],smith:['smith_npc'],inn:['innkeeper','pilgrim'],chapel:['pilgrim'],cottage:['farmer'],bakery:['baker_npc'],tavern:[]}[loc]).every(name=>window.AshenPresentation.debug().ready.includes(name)),loc);
   await page.screenshot({path:`artifacts/interiors/${viewport.width}-${loc}.png`});
  }
  await page.evaluate(()=>window.AshenRealms.enterBuilding('tavern'));

@@ -13,9 +13,10 @@ const cache=new Map(),key=o=>o.scene+':'+o.id;
 const state=(o,world)=>world?.objects?.[key(o)]||{};
 const isOpen=(o,world)=>state(o,world).open??o.open??false;
 function blocked(o,world){return o.kind==='gate'?!isOpen(o,world):o.kind==='container'}
+function seatApproach(loc,x,y,w){const scene=window.AshenInteriors?.scenes[loc];const solids=[...(scene?.walls||[]),...(scene?.props||[]).map(p=>p.footprint)];return [[x+w,y],[x-1,y],[x+w-1,y+1],[x+w-1,y-1]].find(([ax,ay])=>ax>0&&ax<17&&ay>=3&&ay<13&&!solids.some(([px,py,pw,ph])=>ax>=px&&ax<px+pw&&ay>=py&&ay<py+ph))||[x+w,y]}
 function forScene(loc){if(cache.has(loc))return cache.get(loc);const list=[...(extras[loc]||[])];for(const p of window.AshenInteriors?.scenes[loc]?.props||[]){
  const [x,y,w]=p.footprint;const seat=['bench','chair'].includes(p.sprite)&&!p.id.includes('west-chair')&&!p.id.includes('east-chair');
- list.push({id:p.id,scene:loc,kind:seat?'seat':'inspect',name:seat?(p.sprite==='bench'?'Wooden Bench':'Wooden Chair'):p.sprite==='bar'?'Bar Counter':p.sprite.includes('table')||p.sprite==='gaming'?'Wooden Table':p.sprite,cell:[x+w-1,y],anchor:seat?[x+w,y]:[x-1,y],text:'Handcrafted '+p.sprite+' with worn edges, old joinery and the marks of everyday use.'});
+ list.push({id:p.id,scene:loc,kind:seat?'seat':'inspect',name:seat?(p.sprite==='bench'?'Wooden Bench':'Wooden Chair'):p.sprite==='bar'?'Bar Counter':p.sprite.includes('table')||p.sprite==='gaming'?'Wooden Table':p.sprite,cell:[x+w-1,y],anchor:seat?seatApproach(loc,x,y,w):[x-1,y],text:'Handcrafted '+p.sprite+' with worn edges, old joinery and the marks of everyday use.'});
  }cache.set(loc,list);return list}
 function nearby(loc,x,y,dx,dy,world){return forScene(loc).map(o=>{const [ax,ay]=o.anchor;return {object:o,d:Math.abs(ax-x)+Math.abs(ay-y),f:ax===x+dx&&ay===y+dy}}).filter(v=>v.d<=1).sort((a,b)=>Number(b.f)-Number(a.f)||a.d-b.d)[0]?.object||null}
 function perform(o,world,player,occupied=()=>false){

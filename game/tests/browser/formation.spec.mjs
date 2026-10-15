@@ -23,9 +23,9 @@ test('actual party menu configures every member, restores focus and survives rel
  expect(before[0].id).toBe('member-0'); // Fastest hero acts first even from the back row.
  expect(errors).toEqual([]);
 });
-for(const [phase,steps] of [['day',0],['evening',300],['night',400],['dusk-blend',260]]){
+for(const [phase,minutes] of [['day',540],['evening',1140],['night',1320],['dusk-blend',1110]]){
  test(`integrated ${phase} forest loads, preserves artwork and shows initiative on phones`,async({page})=>{
-  const errors=await setup(page);await page.evaluate(steps=>{const a=window.AshenRealms;a.test.modifyGame(g=>{g.location='wild';g.steps=steps});a.beginCombat(['wolf','orc']);},steps);
+  const errors=await setup(page);await page.evaluate(minutes=>{const a=window.AshenRealms;a.test.modifyGame(g=>{g.location='wild';g.world.clock={minutes,day:1,rate:0}});a.beginCombat(['wolf','orc']);},minutes);
   for(const name of ['day','evening','night'])expect((await page.request.get(`/assets/battle/forest_${name}.jpg`)).status()).toBe(200);
   await expect(page.locator('.initiative-actor.current img')).toBeVisible();await expect(page.locator('[data-action-card=attack] img')).toBeVisible();await expect(page.locator('#battleActionDetail')).toContainText('Accuracy');
   await page.waitForFunction(()=>window.AshenIdentity.debug().draws.some(d=>d.mode==='combat')||window.AshenIdentity.debug().draws.length>0);

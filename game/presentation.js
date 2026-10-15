@@ -13,6 +13,7 @@ function piece(c,name,x,y,w,h=null,alpha=1){
  c.save();c.globalAlpha*=alpha;c.imageSmoothingEnabled=true;c.drawImage(image,x-w/2,y-h,w,h);c.restore();return true;
 }
 function flame(c,x,y,size,time=0){
+ if(window.AshenLighting?.frame(c,x,y,size*1.4,size*1.8,time))return;
  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||window.AshenTitle?.preferences().motionPaused)time=0;
  const sway=Math.sin(time/83+x)*size*.15,flicker=1+Math.sin(time/53+x)*.12;
  c.save();const halo=c.createRadialGradient(x,y-size*.4,0,x,y-size*.4,size*3.8);
@@ -28,12 +29,12 @@ function flame(c,x,y,size,time=0){
 function crypt(c,m,sx,sy,w,h){
  const floor=load('crypt_floor'),masonry=load('masonry');load('sarcophagus');load('statue');load('pillar');load('arch');
  let entry=cryptCache.get(m);
- if(!entry||entry.revision!==revision){
+ if(!entry||entry.revision!==revision||entry.materialRevision!==(window.AshenMaterials?.revision()??0)){
   const surface=document.createElement('canvas');surface.width=m.w*T*2;surface.height=m.h*T*2;const g=surface.getContext('2d');g.scale(2,2);
   g.fillStyle='#141b24';g.fillRect(0,0,m.w*T,m.h*T);
   g.save();g.beginPath();for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)if(m.tiles[y][x]!=='wall')g.rect(x*T,y*T,T,T);g.clip();
   g.fillStyle='#515560';g.fillRect(0,0,m.w*T,m.h*T);
-  if(floor){const tile=document.createElement('canvas');tile.width=tile.height=256;tile.getContext('2d').drawImage(floor,0,0,256,256);g.fillStyle=g.createPattern(tile,'repeat');g.fillRect(0,0,m.w*T,m.h*T)}
+  if(floor){const tile=document.createElement('canvas');tile.width=tile.height=256;tile.getContext('2d').drawImage(floor,0,0,256,256);g.fillStyle=g.createPattern(window.AshenMaterials?.texture('crypt',96)||tile,'repeat');g.fillRect(0,0,m.w*T,m.h*T)}
   g.restore();
   let stone='#3a4149';
   if(masonry){const tile=document.createElement('canvas');tile.width=128;tile.height=96;tile.getContext('2d').drawImage(masonry,0,0,128,96);stone=g.createPattern(tile,'repeat')}
@@ -45,10 +46,7 @@ function crypt(c,m,sx,sy,w,h){
     g.fillStyle='#070e1a45';g.fillRect(x*T,(y+1)*T,T,7);
    }else if(floorAt(1,0)||floorAt(-1,0)){g.fillStyle=stone;g.fillRect(x*T,y*T,T,T);g.fillStyle='#10172275';g.fillRect(x*T,y*T,T,T)}
   }
-  // Chamber furniture occupies edges and corners, outside the principal routes.
-  for(const [name,x,y,width] of [['sarcophagus',4,6,37],['sarcophagus',15,7,36],['sarcophagus',4,24,37],['sarcophagus',15,24,35],['statue',21,4,26],['statue',35,4,27],['pillar',20,22,32],['pillar',35,26,30]])piece(g,name,(x+.5)*T,(y+1)*T,width);
-  for(const [x,y] of [[8,11],[8,20],[28,13]])piece(g,'arch',(x+2)*T,y*T+10,4*T,62,.8);
-  entry={revision,surface};cryptCache.set(m,entry);
+  entry={revision,materialRevision:window.AshenMaterials?.revision()??0,surface};cryptCache.set(m,entry);
  }
  const cw=Math.min(w,m.w*T-sx),ch=Math.min(h,m.h*T-sy);c.drawImage(entry.surface,sx*2,sy*2,cw*2,ch*2,0,0,cw,ch);return true;
 }

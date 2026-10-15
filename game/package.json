@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test tests/animation.test.mjs tests/characters.test.mjs tests/dice.test.mjs tests/environment.test.mjs tests/formation.test.mjs tests/grounding.test.mjs tests/interactions.test.mjs tests/npc-behavior.test.mjs tests/p0.test.mjs tests/scene-runtime.test.mjs tests/title.test.mjs tests/world-art.test.mjs tests/world-props.test.mjs tests/world-time.test.mjs",
     "assets:build": "node tools/character-assets.mjs",
     "assets:validate": "node tools/character-assets.mjs --check",
     "browser:install": "node tools/playwright.mjs install chromium",

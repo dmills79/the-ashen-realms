@@ -25,13 +25,13 @@ test('illustrated material loading rebuilds the surface once; unsupported interi
  const ready=allocations();api.draw(ctx,map,'wild',0,0,100,100);assert.equal(allocations(),ready);
  assert.equal(api.draw(ctx,map,'crypt',0,0,100,100),false);assert.equal(api.draw(ctx,map,'inn',0,0,100,100),false);
 });
-test('decorations are deterministic, avoid road corridors, and never change collisions',()=>{
+test('tree footprints are deterministic, avoid road corridors, and leave navigation tiles unchanged',()=>{
  const {api,map}=setup(),before=JSON.stringify(map),trees=api.getDecorations(map,'wild');assert.ok(trees.length>0);
  assert.equal(api.getDecorations(map,'wild'),trees);
- for(const tree of trees){const x=Math.floor(tree.x),y=Math.floor(tree.y);assert.equal(map.tiles[y][x],'forest');assert.ok(Math.abs(y-6)>1)}
+ for(const tree of trees){const x=Math.floor(tree.x),y=Math.floor(tree.y);assert.equal(map.tiles[y][x],'forest');assert.ok(Math.abs(y-6)>1);assert.equal(api.blocks(map,'wild',x,y),true)}
  assert.equal(JSON.stringify(map),before);
 });
 test('water and mist animate without gameplay RNG; unavailable tree art yields to existing art',()=>{
  const {api,map,ctx}=setup();for(let i=0;i<10;i++)api.animate(ctx,map,'wild',0,0,288,288,i*50);
- assert.equal(api.tree(ctx,20,20),false);assert.equal(api.handles('forest'),true);assert.equal(api.handles('altar'),false);
+ assert.equal(api.tree(ctx,20,20),false);assert.equal(api.handles('forest'),true);assert.equal(api.handles('altar'),true);assert.equal(api.handles('insideWall'),false);for(let x=0;x<map.w;x++)assert.equal(api.blocks(map,'wild',x,6),false);
 });

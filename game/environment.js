@@ -2,14 +2,14 @@
 (function(){
 'use strict';
 const T=24;let caches=new WeakMap();
-const art={},decorations=new WeakMap();
+const art={},decorations=new WeakMap(),trunks=new WeakMap();let materialRevision=-1;
 for(const name of ['ancient_oak','woodland_ground','havenmere_gate']){
  const image=new Image();image.onload=()=>{art[name]=image;caches=new WeakMap()};image.src='assets/environment_v3/'+name+'.png';
 }
 for(const name of ['cobblestone','gravel','rock','cliff','oak','pine','willow','snag','fallen_log','ferns','brambles','heather','bridge']){const image=new Image();image.onload=()=>{art[name]=image;caches=new WeakMap()};image.src='assets/overhaul/'+name+'.png'}
 const outdoors=new Set(['town','wild','camp']);
 const roads=new Set(['path','plaza','townGate','cryptGate','bridge','fountain']);
-const surfaces=new Set(['grass','grass2','forest','mountain','water','path','plaza','townGate','cryptGate','bridge','building','door','fence','fountain']);
+const surfaces=new Set(['grass','grass2','forest','mountain','water','path','plaza','townGate','cryptGate','bridge','building','door','fence','fountain','barrel','altar','rune','exit']);
 const noise=(x,y,s=0)=>{const n=Math.sin(x*127.1+y*311.7+s*74.7)*43758.5453;return n-Math.floor(n)};
 function ellipse(c,x,y,rx,ry,color){c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill()}
 function material(c,w,h,loc){
@@ -18,6 +18,7 @@ function material(c,w,h,loc){
   const texture=document.createElement('canvas');texture.width=texture.height=512;texture.getContext('2d').drawImage(art.woodland_ground,0,0,512,512);
   c.save();c.globalAlpha=.72;c.fillStyle=c.createPattern(texture,'repeat');c.fillRect(0,0,w,h);c.restore();
  }
+ const forest=window.AshenMaterials?.texture('forest',256);if(forest){c.save();c.globalAlpha=loc==='wild'?.9:loc==='camp'?.55:.18;c.fillStyle=c.createPattern(forest,'repeat');c.fillRect(0,0,w,h);c.restore()}
  // Large overlapping tonal fields span dozens of cells; no individual tile borders.
  for(let y=-100;y<h+100;y+=90)for(let x=-100;x<w+100;x+=90){
   const px=x+noise(x,y)*70,py=y+noise(x,y,2)*70,r=75+noise(x,y,3)*75;
@@ -36,10 +37,10 @@ function paintRoad(c,m,loc){
   for(let x=5.5*T;x<=20.5*T;x+=3){const y=(17+Math.sin((x/T-5.5)/15*Math.PI)*2)*T;if(x===5.5*T)c.moveTo(x,y);else c.lineTo(x,y)}
   c.lineTo(24.5*T,17*T);c.bezierCurveTo(26*T,18*T,24.3*T,21*T,25*T,23*T);
   c.bezierCurveTo(29*T,23.8*T,33*T,22.2*T,37.5*T,23*T);c.lineTo(42.5*T,23.5*T);
-  c.strokeStyle='#4d5843';c.lineWidth=54;c.stroke();
+  const verge=window.AshenMaterials?.texture('forest',256);c.strokeStyle=verge?c.createPattern(verge,'repeat'):'#4d5843';c.lineWidth=52;c.stroke();
   c.strokeStyle='#89775b';c.lineWidth=44;
   if(art.gravel){const texture=document.createElement('canvas');texture.width=texture.height=96;texture.getContext('2d').drawImage(art.gravel,0,0,96,96);c.strokeStyle=c.createPattern(texture,'repeat')}
-  c.stroke();c.strokeStyle='#c5b18b18';c.lineWidth=28;c.stroke();c.restore();return;
+  const trail=window.AshenMaterials?.texture('trail',160);if(trail)c.strokeStyle=c.createPattern(trail,'repeat');c.stroke();c.strokeStyle='#c5b18b10';c.lineWidth=28;c.stroke();c.restore();return;
  }
  c.save();c.beginPath();
  for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)if(roads.has(m.tiles[y][x])){
@@ -72,7 +73,7 @@ function paintRoad(c,m,loc){
    g.addColorStop(0,'#365340b0');g.addColorStop(1,'#36534000');c.fillStyle=g;
    c.fillRect(vertical?Math.min(a,b):sx,vertical?sy:Math.min(a,b),vertical?5:T,vertical?T:5);
    // Uneven worn verges gently wander within each still-walkable corridor.
-   c.fillStyle='#354d3e';c.beginPath();for(let k=0;k<=T;k+=2){const variation=3+2*Math.sin((vertical?sy+k:sx+k)/21)+noise(x,y,k)*2;const u=vertical?a-(dx*variation):sx+k,v=vertical?sy+k:a-(dy*variation);if(k===0)c.moveTo(u,v);else c.lineTo(u,v)}c.lineTo(vertical?a:sx+T,vertical?sy+T:a);c.lineTo(vertical?a:sx,vertical?sy:a);c.closePath();c.fill();
+   const edge=window.AshenMaterials?.texture('forest',256);c.fillStyle=edge?c.createPattern(edge,'repeat'):'#354d3e';c.beginPath();for(let k=0;k<=T;k+=2){const variation=3+2*Math.sin((vertical?sy+k:sx+k)/21)+noise(x,y,k)*2;const u=vertical?a-(dx*variation):sx+k,v=vertical?sy+k:a-(dy*variation);if(k===0)c.moveTo(u,v);else c.lineTo(u,v)}c.lineTo(vertical?a:sx+T,vertical?sy+T:a);c.lineTo(vertical?a:sx,vertical?sy:a);c.closePath();c.fill();
   }
  }
 }
@@ -82,9 +83,9 @@ function paintRiver(c,m){
   // remain under water; traversable neighboring centers remain on dry banks.
   c.save();c.lineJoin='round';c.lineCap='round';c.beginPath();
   for(let y=-24;y<=29*T-24;y+=3){const x=(21.5+Math.sin((y/T-16)/7)*3)*T;if(y===-24)c.moveTo(x,y);else c.lineTo(x,y)}
-  c.strokeStyle='#526b50';c.lineWidth=87;c.stroke();c.strokeStyle='#a6a17a';c.lineWidth=78;c.stroke();c.strokeStyle='#244f5d';c.lineWidth=71;c.stroke();
-  c.strokeStyle='#183d4b';c.lineWidth=49;c.stroke();
+  const bank=window.AshenMaterials?.texture('trail',160),water=window.AshenMaterials?.texture('stream',128);c.strokeStyle=bank?c.createPattern(bank,'repeat'):'#526b50';c.lineWidth=82;c.stroke();c.strokeStyle=water?c.createPattern(water,'repeat'):'#244f5d';c.lineWidth=71;c.stroke();
   for(const offset of [-19,-7,10,22]){c.beginPath();for(let y=-24;y<=29*T-24;y+=3){const x=(21.5+Math.sin((y/T-16)/7)*3)*T+offset+Math.sin(y/18+offset)*1.8;if(y===-24)c.moveTo(x,y);else c.lineTo(x,y)}c.strokeStyle='#a1c8c51b';c.lineWidth=.8;c.stroke()}
+  if(art.ferns)for(let y=0;y<29*T-24;y+=15){const center=(21.5+Math.sin((y/T-16)/7)*3)*T;for(const side of [-1,1]){const bx=center+side*(37+noise(y,side)*4);c.drawImage(art.ferns,bx-5,y-6,11,11)}}
   c.restore();
  }else for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)if(m.tiles[y][x]==='water'){
   const sx=x*T,sy=y*T;c.fillStyle='#193d49';c.fillRect(sx,sy,T,T);
@@ -136,6 +137,7 @@ function build(m,loc){
 }
 function draw(c,m,loc,sx,sy,w,h){
  if(!outdoors.has(loc))return false;
+ const revision=window.AshenMaterials?.revision()??0;if(materialRevision!==revision){materialRevision=revision;caches=new WeakMap()}
  let canvas=caches.get(m);if(!canvas){canvas=build(m,loc);caches.set(m,canvas)}
  const cw=Math.min(w,m.w*T-sx),ch=Math.min(h,m.h*T-sy);
  c.drawImage(canvas,sx*2,sy*2,cw*2,ch*2,0,0,cw,ch);return true;
@@ -163,13 +165,14 @@ function getDecorations(m,loc){
  let list=decorations.get(m);if(list)return list;
  list=[];
  if(loc==='wild')for(let y=2;y<m.h-2;y++)for(let x=2;x<m.w-2;x++){
-  if(m.tiles[y][x]!=='forest'||noise(x,y,32)<.64)continue;
+  if(m.tiles[y][x]!=='forest'||noise(x,y,32)<.39)continue;
   let nearRoad=false;
   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(roads.has(m.tiles[y+dy]?.[x+dx]))nearRoad=true;
-  if(!nearRoad)list.push({type:'landscape',x:x+.12,y:y+.15,height:43+noise(x,y,33)*12,...(noise(x,y,35)>.9?{prop:'fallen_log'}:{})});
+  if(!nearRoad)list.push({type:'landscape',x:x+.12,y:y+.15,height:73+noise(x,y,33)*31});
  }
  decorations.set(m,list);return list;
 }
+function blocks(m,loc,x,y){if(loc!=='wild')return false;let cells=trunks.get(m);if(!cells){cells=new Set(getDecorations(m,loc).map(p=>Math.floor(p.x)+','+Math.floor(p.y)));trunks.set(m,cells)}return cells.has(x+','+y)}
 function tree(c,x,y,height=52,alpha=1){
  if(!art.ancient_oak)return false;
  c.save();c.globalAlpha=alpha;
@@ -182,5 +185,5 @@ function gate(c,x,y){
  ellipse(c,x+3,y-9,64,11,'#0b20244a');
  c.drawImage(art.havenmere_gate,x-75,y-106,150,100);return true;
 }
-window.AshenEnvironment={draw,animate,tree,gate,getDecorations,handles:tile=>surfaces.has(tile),noise};
+window.AshenEnvironment={draw,animate,tree,gate,getDecorations,blocks,handles:tile=>surfaces.has(tile),noise};
 })();

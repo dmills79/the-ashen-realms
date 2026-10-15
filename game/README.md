@@ -121,3 +121,11 @@ Milestone 3 adds continuous outdoor terrain, painted woodland assets, a Havenmer
 Milestone 4 introduces a cinematic title menu with new Havenmere-at-night artwork, responsive New Game/Continue/Settings controls and separate sound, zoom and title-motion preferences. See [TITLE_SCREEN.md](TITLE_SCREEN.md) for files, artwork provenance, validation and preview instructions. Milestone 5 remains pending.
 
 Milestone 5 replaces the character-creation form with portrait-led ancestry/class cards, pip-dice rolls, score swapping, live starting statistics and a final review. Existing 4d6-drop-lowest rules, bonuses and saves are preserved. See [CHARACTER_CREATOR.md](CHARACTER_CREATOR.md) for files, validation, preview and remaining portrait needs.
+
+## Living world development checkpoint
+
+The tavern now demonstrates shared foot-depth rendering, interpolated cardinal walking, synchronized combat effects, saved world time, source-local lighting, active-scene NPC routines, and persistent environmental interactions. Existing Canvas/grid gameplay and the save key remain in place.
+
+See [engine guide](docs/ENVIRONMENT_ENGINE.md), [milestone evidence](docs/LIVING_WORLD_PROGRESS.md), and [asset inventory and remaining production art](docs/LIVING_WORLD_ASSETS.md). The town/forest/crypt/camp work is a first world visual pass; it is not a declaration that every location has reached final tavern quality.
+
+Run npm.cmd test for unit checks. With the server running on port 8844, node tools/check-living-world-browser.mjs runs the diagnostic Chromium suite, and node tools/benchmark-living-world.mjs records warmed performance samples. The canonical browser worker stalled on this host and was not counted as passing.

@@ -4,7 +4,7 @@
 let mask=null;
 const point=(x,y,sx=0,sy=0)=>({x:x*24+12-sx,y:y*24+12-sy});
 const offset=e=>e?.seated?18:e?.behindBar?33:0;
-const depth=actor=>actor.type==='interiorProp'?actor.prop.depth:actor.type==='interactiveProp'?actor.y:(actor.renderY??actor.y)+.5+(actor.seated?18:offset(actor.entity))/24;
+const depth=actor=>actor.type==='sceneProp'?actor.depth:actor.type==='interiorProp'?actor.prop.depth:actor.type==='interactiveProp'?actor.y:(actor.renderY??actor.y)+.5+(actor.seated?18:offset(actor.entity))/24;
 function shadow(c,x,y,{width=12,height=3,alpha=1}={}){
  if(!mask){
   mask=document.createElement('canvas');mask.width=96;mask.height=32;

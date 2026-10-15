@@ -25,7 +25,7 @@ function update(loc,dt,{clock,player,map,walkable},active=true){
  }
  const occupied=(x,y,self)=>roster.some(e=>e!==self&&(e.x===x&&e.y===y||e.previous&&elapsed-e.movedAt<180&&e.previous.x===x&&e.previous.y===y));
  for(const e of roster){
-  if(elapsed<e.wait){e.state=e.conversing?'conversing':e.index===2?'sitting':'idle';continue}e.conversing=false;
+  if(elapsed<e.wait){e.state=e.conversing?'conversing':e.index===2?'conversing':'idle';continue}e.conversing=false;
   if(hour<e.hours[0]||hour>=e.hours[1]){if(e.exit)e.index=e.route.length-1}
   const goal=e.route[e.index],pass=(x,y)=>!(player.x===x&&player.y===y)&&!(player.visualX===x&&player.visualY===y)&&!occupied(x,y,e)&&walkable(x,y);
   if(e.x===goal[0]&&e.y===goal[1]){
