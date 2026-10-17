@@ -26,7 +26,7 @@ function createHarness(role='Wizard',level=5){
     performance:{now:()=>clock},Math:math};
   const end=gameSource.lastIndexOf('})();');assert.ok(end>=0);
   const inspect='window.__engine={getGame:()=>G,getCombat:()=>combat,setCombat:v=>{combat=v;mode="combat";combatAnimating=false},hitAttack,aoeDamage,processTurn,startRound,nextTurn,enemyAct,applyItem,pickMember,castFieldSpell,trapCheck,knownAbilities,illustratedActorState,chooseModal:a=>modalCallback(a),normalizeSave,isDefending,battleActionInfo,abilities:ABILITIES,creationStats,ancestries:ANCESTRIES,classes:CLASSES,training:CLASS_TRAINING};';
-  vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../formation.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
+  vm.createContext(sandbox);new vm.Script(readFileSync(new URL('../formation.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(readFileSync(new URL('../character-config.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(readFileSync(new URL('../world-time.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(readFileSync(new URL('../interactions.js',import.meta.url),'utf8')).runInContext(sandbox);new vm.Script(gameSource.slice(0,end)+inspect+gameSource.slice(end),{filename:'game.js'}).runInContext(sandbox);
   const api=sandbox.window.AshenRealms,engine=sandbox.window.__engine;
   api.newGame('Audit','Human',role);api.closeModal();
   const hero=engine.getGame().party[0];hero.stats=[10,10,10,10,10,10];hero.level=level;hero.hp=hero.maxHp=100;hero.mp=hero.maxMp=100;
@@ -216,16 +216,33 @@ test('equipping and swapping preserves total item counts and persists equipment'
   assert.equal(JSON.parse(h.storage.get(SAVE_KEY)).party[0].gear.weapon,'iron');
 });
 
+test('Lantern Road initializes safely and rewards a completed route exactly once',()=>{
+  const h=createHarness(),g=h.engine.getGame();
+  assert.equal(g.flags.lanternQuest,false);assert.equal(g.flags.lanternRoadComplete,false);
+  g.location='wild';g.x=10;g.y=18;g.dir='up';h.api.interact();
+  assert.equal(g.world.objects['wild:lantern-west']?.active,undefined);
+  h.api.closeModal();h.api.action('acolyte');h.engine.chooseModal('accept');
+  assert.equal(g.flags.lanternQuest,true);
+  for(const [x,y] of [[10,18],[22,16],[30,22]]){g.location='wild';g.x=x;g.y=y;g.dir='up';h.api.interact()}
+  assert.equal(Object.values(g.world.objects).filter(o=>o.active).length,3);
+  h.api.save();h.api.load();const restored=h.engine.getGame();
+  assert.equal(Object.values(restored.world.objects).filter(o=>o.active).length,3);
+  const gold=restored.gold,ether=restored.bag.ether;h.api.action('acolyte');
+  assert.equal(restored.flags.lanternRoadComplete,true);assert.equal(restored.gold,gold+30);assert.equal(restored.bag.ether,ether+1);
+  h.api.closeModal();h.api.action('acolyte');
+  assert.equal(restored.gold,gold+30);assert.equal(restored.bag.ether,ether+1);
+});
+
 for(const version of [2,3,4,5]){
   test('loads compatible version '+version+' without losing progress',()=>{
     const h=createHarness(),saved=JSON.parse(h.storage.get(SAVE_KEY));saved.version=version;saved.gold=123;saved.flags.boss=true;saved.bag.runestaff=2;saved.party[0].gear.weapon='iron';
     saved.party[0].level=3;saved.party[0].xp=7;saved.party[0].talents={might:1};saved.party[0].poison=2;saved.party[0].defending=true;saved.party[0].protectedThroughRound=99;
-    delete saved.party[0].talentPoints;delete saved.party[0].xpTotal;delete saved.jobs;
+    delete saved.party[0].talentPoints;delete saved.party[0].xpTotal;delete saved.jobs;delete saved.flags.lanternQuest;delete saved.flags.lanternRoadComplete;
     h.storage.set(SAVE_KEY,JSON.stringify(saved));h.api.load();const restored=h.api.getState();
     assert.equal(restored.version,5);assert.equal(restored.gold,123);assert.equal(restored.flags.boss,true);assert.equal(restored.bag.runestaff,2);
     assert.equal(restored.party[0].gear.weapon,'iron');assert.equal(restored.party[0].xpTotal,90);assert.equal(restored.party[0].talentPoints,1);
     assert.equal(restored.party[0].poison,2);assert.equal(restored.party[0].defending,false);assert.equal(restored.party[0].protectedThroughRound,undefined);
-    assert.equal(restored.jobs.goblin.state,'none');
+    assert.equal(restored.jobs.goblin.state,'none');assert.equal(restored.flags.lanternQuest,false);assert.equal(restored.flags.lanternRoadComplete,false);
   });
 }
 

@@ -9,3 +9,26 @@ test('a seat keeps the saved stand position and clears occupation when standing'
 test('invalid persisted object flags are rejected instead of corrupting collision state',()=>{assert.throws(()=>a?.validate?.({objects:{'tavern:gate':{open:'yes'}}}),/Invalid object/);assert.throws(()=>a?.validate?.({objects:{},seat:{scene:'missing',object:'bench'}}),/Invalid seat/)});
 
 test('chair approach avoids an adjacent table footprint',()=>{s.window.AshenInteriors={scenes:{fixture:{walls:[],props:[{id:'chair',sprite:'chair',footprint:[2,11,1,1]},{id:'table',sprite:'table',footprint:[3,10,3,2]}]}}};assert.deepEqual(Array.from(a.forScene('fixture').find(o=>o.id==='chair').anchor),[1,11])});
+
+test('Lantern Road defines three persistent non-blocking wilderness lights',()=>{
+ const lanterns=a.forScene('wild');
+ assert.deepEqual(Array.from(lanterns,o=>[o.id,Array.from(o.cell),Array.from(o.anchor)]),[
+  ['lantern-west',[10,17],[10,18]],
+  ['lantern-bridge',[22,15],[22,16]],
+  ['lantern-east',[30,21],[30,22]]
+ ]);
+ const world={objects:{}},lantern=lanterns[0];
+ assert.equal(a.blocked(lantern,world),false);
+ const first=a.perform(lantern,world,{x:10,y:18});
+ assert.equal(first.lit,true);assert.equal(first.text,'You relight the western waylantern. Its amber flame steadies against the Gloamwood mist.');
+ assert.equal(world.objects['wild:lantern-west'].active,true);
+ const repeated=a.perform(lantern,world,{x:10,y:18});
+ assert.equal(repeated.lit,false);assert.equal(repeated.text,'The western waylantern burns with a steady amber flame.');
+ const saved=JSON.parse(JSON.stringify(world));
+ assert.doesNotThrow(()=>a.validate(saved));
+ assert.equal(saved.objects['wild:lantern-west'].active,true);
+ const props=a.props('wild',saved);
+ assert.equal(props.length,3);
+ assert.equal(props[0].frame,'lantern');
+ assert.equal(props[0].active,true);
+});

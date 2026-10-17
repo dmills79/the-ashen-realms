@@ -8,6 +8,10 @@ const extras={tavern:[
  {id:'linen-chest',scene:'tavern',kind:'container',name:'Linen Chest',cell:[13,11],anchor:[13,10]},
  {id:'hearth',scene:'tavern',kind:'hearth',name:'Stone Hearth',cell:[14,3],anchor:[14,4]},
  {id:'notice',scene:'tavern',kind:'note',name:'Wayfarer Notices',cell:[3,2],anchor:[3,3],text:'Keep the passage to the hearth clear. Return empty tankards to the bar. Travelers may rest by the fire.'}
+],wild:[
+ {id:'lantern-west',scene:'wild',kind:'lantern',name:'Western Waylantern',cell:[10,17],anchor:[10,18],text:'You relight the western waylantern. Its amber flame steadies against the Gloamwood mist.'},
+ {id:'lantern-bridge',scene:'wild',kind:'lantern',name:'Bridge Waylantern',cell:[22,15],anchor:[22,16],text:'You relight the bridge waylantern. Warm light spills across the old stones.'},
+ {id:'lantern-east',scene:'wild',kind:'lantern',name:'Eastern Waylantern',cell:[30,21],anchor:[30,22],text:'You relight the eastern waylantern. The road toward Emberfall glows once more.'}
 ]};
 const cache=new Map(),key=o=>o.scene+':'+o.id;
 const state=(o,world)=>world?.objects?.[key(o)]||{};
@@ -24,6 +28,10 @@ function perform(o,world,player,occupied=()=>false){
  if(o.kind==='gate'){const closing=isOpen(o,world);if(closing&&(player.x===o.cell[0]&&player.y===o.cell[1]||occupied(...o.cell)))return {blocked:true,text:'The passage is occupied.'};next.open=!closing;world.objects[key(o)]=next;return {text:next.open?'You open the service gate.':'You close the service gate.'}}
  if(o.kind==='seat'){if(old.occupied||occupied(...o.cell))return {blocked:true,text:'That seat is occupied.'};next.occupied=true;next.occupiedBy='player';world.seat={scene:o.scene,object:o.id,stand:{x:player.x,y:player.y},cell:{x:o.cell[0],y:o.cell[1]}};world.objects[key(o)]=next;return {seated:true,text:'You sit. E or movement to stand.'}}
  if(o.kind==='container'){next.open=!old.open;next.looted=true;world.objects[key(o)]=next;return {inspect:true,text:next.open?'Folded wool blankets and clean linens fill the chest. These belong to the tavern; you leave them in place.':'You close the linen chest.'}}
+ if(o.kind==='lantern'){
+  if(old.active)return {lit:false,text:`The ${o.id==='lantern-west'?'western':o.id==='lantern-bridge'?'bridge':'eastern'} waylantern burns with a steady amber flame.`};
+  next.active=true;world.objects[key(o)]=next;return {lit:true,text:o.text};
+ }
  if(o.kind==='hearth'){next.active=true;next.stokedAt=(world.clock?.day||1)*1440+(world.clock?.minutes||0)}
  world.objects[key(o)]=next;return {inspect:true,text:o.text||(o.kind==='hearth'?'You settle a split log among the glowing embers. Warmth gathers around the stone hearth.':'The workmanship speaks of years of ordinary life.')}
 }
@@ -33,8 +41,12 @@ function validate(world){
  for(const [k,v]of Object.entries(world.objects||{})){if(k.length>120||k.includes('__proto__')||!v||typeof v!=='object'||Array.isArray(v))throw Error('Invalid object state');for(const f of ['open','active','occupied','looted','discovered'])if(v[f]!==undefined&&typeof v[f]!=='boolean')throw Error('Invalid object flags');if(v.occupiedBy!==undefined&&v.occupiedBy!==null&&v.occupiedBy!=='player')throw Error('Invalid object occupant');if(v.stokedAt!==undefined&&(!Number.isFinite(v.stokedAt)||v.stokedAt<0))throw Error('Invalid object time')}
  if(world.seat){const s=world.seat;if(!['tavern','inn','hall','smith','chapel','cottage','bakery','town','wild','crypt','camp'].includes(s.scene)||typeof s.object!=='string'||![s.stand?.x,s.stand?.y,s.cell?.x,s.cell?.y].every(n=>Number.isInteger(n)&&n>=0&&n<64))throw Error('Invalid seat state')}return world;
 }
-function props(loc,world){if(loc!=='tavern')return [];return extras.tavern.filter(o=>['gate','container','note'].includes(o.kind)).map(o=>{const open=isOpen(o,world),bounds=o.kind==='gate'?(open?[10.85,4.6,.55,1.3]:[11,5.2,1,.7]):o.kind==='container'?(open?[12.75,10.1,1.5,1.5]:[12.75,10.6,1.5,1]):[2.5,.55,1,1.2];return {type:'interactiveProp',x:bounds[0],y:o.kind==='note'?1.75:o.kind==='gate'?5.95:11.6,object:o,bounds,frame:o.kind==='gate'?(open?'gateOpen':'gateClosed'):o.kind==='container'?(open?'chestOpen':'chestClosed'):'notice'}})}
-function draw(c,p,sx,sy){if(!image.complete||!image.naturalWidth)return;const[x,y,w,h]=p.bounds;c.drawImage(image,...art[p.frame],x*24-sx,y*24-sy,w*24,h*24)}
-function hint(o,world){return 'E · '+(o.kind==='gate'?(isOpen(o,world)?'CLOSE ':'OPEN '):o.kind==='seat'?'SIT · ':o.kind==='container'?(isOpen(o,world)?'CLOSE ':'OPEN '):'INSPECT · ')+o.name.toUpperCase()}
+function props(loc,world){
+ if(loc==='wild')return extras.wild.map(o=>{const active=!!state(o,world).active,bounds=[o.cell[0]-.15,o.cell[1]-.9,1.3,1.9];return {type:'interactiveProp',x:o.cell[0],y:o.cell[1]+.5,object:o,bounds,frame:'lantern',active}});
+ if(loc!=='tavern')return [];
+ return extras.tavern.filter(o=>['gate','container','note'].includes(o.kind)).map(o=>{const open=isOpen(o,world),bounds=o.kind==='gate'?(open?[10.85,4.6,.55,1.3]:[11,5.2,1,.7]):o.kind==='container'?(open?[12.75,10.1,1.5,1.5]:[12.75,10.6,1.5,1]):[2.5,.55,1,1.2];return {type:'interactiveProp',x:bounds[0],y:o.kind==='note'?1.75:o.kind==='gate'?5.95:11.6,object:o,bounds,frame:o.kind==='gate'?(open?'gateOpen':'gateClosed'):o.kind==='container'?(open?'chestOpen':'chestClosed'):'notice'}})
+}
+function draw(c,p,sx,sy){if(!image.complete||!image.naturalWidth)return;const[x,y,w,h]=p.bounds,px=(x+w/2)*24-sx,py=(y+h*.62)*24-sy;if(p.active){c.save();c.globalCompositeOperation='screen';const glow=c.createRadialGradient(px,py,1,px,py,28);glow.addColorStop(0,'#ffd27a99');glow.addColorStop(1,'#ffd27a00');c.fillStyle=glow;c.fillRect(px-28,py-28,56,56);c.restore()}c.drawImage(image,...art[p.frame],x*24-sx,y*24-sy,w*24,h*24)}
+function hint(o,world){return 'E · '+(o.kind==='gate'?(isOpen(o,world)?'CLOSE ':'OPEN '):o.kind==='seat'?'SIT · ':o.kind==='container'?(isOpen(o,world)?'CLOSE ':'OPEN '):o.kind==='lantern'?(state(o,world).active?'INSPECT ':'LIGHT '):'INSPECT · ')+o.name.toUpperCase()}
 window.AshenInteractions={extras,state,blocked,blocks,forScene,nearby,perform,stand,validate,props,draw,hint,art};
 })();

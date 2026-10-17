@@ -1,6 +1,6 @@
 # The Ashen Realms v1.8 — Mobile Expansion
 
-The current development release adds safe-area responsive exploration, contextual hold-to-move touch controls, full-size mobile combat targets, reliable browser-test shutdown on Windows, and explicit cache revalidation/version headers. The save key remains `ashen-realms-v1.2-save`; no save migration or production deployment is required.
+The current development release adds safe-area responsive exploration, contextual hold-to-move touch controls, full-size mobile combat targets, reliable browser-test shutdown on Windows, and explicit cache revalidation/version headers. The Lantern Road side quest adds three persistent Gloamwood waylanterns, journal progress, and a one-time chapel reward using the existing interaction artwork and save system. The save key remains `ashen-realms-v1.2-save`; no manual save migration or production deployment is required.
 
 # Living World completion
 
