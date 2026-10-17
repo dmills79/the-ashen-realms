@@ -16,7 +16,7 @@ export default defineConfig({
     trace:'retain-on-failure',
     screenshot:'only-on-failure'
   },
-  webServer:{
+  webServer:process.env.ASHEN_EXTERNAL_TEST_SERVER?undefined:{
     command:'node server.mjs',
     env:{HOST:'127.0.0.1',PORT:'8877'},
     url:'http://127.0.0.1:8877',
