@@ -3,7 +3,8 @@ import {mkdirSync} from 'node:fs';
 
 const cycleOne='artifacts/mobile-expansion/cycle-1';
 const cycleTwo='artifacts/mobile-expansion/cycle-2';
-mkdirSync(cycleOne,{recursive:true});mkdirSync(cycleTwo,{recursive:true});
+const mobileUiTwo='artifacts/mobile-ui-2';
+mkdirSync(cycleOne,{recursive:true});mkdirSync(cycleTwo,{recursive:true});mkdirSync(mobileUiTwo,{recursive:true});
 test.use({hasTouch:true});
 
 async function startMobileAdventure(page,viewport){
@@ -35,16 +36,48 @@ async function expectNoPageOverflow(page){
 }
 
 async function expectDockHitTestable(page){
-  const controls=page.locator('.mobilepad button');
-  await expect(controls).toHaveCount(6);
-  for(const button of await controls.all()){
-    const box=await button.boundingBox();
+  const controls=page.locator('#mobileJoystick,#mobileAction,#mobileMenu');
+  await expect(controls).toHaveCount(3);
+  for(const control of await controls.all()){
+    const box=await control.boundingBox();
     expect(box).not.toBeNull();
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
-    const hit=await button.evaluate((node,{x,y})=>document.elementFromPoint(x,y)?.closest('button')===node,{x:box.x+box.width/2,y:box.y+box.height/2});
+    const hit=await control.evaluate((node,{x,y})=>document.elementFromPoint(x,y)?.closest('#mobileJoystick,button')===node,{x:box.x+box.width/2,y:box.y+box.height/2});
     expect(hit,'touch control is topmost at its center').toBe(true);
   }
+}
+
+async function placeInOpenWild(page,reach=7){
+  return page.evaluate(reach=>{
+    const a=window.AshenRealms,map=a.getMapData('wild');
+    for(let y=1;y<map.h-1;y++)for(let x=1;x<map.w-1;x++){
+      const clear=[[0,0],[1,0],[-1,0],[0,1],[0,-1]];
+      for(let step=2;step<=reach;step++)clear.push([step,0],[-step,0],[0,step],[0,-step]);
+      if(clear.every(([dx,dy])=>a.walkable('wild',x+dx,y+dy))){
+        a.test.modifyGame(game=>{game.location='wild';game.x=x;game.y=y;game.dir='down';game.world.clock.rate=0});
+        return {x,y};
+      }
+    }
+    throw new Error('No open joystick test cell found');
+  },reach);
+}
+
+async function joystickGeometry(page){
+  const box=await page.locator('#mobileJoystick').boundingBox();
+  expect(box).not.toBeNull();
+  return {x:box.x+box.width/2,y:box.y+box.height/2,radius:Math.min(box.width,box.height)/2};
+}
+
+async function startJoystick(page,vector,pointerId=41){
+  const geometry=await joystickGeometry(page),joystick=page.locator('#mobileJoystick');
+  await joystick.dispatchEvent('pointerdown',{pointerId,pointerType:'touch',isPrimary:pointerId===41,button:0,clientX:geometry.x,clientY:geometry.y});
+  await joystick.dispatchEvent('pointermove',{pointerId,pointerType:'touch',isPrimary:pointerId===41,button:0,clientX:geometry.x+geometry.radius*vector.x,clientY:geometry.y+geometry.radius*vector.y});
+  return geometry;
+}
+
+async function stopJoystick(page,pointerId=41,type='pointerup'){
+  await page.locator('#mobileJoystick').dispatchEvent(type,{pointerId,pointerType:'touch',isPrimary:pointerId===41,button:0});
 }
 
 async function inspectModal(page,name,open){
@@ -95,24 +128,95 @@ for(const viewport of [{width:360,height:800},{width:390,height:844},{width:768,
   });
 }
 
-test('touch controls repeat movement, stop on release and expose pressed feedback',async({page})=>{
-  await startMobileAdventure(page,{width:390,height:844});
-  const route=await page.evaluate(()=>{
-    const state=window.AshenRealms.getState();
-    return [{name:'up',dx:0,dy:-1},{name:'down',dx:0,dy:1},{name:'left',dx:-1,dy:0},{name:'right',dx:1,dy:0}]
-      .find(({dx,dy})=>[1,2,3].every(step=>window.AshenRealms.walkable(state.location,state.x+dx*step,state.y+dy*step)));
+test('analog joystick moves in four directions and alternates diagonal grid steps',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  await expect(page.locator('[data-dir]')).toHaveCount(0);
+  await expect(page.locator('#mobileJoystick')).toBeVisible();
+  const origin=await placeInOpenWild(page);
+  for(const vector of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]){
+    await page.evaluate(origin=>window.AshenRealms.test.modifyGame(game=>{game.location='wild';game.x=origin.x;game.y=origin.y}),origin);
+    await startJoystick(page,vector);
+    await expect.poll(()=>page.evaluate(()=>window.AshenRealms.getState())).toMatchObject({x:origin.x+vector.x,y:origin.y+vector.y});
+    await stopJoystick(page);
+  }
+  await page.evaluate(origin=>window.AshenRealms.test.modifyGame(game=>{game.location='wild';game.x=origin.x;game.y=origin.y}),origin);
+  await startJoystick(page,{x:.72,y:.72});
+  await expect.poll(()=>page.evaluate(origin=>{const game=window.AshenRealms.getState();return game.x>origin.x&&game.y>origin.y},origin),{timeout:1200}).toBe(true);
+  await stopJoystick(page);
+});
+
+test('joystick magnitude controls cadence and the dead zone remains still',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  const origin=await placeInOpenWild(page,8);
+  await startJoystick(page,{x:.1,y:0});
+  await page.waitForTimeout(320);
+  expect(await page.evaluate(()=>window.AshenRealms.getState())).toMatchObject(origin);
+  await stopJoystick(page);
+  const distances=[];
+  for(const magnitude of [.38,1]){
+    await page.evaluate(origin=>window.AshenRealms.test.modifyGame(game=>{game.x=origin.x;game.y=origin.y}),origin);
+    await startJoystick(page,{x:magnitude,y:0});
+    await page.waitForTimeout(650);
+    await stopJoystick(page);
+    distances.push((await page.evaluate(()=>window.AshenRealms.getState())).x-origin.x);
+  }
+  expect(distances[0]).toBeGreaterThan(0);
+  expect(distances[1]).toBeGreaterThan(distances[0]);
+});
+
+test('joystick recenters and stops on release cancellation blur visibility and modal open',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  await placeInOpenWild(page,8);
+  const expectReset=async()=>{
+    await expect.poll(()=>page.evaluate(()=>window.AshenRealms.test.joystick())).toMatchObject({pointerId:null,x:0,y:0,magnitude:0});
+    expect(await page.locator('.joystick-knob').evaluate(node=>node.style.transform)).toBe('translate3d(0px, 0px, 0px)');
+  };
+  await startJoystick(page,{x:1,y:0});await stopJoystick(page);await expectReset();
+  await startJoystick(page,{x:1,y:0});await stopJoystick(page,41,'pointercancel');await expectReset();
+  await startJoystick(page,{x:1,y:0});await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await expectReset();
+  await startJoystick(page,{x:1,y:0});await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await expectReset();
+  await startJoystick(page,{x:1,y:0});await page.evaluate(()=>window.AshenRealms.openInventory());await expectReset();
+  await page.evaluate(()=>window.AshenRealms.closeModal());
+});
+
+test('joystick preserves collision animation and active-pointer ownership',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  const blocked=await page.evaluate(()=>{
+    const a=window.AshenRealms,map=a.getMapData('wild'),dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+    for(let y=1;y<map.h-1;y++)for(let x=1;x<map.w-1;x++)if(a.walkable('wild',x,y))for(const [dx,dy] of dirs)if(!a.walkable('wild',x+dx,y+dy)){
+      a.test.modifyGame(game=>{game.location='wild';game.x=x;game.y=y;game.dir='down';game.world.clock.rate=0});return {x,y,dx,dy};
+    }
+    throw new Error('No collision fixture found');
   });
-  expect(route).toBeTruthy();
-  const button=page.locator(`[data-dir="${route.name}"]`),start=await page.evaluate(()=>window.AshenRealms.getState());
-  await button.dispatchEvent('pointerdown',{pointerId:11,pointerType:'touch',isPrimary:true});
-  await expect(button).toHaveClass(/is-pressed/);
-  await page.waitForTimeout(380);
-  await button.dispatchEvent('pointerup',{pointerId:11,pointerType:'touch',isPrimary:true});
-  await expect(button).not.toHaveClass(/is-pressed/);
-  const released=await page.evaluate(()=>window.AshenRealms.getState());
-  expect(Math.abs(released.x-start.x)+Math.abs(released.y-start.y)).toBeGreaterThanOrEqual(2);
-  await page.waitForTimeout(260);
-  expect(await page.evaluate(()=>window.AshenRealms.getState())).toMatchObject({x:released.x,y:released.y});
+  await startJoystick(page,{x:blocked.dx,y:blocked.dy});
+  await page.waitForTimeout(260);await stopJoystick(page);
+  expect(await page.evaluate(()=>window.AshenRealms.getState())).toMatchObject({x:blocked.x,y:blocked.y});
+
+  const origin=await placeInOpenWild(page);
+  await startJoystick(page,{x:1,y:0});
+  await expect.poll(()=>page.evaluate(origin=>window.AshenRealms.getState().x-origin.x,origin)).toBeGreaterThan(0);
+  const motion=await page.evaluate(()=>{const a=window.AshenRealms,g=a.getState();return window.AshenAnimation.sample('wild:'+g.party[0].id,g.x,g.y,g.dir,performance.now())});
+  expect(motion.direction).toBe('right');expect(motion.walking).toBe(true);
+  const geometry=await joystickGeometry(page);
+  await page.locator('#mobileJoystick').dispatchEvent('pointerdown',{pointerId:42,pointerType:'touch',isPrimary:false,button:0,clientX:geometry.x,clientY:geometry.y});
+  expect(await page.evaluate(()=>window.AshenRealms.test.joystick())).toMatchObject({pointerId:41});
+  await stopJoystick(page);
+});
+
+test('movement and contextual action accept independent pointers',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  await page.evaluate(()=>window.AshenRealms.test.modifyGame(game=>{game.location='town';game.x=10;game.y=15;game.dir='up';game.world.clock.rate=0}));
+  await expect(page.locator('#mobileAction')).toHaveText('TALK');
+  const geometry=await joystickGeometry(page);
+  await page.evaluate(({x,y,radius})=>{
+    const joystick=document.querySelector('#mobileJoystick'),action=document.querySelector('#mobileAction');
+    joystick.dispatchEvent(new PointerEvent('pointerdown',{pointerId:41,pointerType:'touch',isPrimary:true,button:0,clientX:x,clientY:y,bubbles:true,cancelable:true}));
+    joystick.dispatchEvent(new PointerEvent('pointermove',{pointerId:41,pointerType:'touch',isPrimary:true,button:0,clientX:x+radius,clientY:y,bubbles:true,cancelable:true}));
+    action.dispatchEvent(new PointerEvent('pointerdown',{pointerId:72,pointerType:'touch',isPrimary:false,button:0,bubbles:true,cancelable:true}));
+    action.click();
+  },geometry);
+  await expect(page.locator('#modal')).toContainText('HAVENMERE JOB BOARD');
+  await expect.poll(()=>page.evaluate(()=>window.AshenRealms.test.joystick())).toMatchObject({pointerId:null});
 });
 
 test('touch action is contextual and mobile navigation opens inventory',async({page})=>{
