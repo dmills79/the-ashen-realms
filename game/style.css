@@ -490,6 +490,70 @@ html.world-explore.hud-minimal .district-notice{display:none}
 }
 @media(max-width:560px){html.world-explore .world-hero.world-roster{bottom:55px;max-height:30vh;width:196px}.world-party-row-info strong{font-size:11px}.train-statline>span{min-width:31px;padding:3px}}
 
+/* v1.8 mobile viewport shell: keep exploration controls above the fixed world. */
+:root{
+ --safe-top:env(safe-area-inset-top,0px);
+ --safe-right:env(safe-area-inset-right,0px);
+ --safe-bottom:env(safe-area-inset-bottom,0px);
+ --safe-left:env(safe-area-inset-left,0px);
+ --mobile-dock-height:104px;
+}
+html.world-explore .gameframe,html.title-screen .gameframe{height:100vh;height:100dvh}
+html.world-explore .overlay,html.title-screen .overlay{
+ padding:max(10px,var(--safe-top)) max(10px,var(--safe-right)) max(10px,var(--safe-bottom)) max(10px,var(--safe-left));
+ align-items:center;
+}
+html.world-explore .modal,html.title-screen .modal{
+ max-height:calc(100vh - var(--safe-top) - var(--safe-bottom) - 20px);
+ max-height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 20px);
+ overscroll-behavior:contain;
+}
+
+@media(max-width:899px){
+ html.world-explore .mobilepad{
+  display:flex;position:fixed;z-index:121;left:max(8px,var(--safe-left));right:max(8px,var(--safe-right));
+  bottom:max(8px,var(--safe-bottom));height:var(--mobile-dock-height);margin:0;align-items:flex-end;
+  pointer-events:none;filter:drop-shadow(0 6px 15px #000b);
+ }
+ html.world-explore .mobilepad .pad-dirs,html.world-explore .mobilepad .actionkey{pointer-events:auto}
+ html.world-explore .pad-dirs{display:flex;flex-direction:column;align-items:center;padding:4px;border:1px solid #a58a636e;border-radius:11px;background:#07131eda;backdrop-filter:blur(8px)}
+ html.world-explore .pad-dirs>div{display:flex}
+ html.world-explore .pad-dirs button,html.world-explore .actionkey{min-width:48px;min-height:48px;margin:1px;touch-action:none;user-select:none;-webkit-user-select:none}
+ html.world-explore .actionkey{width:58px;height:58px;align-self:flex-end;background:#101e2ee8;border-color:#c7a873;border-radius:50%;font:700 10px Arial,sans-serif;letter-spacing:.7px;text-align:center}
+ html.world-explore .actionkey.muted{margin-left:-4px;background:#091522e8;border-color:#718392}
+ html.world-explore .world-actions{bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 14px)}
+ html.world-explore .world-hero.world-roster{bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 58px);max-height:min(27vh,260px)}
+ html.world-explore .world-topline{top:max(5px,var(--safe-top));left:max(6px,var(--safe-left))}
+ html.world-explore .world-topactions{top:max(5px,var(--safe-top));right:max(5px,var(--safe-right))}
+ html.world-explore #hudToggle{right:max(6px,var(--safe-right))}
+ html.world-explore:has(.overlay:not(.hidden)) .mobilepad,html.world-explore.world-windowed .mobilepad{display:none}
+ .modal button,.modal input,.modal select{min-height:44px}
+ .modal .scroll{max-height:min(38dvh,310px)}
+}
+
+@media(max-width:560px){
+ :root{--mobile-dock-height:100px}
+ html.world-explore .world-actions{left:112px;right:4px;bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 8px)}
+ html.world-explore .world-actions button{min-height:44px;padding:6px 3px;font-size:8px}
+ html.world-explore .world-hero.world-roster{bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 58px);width:188px;max-height:23vh}
+ html.world-explore .world-map{right:max(5px,var(--safe-right))}
+ html.world-explore .modal{width:100%;padding:12px}
+ .shoprow,.itemrow,.partyrow{align-items:flex-start;flex-wrap:wrap}
+ .shoprow>div,.itemrow>div,.partyrow>div{min-width:0;flex:1 1 180px}
+ .shoprow button,.itemrow button,.partyrow button{flex:1 0 88px}
+}
+
+@media(max-width:899px) and (max-height:520px){
+ :root{--mobile-dock-height:76px}
+ html.world-explore .mobilepad{height:var(--mobile-dock-height)}
+ html.world-explore .pad-dirs{display:grid;grid-template-columns:44px 132px;padding:2px}
+ html.world-explore .pad-dirs>button{grid-column:1;grid-row:1}
+ html.world-explore .pad-dirs>div{grid-column:2;grid-row:1}
+ html.world-explore .pad-dirs button,html.world-explore .actionkey{min-width:44px;min-height:44px;width:44px;height:44px}
+ html.world-explore .world-hero.world-roster{display:none}
+ html.world-explore .world-actions{left:184px;bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 3px)}
+}
+
 /* v1.6 merchant storefront */
 .trade-screen{width:min(780px,96vw);color:#f2e9d8}.trade-header{text-align:center;padding:8px 8px 17px;border-bottom:1px solid #8a765b}.trade-header>span{font:700 10px Arial,sans-serif;letter-spacing:3px;color:#c9ab77}.trade-header h2{font-size:28px;margin:6px 0;color:#f1d5a0}.trade-header p{font-size:13px;color:#bdcbd2}.trade-purse{background:#111e2c;border:1px solid #7e6948;border-radius:7px;margin:12px auto 0;padding:10px;max-width:300px;font:12px Arial,sans-serif;letter-spacing:1px}.trade-purse b{color:#f7c971;font-size:17px;margin-left:10px}.trade-tabs{display:flex;gap:8px;margin:14px 0}.trade-tabs button{flex:1;min-height:42px}.trade-tabs button.selected{background:#46543f;border-color:#e6c785;color:#ffe6af}.trade-list{max-height:min(50vh,490px);overflow:auto;display:grid;gap:9px;padding:3px 5px 8px}.trade-row{background:linear-gradient(110deg,#243444,#132130);border:1px solid #506377;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:8px}.trade-item{flex:1;min-width:0}.trade-item strong{font-size:15px;color:#ffdfaa}.trade-item small,.trade-item em{display:block;font:12px/1.4 Arial,sans-serif;color:#b9c8cc;margin-top:4px}.trade-item em{font-size:10px;color:#b9b3a0;font-style:normal}.trade-controls{display:flex;align-items:center;gap:5px}.trade-controls input{width:55px!important;max-width:55px;text-align:center;height:35px;padding:4px!important}.trade-controls button{min-width:32px;height:35px;padding:5px 8px!important}.trade-controls .trade-submit{min-width:66px;border-color:#c9ab77;color:#f9d9a2;font-weight:bold}.trade-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px}.trade-footer span{font:11px/1.4 Arial,sans-serif;color:#a8b9c9}.trade-footer button{padding:10px 15px!important}.empty-trade{padding:25px;text-align:center;color:#b1c1cb}@media(max-width:680px){.trade-row{display:block}.trade-controls{margin-top:12px}.trade-footer{display:block}.trade-footer button{margin-top:10px;width:100%}}
 
