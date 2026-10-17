@@ -519,6 +519,7 @@ html.world-explore .modal,html.title-screen .modal{
  html.world-explore .pad-dirs{display:flex;flex-direction:column;align-items:center;padding:4px;border:1px solid #a58a636e;border-radius:11px;background:#07131eda;backdrop-filter:blur(8px)}
  html.world-explore .pad-dirs>div{display:flex}
  html.world-explore .pad-dirs button,html.world-explore .actionkey{min-width:48px;min-height:48px;margin:1px;touch-action:none;user-select:none;-webkit-user-select:none}
+ html.world-explore .mobilepad button.is-pressed{transform:translateY(1px) scale(.94);border-color:#f2ce8b;background:#294057;box-shadow:0 0 0 2px #e3b96f3d,0 0 18px #d59b5170}
  html.world-explore .actionkey{width:58px;height:58px;align-self:flex-end;background:#101e2ee8;border-color:#c7a873;border-radius:50%;font:700 10px Arial,sans-serif;letter-spacing:.7px;text-align:center}
  html.world-explore .actionkey.muted{margin-left:-4px;background:#091522e8;border-color:#718392}
  html.world-explore .world-actions{bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 14px)}
@@ -527,7 +528,7 @@ html.world-explore .modal,html.title-screen .modal{
  html.world-explore .world-topactions{top:max(5px,var(--safe-top));right:max(5px,var(--safe-right))}
  html.world-explore #hudToggle{right:max(6px,var(--safe-right))}
  html.world-explore:has(.overlay:not(.hidden)) .mobilepad,html.world-explore.world-windowed .mobilepad{display:none}
- .modal button,.modal input,.modal select{min-height:44px}
+ html.world-explore .modal button,html.world-explore .modal input,html.world-explore .modal select{min-height:44px}
  .modal .scroll{max-height:min(38dvh,310px)}
 }
 

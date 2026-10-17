@@ -2,7 +2,9 @@ import {test,expect} from '@playwright/test';
 import {mkdirSync} from 'node:fs';
 
 const cycleOne='artifacts/mobile-expansion/cycle-1';
-mkdirSync(cycleOne,{recursive:true});
+const cycleTwo='artifacts/mobile-expansion/cycle-2';
+mkdirSync(cycleOne,{recursive:true});mkdirSync(cycleTwo,{recursive:true});
+test.use({hasTouch:true});
 
 async function startMobileAdventure(page,viewport){
   await page.setViewportSize(viewport);
@@ -92,3 +94,57 @@ for(const viewport of [{width:360,height:800},{width:390,height:844},{width:768,
     expect(errors).toEqual([]);
   });
 }
+
+test('touch controls repeat movement, stop on release and expose pressed feedback',async({page})=>{
+  await startMobileAdventure(page,{width:390,height:844});
+  const route=await page.evaluate(()=>{
+    const state=window.AshenRealms.getState();
+    return [{name:'up',dx:0,dy:-1},{name:'down',dx:0,dy:1},{name:'left',dx:-1,dy:0},{name:'right',dx:1,dy:0}]
+      .find(({dx,dy})=>[1,2,3].every(step=>window.AshenRealms.walkable(state.location,state.x+dx*step,state.y+dy*step)));
+  });
+  expect(route).toBeTruthy();
+  const button=page.locator(`[data-dir="${route.name}"]`),start=await page.evaluate(()=>window.AshenRealms.getState());
+  await button.dispatchEvent('pointerdown',{pointerId:11,pointerType:'touch',isPrimary:true});
+  await expect(button).toHaveClass(/is-pressed/);
+  await page.waitForTimeout(380);
+  await button.dispatchEvent('pointerup',{pointerId:11,pointerType:'touch',isPrimary:true});
+  await expect(button).not.toHaveClass(/is-pressed/);
+  const released=await page.evaluate(()=>window.AshenRealms.getState());
+  expect(Math.abs(released.x-start.x)+Math.abs(released.y-start.y)).toBeGreaterThanOrEqual(2);
+  await page.waitForTimeout(260);
+  expect(await page.evaluate(()=>window.AshenRealms.getState())).toMatchObject({x:released.x,y:released.y});
+});
+
+test('touch action is contextual and mobile navigation opens inventory',async({page})=>{
+  await startMobileAdventure(page,{width:390,height:844});
+  await page.evaluate(()=>window.AshenRealms.test.modifyGame(game=>{game.location='town';game.x=10;game.y=15;game.dir='up'}));
+  const action=page.locator('#mobileAction');
+  await expect(action).toHaveText('TALK');
+  await page.screenshot({path:`${cycleTwo}/390x844-contextual-talk.png`});
+  await action.tap();
+  await expect(page.locator('#overlay')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#modal')).toContainText('HAVENMERE JOB BOARD');
+  await page.evaluate(()=>window.AshenRealms.closeModal());
+  await page.locator('#mobileMenu').tap();
+  await expect(page.locator('#modal')).toContainText("ADVENTURER'S SATCHEL");
+  await expect(page.locator('#modal button').last()).toHaveCSS('min-height','44px');
+  await page.screenshot({path:`${cycleTwo}/390x844-touch-inventory.png`});
+});
+
+test('combat remains fully touch operable with comfortable command targets',async({page})=>{
+  await startMobileAdventure(page,{width:390,height:844});
+  await page.evaluate(()=>window.AshenRealms.beginCombat(['orc']));
+  await expect(page.locator('.mobilepad')).toBeHidden();
+  const attack=page.locator('#battlePanel [data-c="attack"]');
+  await expect(attack).toBeVisible();
+  const attackBox=await attack.boundingBox();
+  expect(attackBox.height).toBeGreaterThanOrEqual(44);
+  await page.screenshot({path:`${cycleTwo}/390x844-combat-commands.png`});
+  await attack.tap();
+  const target=page.locator('#battlePanel [data-c^="target:"]').first();
+  await expect(target).toBeVisible();
+  const targetBox=await target.boundingBox();
+  expect(targetBox.height).toBeGreaterThanOrEqual(44);
+  await target.tap();
+  await expect.poll(()=>page.evaluate(()=>window.AshenRealms.getCombat()?.events?.length||window.AshenRealms.getCombat()?.log?.length||0)).toBeGreaterThan(0);
+});

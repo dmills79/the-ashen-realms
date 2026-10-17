@@ -126,3 +126,18 @@ html.cinematic-battle [data-inspect-toggle]{display:none;min-height:0;padding:1p
  html.cinematic-battle .battlepanel .tactics button{min-height:18px!important;font-size:7px!important}html.cinematic-battle .combat-command-rail button{font-size:9px}html.cinematic-battle .battlepanel .actionrow .battle-art-card{width:80px;flex-basis:80px}html.cinematic-battle .action-art{height:74px}html.cinematic-battle .battle-art-card b{font-size:9px;min-height:22px}
  html.cinematic-battle .battle-action-detail p{font-size:10px}html.cinematic-battle .battle-action-detail dl{font-size:9px}.battle-target-detail p{font-size:9px}html.cinematic-battle .battle-events{padding:8px 10px}
 }
+
+/* Touch layouts keep the compact battle dock while giving every command a full finger target. */
+@media(max-width:900px) and (min-height:551px){
+ html.cinematic-battle .battle-controls{grid-template-columns:108px minmax(0,1fr)}
+ html.cinematic-battle .combat-command-rail{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(44px,1fr))}
+ html.cinematic-battle .combat-command-rail button{min-height:44px!important;justify-content:center;padding:3px 4px}
+ html.cinematic-battle .battlepanel .actionrow .battle-back{min-height:44px}
+ html.cinematic-battle .battlepanel .actionrow .battle-art-card{touch-action:manipulation}
+}
+@media(max-height:550px) and (max-width:900px){
+ html.cinematic-battle .battle-controls{grid-template-columns:150px minmax(0,1fr)}
+ html.cinematic-battle .combat-command-rail{grid-template-columns:repeat(3,minmax(44px,1fr));grid-template-rows:repeat(2,minmax(44px,1fr))}
+ html.cinematic-battle .combat-command-rail button{min-width:44px;min-height:44px!important}
+ html.cinematic-battle .battlepanel .actionrow .battle-back{min-height:44px}
+}
