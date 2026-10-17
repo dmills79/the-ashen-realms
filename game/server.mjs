@@ -1,4 +1,4 @@
-/** The Ashen Realms v1.4 - dependency-free Node.js LAN game server.
+/** The Ashen Realms v1.8 - dependency-free Node.js LAN game server.
  *  Static hosting + minimal same-origin WebSocket lobby presence/chat protocol.
  *  Solo play needs no server. Multiplayer does not sync combat, items or quests.
  */
@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash,randomBytes} from 'node:crypto';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
+const APP_VERSION='1.8.0';
 const host=process.env.HOST||'0.0.0.0';
 const port=Number(process.env.PORT||8844);
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.ogg':'audio/ogg','.wav':'audio/wav','.mp3':'audio/mpeg','.jpg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon','.md':'text/markdown; charset=utf-8'};
@@ -27,6 +28,27 @@ function processMessage(p,m){if(!m||typeof m!=='object'||Array.isArray(m))return
  if(m.type==='chat'){if(now-p.lastChat<450)return;const message=String(m.message||'').replace(/[\x00-\x1f\x7f]/g,'').trim().slice(0,180);if(!message)return;p.lastChat=now;broadcast(p.room,{type:'chat',name:p.name,message});send(p,{type:'chat',name:p.name,message})}
 }
 function openSocket(socket){const p={socket,id:randomBytes(6).toString('hex'),name:'Adventurer',room:null,joined:false,loc:null,x:0,y:0,dir:'down',role:'Fighter',level:1,lastState:0,lastChat:0};let buffer=Buffer.alloc(0);socket.on('data',chunk=>{buffer=Buffer.concat([buffer,chunk]);if(buffer.length>16384){socket.destroy();return}while(buffer.length>=2){const a=buffer[0],b=buffer[1],opcode=a&0xf,masked=!!(b&0x80);if(!(a&0x80)||!masked){socket.destroy();return}let n=b&0x7f,off=2;if(n===126){if(buffer.length<4)return;n=buffer.readUInt16BE(2);off=4}else if(n===127){if(buffer.length<10)return;const long=buffer.readBigUInt64BE(2);if(long>4096n){socket.destroy();return}n=Number(long);off=10}if(n>4096){socket.destroy();return}if(buffer.length<off+4+n)return;const key=buffer.subarray(off,off+4),msg=Buffer.from(buffer.subarray(off+4,off+4+n));buffer=buffer.subarray(off+4+n);for(let i=0;i<msg.length;i++)msg[i]^=key[i%4];if(opcode===8){sendFrame(socket,8,Buffer.alloc(0));socket.end();return}if(opcode===9){sendFrame(socket,10,msg);continue}if(opcode!==1)continue;try{processMessage(p,JSON.parse(msg.toString('utf8')))}catch(e){}}});socket.on('close',()=>leave(p));socket.on('error',()=>leave(p))}
-const server=http.createServer((req,res)=>{let pathname;try{pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname)}catch(e){res.writeHead(400);res.end('Invalid path');return}if(pathname==='/')pathname='/index.html';const file=path.resolve(root,'.'+pathname);if(!file.startsWith(root+path.sep)||file.includes(`${path.sep}node_modules${path.sep}`)||path.basename(file).startsWith('.')||['.mjs','.py','.sh','.bat','.zip'].includes(path.extname(file))){res.writeHead(403);res.end('Forbidden');return}fs.stat(file,(err,stat)=>{if(err||!stat.isFile()){res.writeHead(404);res.end('Not found');return}res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');res.setHeader('X-Content-Type-Options','nosniff');fs.createReadStream(file).pipe(res)})});
+const revalidatedExtensions=new Set(['.html','.css','.js','.json']);
+const server=http.createServer((req,res)=>{
+ let pathname;
+ try{pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname)}catch(e){res.writeHead(400);res.end('Invalid path');return}
+ if(pathname==='/')pathname='/index.html';
+ const file=path.resolve(root,'.'+pathname),extension=path.extname(file);
+ if(!file.startsWith(root+path.sep)||file.includes(`${path.sep}node_modules${path.sep}`)||path.basename(file).startsWith('.')||['.mjs','.py','.sh','.bat','.zip'].includes(extension)){res.writeHead(403);res.end('Forbidden');return}
+ fs.stat(file,(err,stat)=>{
+  if(err||!stat.isFile()){res.writeHead(404);res.end('Not found');return}
+  const etag=`"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
+  res.setHeader('Content-Type',mime[extension]||'application/octet-stream');
+  res.setHeader('Content-Length',stat.size);
+  res.setHeader('Last-Modified',stat.mtime.toUTCString());
+  res.setHeader('ETag',etag);
+  res.setHeader('Cache-Control',revalidatedExtensions.has(extension)?'no-cache':'public, max-age=86400, stale-while-revalidate=604800');
+  res.setHeader('X-Ashen-Realms-Version',APP_VERSION);
+  res.setHeader('X-Content-Type-Options','nosniff');
+  if(req.headers['if-none-match']===etag){res.writeHead(304);res.end();return}
+  if(req.method==='HEAD'){res.writeHead(200);res.end();return}
+  fs.createReadStream(file).pipe(res)
+ })
+});
 server.on('upgrade',(req,socket)=>{try{const endpoint=new URL(req.url,'http://localhost');const origin=req.headers.origin;if(endpoint.pathname!=='/ws'||!origin||new URL(origin).host!==req.headers.host||req.headers.upgrade?.toLowerCase()!=='websocket'||!req.headers['sec-websocket-key']){socket.destroy();return}const key=req.headers['sec-websocket-key'];const accept=createHash('sha1').update(key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: '+accept+'\r\n\r\n');openSocket(socket)}catch(e){socket.destroy()}});
-server.listen(port,host,()=>console.log(`The Ashen Realms v1.6 is listening at http://localhost:${port} (LAN: http://YOUR-IP:${port})`));
+server.listen(port,host,()=>console.log(`The Ashen Realms v${APP_VERSION} is listening at http://localhost:${port} (LAN: http://YOUR-IP:${port})`));

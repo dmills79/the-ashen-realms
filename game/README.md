@@ -1,3 +1,7 @@
+# The Ashen Realms v1.8 — Mobile Expansion
+
+The current development release adds safe-area responsive exploration, contextual hold-to-move touch controls, full-size mobile combat targets, reliable browser-test shutdown on Windows, and explicit cache revalidation/version headers. The save key remains `ashen-realms-v1.2-save`; no save migration or production deployment is required.
+
 # Living World completion
 
 The current Canvas 2D game now includes identity-matched directional walking/action artwork, inventory-selected weapon sprites, active NPC routines with real seating, dynamic saved world lighting, interactive persistent objects, independent architectural foregrounds and upgraded world scenery. See [the environment engine](docs/ENVIRONMENT_ENGINE.md), [asset pipeline](docs/LIVING_WORLD_ASSETS.md), and [milestone evidence](docs/LIVING_WORLD_PROGRESS.md). Existing campaign mechanics, save key and LPC credits are preserved.

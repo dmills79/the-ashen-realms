@@ -148,3 +148,16 @@ test('combat remains fully touch operable with comfortable command targets',asyn
   await target.tap();
   await expect.poll(()=>page.evaluate(()=>window.AshenRealms.getCombat()?.events?.length||window.AshenRealms.getCombat()?.log?.length||0)).toBeGreaterThan(0);
 });
+
+test('versioned browser delivery revalidates code and caches artwork',async({request})=>{
+  const code=await request.get('/game.js');
+  expect(code.status()).toBe(200);
+  expect(code.headers()['x-ashen-realms-version']).toBe('1.8.0');
+  expect(code.headers()['cache-control']).toContain('no-cache');
+  expect(code.headers().etag).toBeTruthy();
+  const unchanged=await request.get('/game.js',{headers:{'If-None-Match':code.headers().etag}});
+  expect(unchanged.status()).toBe(304);
+  const artwork=await request.get('/assets/battle_town.jpg');
+  expect(artwork.status()).toBe(200);
+  expect(artwork.headers()['cache-control']).toContain('max-age=86400');
+});

@@ -92,7 +92,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}])test(`roo
     return {x:px,y:py,left:(480-v.visibleW)/2,right:(480+v.visibleW)/2,top:(288-v.visibleH)/2,bottom:(288+v.visibleH)/2,hudOverlap};
    },[x,y]);
    expect(visible.x).toBeGreaterThan(visible.left+5);expect(visible.x).toBeLessThan(visible.right-5);
-   expect(visible.y).toBeGreaterThan(visible.top+25);expect(visible.y).toBeLessThan(visible.bottom);expect(visible.hudOverlap).toBe(false);
+   expect(visible.y).toBeGreaterThan(visible.top+25);expect(visible.y).toBeLessThan(visible.bottom);expect(visible.hudOverlap,JSON.stringify({x,y,zoom:audit.zoom,visible})).toBe(false);
   }
   await page.evaluate(()=>window.AshenRealms.test.modifyGame(g=>{g.x=8;g.y=10}));
   await expect(page.locator('#worldBagBtn')).toBeVisible();await expect(page.locator('#worldPartyBtn')).toBeVisible();await expect(page.locator('#worldSaveBtn')).toBeVisible();

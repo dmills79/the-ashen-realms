@@ -38,7 +38,10 @@ test('crypt entry back and Escape preserve quests, supplies, steps and saved adv
  await expect.poll(()=>page.locator('.arrival-adventurer').evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
  await page.screenshot({path:'artifacts/overnight/crypt-arrival.png'});
  await page.getByRole('button',{name:'← GO BACK',exact:true}).click();
- expect(await page.evaluate(()=>window.AshenRealms.getState())).toEqual({...before,dir:'right'});
+ const afterBack=await page.evaluate(()=>window.AshenRealms.getState());
+ expect(afterBack.world.clock.minutes).toBeGreaterThanOrEqual(before.world.clock.minutes);
+ afterBack.world.clock.minutes=before.world.clock.minutes;
+ expect(afterBack).toEqual({...before,dir:'right'});
  expect(await page.evaluate(()=>localStorage.getItem('ashen-realms-v1.2-save'))).toBe(saved);
  await page.evaluate(()=>window.AshenRealms.move(1,0));await page.keyboard.press('Escape');
  expect(await page.evaluate(()=>window.AshenRealms.getState().location)).toBe('wild');

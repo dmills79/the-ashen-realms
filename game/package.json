@@ -1,6 +1,6 @@
 {
   "name": "the-ashen-realms",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "private": true,
   "description": "LPC Revised modular sprites animated in exploration and combat; retains v1.6 RPG systems",
   "type": "module",

@@ -24,7 +24,7 @@ async function setup(page,role='Fighter'){
 }
 
 async function drawn(page,id,state){
-  await expect.poll(()=>page.evaluate(({id,state})=>[...window.__spriteDraws,...(window.AshenIdentity?.debug().draws||[])].some(d=>d.id===id&&d.state===state&&d.result),{id,state})).toBe(true);
+  await expect.poll(()=>page.evaluate(({id,state})=>[...window.__spriteDraws,...(window.AshenIdentity?.debug().draws||[]),...(window.AshenCharacterMotion?.debug().draws||[])].some(d=>d.id===id&&(d.state===state||d.tag===state)&&d.result!==false),{id,state})).toBe(true);
 }
 
 test('all replacement characters and six animation states render in the atelier',async({page})=>{

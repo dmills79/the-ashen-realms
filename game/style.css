@@ -536,7 +536,14 @@ html.world-explore .modal,html.title-screen .modal{
  :root{--mobile-dock-height:100px}
  html.world-explore .world-actions{left:112px;right:4px;bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 8px)}
  html.world-explore .world-actions button{min-height:44px;padding:6px 3px;font-size:8px}
- html.world-explore .world-hero.world-roster{bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 58px);width:188px;max-height:23vh}
+ html.world-explore .world-hero.world-roster{bottom:calc(var(--mobile-dock-height) + var(--safe-bottom) + 58px);width:156px;max-height:min(18vh,132px);padding:4px;gap:0}
+ html.world-explore .world-roster-label,html.world-explore .world-roster-action{display:none}
+ html.world-explore .world-hero.world-roster .world-party-row{gap:5px;padding:2px 0}
+ html.world-explore .world-hero.world-roster .world-party-row img{width:30px;height:36px;flex-basis:30px}
+ html.world-explore .world-party-row-info strong{font-size:11px}
+ html.world-explore .world-party-row-info>small{display:none}
+ html.world-explore .party-mini-bar{margin-top:2px;gap:3px;font-size:7px}
+ html.world-explore .party-mini-bar>b{min-width:34px}
  html.world-explore .world-map{right:max(5px,var(--safe-right))}
  html.world-explore .modal{width:100%;padding:12px}
  .shoprow,.itemrow,.partyrow{align-items:flex-start;flex-wrap:wrap}

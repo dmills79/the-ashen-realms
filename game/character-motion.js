@@ -57,7 +57,7 @@ function drawAsset(ctx,asset,x,y,{frame=0,height=44,alpha=1,shadow=true,hero=nul
   ctx.drawImage(isolated||image,isolated?0:sx,isolated?0:sy,w,h,x+(sx-ax)*scale,y+(sy-ay)*scale,w*scale,h*scale);
   if(direction!=='up')equipment();
   ctx.restore();
-  if(window.__ASHEN_TEST__){draws.push({src:asset.src,frame,state:action||tag,tag,direction});if(draws.length>128)draws.shift()}
+  if(window.__ASHEN_TEST__){draws.push({id:hero?.role?.toLowerCase(),src:asset.src,frame,state:action||tag,tag,direction});if(draws.length>128)draws.shift()}
   return true;
 }
 function flushPrepared(){
