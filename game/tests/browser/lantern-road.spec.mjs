@@ -45,6 +45,7 @@ test('Lantern Road is touch playable, persistent and rewards only once',async({p
     if(i===2)await page.evaluate(()=>window.AshenRealms.closeModal());
   }
 
+  await page.locator('#mobileMenu').tap();
   await page.locator('#worldJournalBtn').tap();
   await expect(page.locator('#modal')).toContainText('All 3 waylanterns are lit');
   await page.screenshot({path:`${output}/390-journal-ready.png`});

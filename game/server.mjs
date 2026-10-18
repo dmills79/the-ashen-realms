@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash,randomBytes} from 'node:crypto';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
-const APP_VERSION='1.8.0';
+const APP_VERSION='1.9.0';
 const host=process.env.HOST||'0.0.0.0';
 const port=Number(process.env.PORT||8844);
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.ogg':'audio/ogg','.wav':'audio/wav','.mp3':'audio/mpeg','.jpg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon','.md':'text/markdown; charset=utf-8'};

@@ -95,7 +95,11 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}])test(`roo
    expect(visible.y).toBeGreaterThan(visible.top+25);expect(visible.y).toBeLessThan(visible.bottom);expect(visible.hudOverlap,JSON.stringify({x,y,zoom:audit.zoom,visible})).toBe(false);
   }
   await page.evaluate(()=>window.AshenRealms.test.modifyGame(g=>{g.x=8;g.y=10}));
-  await expect(page.locator('#worldBagBtn')).toBeVisible();await expect(page.locator('#worldPartyBtn')).toBeVisible();await expect(page.locator('#worldSaveBtn')).toBeVisible();
+  if(viewport.width<900){
+   await expect(page.locator('#mobileMenu')).toBeVisible();await expect(page.locator('#mobileSettingsToggle')).toBeVisible();
+   await page.locator('#mobileMenu').click();await expect(page.locator('#worldBagBtn')).toBeVisible();await expect(page.locator('#worldMobilePartyBtn')).toBeVisible();await page.locator('#mobileMenu').click();
+   await page.locator('#mobileSettingsToggle').click();await expect(page.locator('#worldSaveBtn')).toBeVisible();await page.locator('#mobileSettingsToggle').click();
+  }else{await expect(page.locator('#worldBagBtn')).toBeVisible();await expect(page.locator('#worldPartyBtn')).toBeVisible();await expect(page.locator('#worldSaveBtn')).toBeVisible()}
   await page.screenshot({path:`artifacts/interiors/${viewport.width}-tavern-zoom-${audit.zoom}.png`});
   await page.evaluate(()=>document.getElementById('zoomBtn').click());
  }

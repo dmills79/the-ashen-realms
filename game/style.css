@@ -509,7 +509,7 @@ html.world-explore .modal,html.title-screen .modal{
  overscroll-behavior:contain;
 }
 
-@media(max-width:899px){
+@media(max-width:899px),(max-width:1024px) and (pointer:coarse){
  html.world-explore .mobilepad{
   display:flex;position:fixed;z-index:121;left:max(8px,var(--safe-left));right:max(8px,var(--safe-right));
   bottom:max(8px,var(--safe-bottom));height:var(--mobile-dock-height);margin:0;align-items:flex-end;
@@ -557,7 +557,7 @@ html.world-explore .modal,html.title-screen .modal{
  .shoprow button,.itemrow button,.partyrow button{flex:1 0 88px}
 }
 
-@media(max-width:899px) and (max-height:520px){
+@media(max-width:899px) and (max-height:520px),(max-width:1024px) and (max-height:520px) and (pointer:coarse){
  :root{--mobile-dock-height:76px}
  html.world-explore .mobilepad{height:var(--mobile-dock-height)}
  html.world-explore .joystick{width:96px;height:96px;flex-basis:96px}
@@ -591,7 +591,7 @@ html.world-explore .modal,html.title-screen .modal{
 
 /* Mobile UI 2.0: compact, mutually exclusive exploration surfaces. */
 .mobile-only,.mobile-hud-toggle{display:none}
-@media(max-width:899px){
+@media(max-width:899px),(max-width:1024px) and (pointer:coarse){
  html.world-explore .world-topline,html.world-explore .world-hero.world-roster,html.world-explore .world-keyhelp,html.world-explore #hudToggle{display:none}
  html.world-explore .world-location{top:max(8px,var(--safe-top));left:max(8px,var(--safe-left));max-width:calc(100vw - 132px);padding:7px 10px;background:#07131dcc;border:1px solid #a78c6357;border-left:2px solid #d5af72;border-radius:16px;box-shadow:0 5px 18px #0006;backdrop-filter:blur(7px);font-size:9px;letter-spacing:1.1px}
  html.world-explore .world-location .location-pin{font-size:12px}
@@ -608,6 +608,7 @@ html.world-explore .modal,html.title-screen .modal{
  html.world-explore .world-map{top:max(8px,var(--safe-top));right:calc(max(8px,var(--safe-right)) + 52px);width:44px;height:44px;padding:0;display:grid;place-items:center;border-radius:50%;opacity:1;overflow:hidden;box-shadow:0 5px 19px #0008;background:#081622bf;transition:width .2s ease,height .2s ease,border-radius .2s ease,top .2s ease}
  html.world-explore .world-map>canvas,html.world-explore .world-map>span{display:none}
  html.world-explore .world-map:before{content:"◇";color:#d8c19a;font:21px Georgia,serif}
+ html.world-explore:not([data-mobile-surface="map"]) .world-map:hover{width:44px;height:44px}
  html.world-explore[data-mobile-surface="map"] .world-map{top:calc(max(8px,var(--safe-top)) + 52px);right:max(8px,var(--safe-right));display:block;width:204px;height:auto;padding:5px;border-radius:7px;background:#091725ee;overflow:visible}
  html.world-explore[data-mobile-surface="map"] .world-map:before{display:none}
  html.world-explore[data-mobile-surface="map"] .world-map>canvas{display:block;height:90px}
@@ -626,7 +627,7 @@ html.world-explore .modal,html.title-screen .modal{
  html.world-explore .mobilepad{transition:opacity .16s ease}
  html.world-explore[data-mobile-surface] .joystick{opacity:.3}
 }
-@media(max-width:899px) and (max-height:380px){
+@media(max-width:899px) and (max-height:380px),(max-width:1024px) and (max-height:380px) and (pointer:coarse){
  html.world-explore .world-location{padding:5px 8px}
  html.world-explore .world-quest{top:calc(max(6px,var(--safe-top)) + 48px)}
  html.world-explore[data-mobile-surface="quest"] .world-quest{min-height:78px;padding:8px 10px}
