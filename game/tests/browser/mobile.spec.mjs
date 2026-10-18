@@ -113,8 +113,8 @@ for(const viewport of [{width:360,height:800},{width:390,height:844},{width:768,
     await page.screenshot({path:`${cycleOne}/${viewport.width}x${viewport.height}-world.png`});
 
     await inspectModal(page,'inventory',()=>page.evaluate(()=>window.AshenRealms.openInventory()));
-    await inspectModal(page,'party',()=>page.locator('#worldPartyBtn').click());
-    await inspectModal(page,'journal',()=>page.locator('#worldJournalBtn').click());
+    await inspectModal(page,'party',async()=>{if(viewport.width<900){await page.locator('#mobileMenu').tap();await page.locator('#worldMobilePartyBtn').tap()}else await page.locator('#worldPartyBtn').click()});
+    await inspectModal(page,'journal',async()=>{if(viewport.width<900){await page.locator('#mobileMenu').tap();await page.locator('#worldJournalBtn').tap()}else await page.locator('#worldJournalBtn').click()});
     await inspectModal(page,'shop',()=>page.evaluate(()=>window.AshenRealms.openShop('forge')));
     await inspectModal(page,'dialogue',()=>page.evaluate(()=>window.AshenRealms.action('acolyte')));
     await page.evaluate(()=>window.AshenRealms.openInventory());
@@ -230,9 +230,76 @@ test('touch action is contextual and mobile navigation opens inventory',async({p
   await expect(page.locator('#modal')).toContainText('HAVENMERE JOB BOARD');
   await page.evaluate(()=>window.AshenRealms.closeModal());
   await page.locator('#mobileMenu').tap();
+  await page.locator('#worldBagBtn').tap();
   await expect(page.locator('#modal')).toContainText("ADVENTURER'S SATCHEL");
   await expect(page.locator('#modal button').last()).toHaveCSS('min-height','44px');
   await page.screenshot({path:`${cycleTwo}/390x844-touch-inventory.png`});
+});
+
+test('quest and minimap expand without leaving persistent panels open',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  const quest=page.locator('#worldQuestBtn'),map=page.locator('#worldMapBtn');
+  await expect(quest).toHaveAttribute('aria-expanded','false');
+  await expect(map).toHaveAttribute('aria-expanded','false');
+  await quest.tap();
+  await expect(page.locator('html')).toHaveAttribute('data-mobile-surface','quest');
+  await expect(quest).toHaveAttribute('aria-expanded','true');
+  await expect(page.locator('#worldQuestDesc')).toBeVisible();
+  await map.tap();
+  await expect(page.locator('html')).toHaveAttribute('data-mobile-surface','map');
+  await expect(quest).toHaveAttribute('aria-expanded','false');
+  await expect(map).toHaveAttribute('aria-expanded','true');
+  await expect(page.locator('#worldMini')).toBeVisible();
+  await map.tap();
+  await expect(page.locator('#modal')).toContainText("THE CARTOGRAPHER'S MAP");
+  await expect(page.locator('html')).not.toHaveAttribute('data-mobile-surface',/.+/);
+});
+
+test('BAG tray exposes inventory spells journal and party',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  const openTool=async(selector,text)=>{
+    await page.locator('#mobileMenu').tap();
+    await expect(page.locator('#mobileMenu')).toHaveAttribute('aria-expanded','true');
+    await expect(page.locator('#mobileToolsTray')).toBeVisible();
+    await page.locator(selector).tap();
+    await expect(page.locator('#modal')).toContainText(text);
+    await expect(page.locator('html')).not.toHaveAttribute('data-mobile-surface',/.+/);
+    await page.evaluate(()=>window.AshenRealms.closeModal());
+  };
+  await openTool('#worldBagBtn',"ADVENTURER'S SATCHEL");
+  await openTool('#worldSkillsBtn','THE SPELL GRIMOIRE');
+  await openTool('#worldJournalBtn',"ADVENTURER'S JOURNAL");
+  await openTool('#worldMobilePartyBtn','YOUR PARTY');
+});
+
+test('settings tray preserves save sound and help',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  const settings=page.locator('#mobileSettingsToggle');
+  await settings.tap();
+  await expect(settings).toHaveAttribute('aria-expanded','true');
+  await expect(page.locator('#mobileSettingsTray')).toBeVisible();
+  await page.locator('#worldSaveBtn').tap();
+  await expect(page.locator('#toast')).toContainText('saved');
+  expect(await page.evaluate(()=>localStorage.getItem('ashen-realms-v1.2-save'))).toBeTruthy();
+  const soundBefore=await page.locator('#worldSoundBtn').textContent();
+  await settings.tap();
+  await page.locator('#worldSoundBtn').tap();
+  await expect(page.locator('#worldSoundBtn')).not.toHaveText(soundBefore);
+  await settings.tap();
+  await page.locator('#worldMenuBtn').tap();
+  await expect(page.locator('#modal')).toContainText("ADVENTURER'S MANUAL");
+});
+
+test('opening another surface or modal closes mobile HUD state',async({page})=>{
+  await startMobileAdventure(page,{width:844,height:390});
+  await page.locator('#worldQuestBtn').tap();
+  await page.locator('#mobileMenu').tap();
+  await expect(page.locator('html')).toHaveAttribute('data-mobile-surface','tools');
+  await expect(page.locator('#worldQuestBtn')).toHaveAttribute('aria-expanded','false');
+  await page.locator('#worldBagBtn').tap();
+  await expect(page.locator('#overlay')).not.toHaveClass(/hidden/);
+  await expect(page.locator('html')).not.toHaveAttribute('data-mobile-surface',/.+/);
+  await expect(page.locator('#mobileMenu')).toHaveAttribute('aria-expanded','false');
 });
 
 test('combat remains fully touch operable with comfortable command targets',async({page})=>{

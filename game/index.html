@@ -40,12 +40,13 @@
         <div id="districtNotice" class="district-notice" aria-live="polite"></div>
         <div id="worldHud" class="world-hud" aria-label="Adventure interface">
           <div class="world-topline"><span class="world-crest">✦</span><div><strong>THE ASHEN REALMS</strong><small>CHAPTER I · THE HOLLOW BELL</small></div></div>
-          <div class="world-topactions"><button id="worldViewBtn" title="Open the windowed dashboard and LAN lobby">DASHBOARD</button><button id="worldZoomBtn" title="Change map zoom">ZOOM 75%</button><button id="worldSaveBtn">SAVE</button><button id="worldSoundBtn">SOUND ON</button><button id="worldMenuBtn">HELP</button></div>
+          <button id="mobileSettingsToggle" class="mobile-hud-toggle" aria-label="Open settings" aria-expanded="false" aria-controls="mobileSettingsTray"><span aria-hidden="true">⚙</span></button>
+          <div class="world-topactions" id="mobileSettingsTray" aria-label="Settings menu"><button id="worldViewBtn" title="Open the windowed dashboard and LAN lobby">DASHBOARD</button><button id="worldZoomBtn" title="Change map zoom">ZOOM 75%</button><button id="worldSaveBtn">SAVE</button><button id="worldSoundBtn">SOUND ON</button><button id="worldMenuBtn">HELP</button></div>
           <div class="world-location"><span class="location-pin">◇</span><span id="worldLocation">HAVENMERE</span><small id="worldGold">45 GOLD</small></div>
-          <button class="world-quest" id="worldQuestBtn"><small>ACTIVE QUEST <span>↕</span></small><b id="worldQuest">AN UNQUIET MORNING</b><span id="worldQuestDesc">Enter Havenmere's Great Hall.</span></button>
-          <button class="world-map" id="worldMapBtn" title="Open map"><canvas id="worldMini" width="200" height="104"></canvas><span>AREA MAP ↗<small id="worldClock" class="world-clock"></small></span></button>
+          <button class="world-quest" id="worldQuestBtn" aria-label="Active quest" aria-expanded="false"><small>ACTIVE QUEST <span>↕</span></small><b id="worldQuest">AN UNQUIET MORNING</b><span id="worldQuestDesc">Enter Havenmere's Great Hall.</span></button>
+          <button class="world-map" id="worldMapBtn" title="Open map" aria-label="Area map" aria-expanded="false"><canvas id="worldMini" width="200" height="104"></canvas><span>AREA MAP ↗<small id="worldClock" class="world-clock"></small></span></button>
           <button class="world-hero world-roster" id="worldPartyBtn" title="Inspect party, formation and training"><span class="world-roster-label">ADVENTURING PARTY <span id="worldPartyCount">SOLO ADVENTURER</span></span><span class="world-roster-rows" id="worldPartyRoster"></span><span class="world-roster-action">PARTY & FORMATION ↗</span></button>
-          <div class="world-actions"><button id="worldBagBtn"><span>I</span> INVENTORY</button><button id="worldSkillsBtn"><span>K</span> SPELLS</button><button id="worldJournalBtn"><span>J</span> JOURNAL</button></div>
+          <div class="world-actions" id="mobileToolsTray" aria-label="Adventure tools"><button id="worldBagBtn"><span>I</span> INVENTORY</button><button id="worldSkillsBtn"><span>K</span> SPELLS</button><button id="worldJournalBtn"><span>J</span> JOURNAL</button><button id="worldMobilePartyBtn" class="mobile-only"><span>P</span> PARTY</button></div>
           <div class="world-keyhelp">WASD MOVE <span>·</span> E INTERACT <span>·</span> TAB QUEST <span>·</span> H HIDE HUD</div>
         </div>
         <button id="hudToggle" aria-label="Show or hide HUD">HUD <span>H</span></button>
@@ -60,7 +61,7 @@
         <div class="mobilepad" aria-label="Mobile controls">
           <div id="mobileJoystick" class="joystick" role="group" aria-label="Movement joystick"><span class="joystick-ring" aria-hidden="true"></span><span class="joystick-knob" aria-hidden="true"></span></div>
           <button id="mobileAction" class="actionkey" aria-label="Interact">ACT</button>
-          <button id="mobileMenu" class="actionkey muted" aria-label="Open inventory">BAG</button>
+          <button id="mobileMenu" class="actionkey muted" aria-label="Open adventure tools" aria-expanded="false" aria-controls="mobileToolsTray">BAG</button>
         </div>
       </div>
     <section class="lan-section hidden-panel"><h2><span class="bullet">◇</span> FRIENDS ON LAN <small id="lanCount">OFFLINE</small></h2>

@@ -237,8 +237,8 @@ function newHero(name,ancestry,role,level=1,assigned=null,rolls=null,appearance=
  return {id:Math.random().toString(36).slice(2,8),name,ancestry,role,row:Formation.defaultRow({role}),appearance:appearance==='female'?'female':'male',silentSteps:0,level,talentPoints:0,talents:{might:0,focus:0,vigor:0,ward:0},xp:0,xpTotal:0,ancestryRuleSet:window.AshenCharacterRules.version,ancestryModifiers:ANCESTRIES[ancestry].stats.slice(),classModifiers:CLASS_TRAINING[role].stats.slice(),rolls,assigned:assigned.slice(),...derived,hp:derived.maxHp,mp:derived.maxMp,gear:{weapon:null,armor:null},poison:0,defending:false};
 }
 function startGame(name,ancestry,role,assigned=null,rolls=null,appearance='male'){G={version:5,location:'town',x:15,y:11,dir:'up',party:[newHero(name||'Wanderer',ancestry,role,1,assigned,rolls,appearance)],bag:{potion:4,ether:2,salve:2,ration:3},gold:45,flags:{elder:false,ritual:false,leverA:false,leverB:false,gate:false,boss:false,ending:null,satchelFound:false,satchelReturned:false,shrine:false,starterChest:false,cryptChestA:false,cryptChestB:false,trial:false,lanternQuest:false,lanternRoadComplete:false},log:[],steps:0,battles:0,jobs:{goblin:{state:'none',count:0},orc:{state:'none',count:0}}};mode='explore';if(window.AshenWorldTime)G.world={clock:{minutes:540,day:1,rate:2},objects:{}};window.AshenNPCs?.clear();window.AshenAnimation?.clear();window.AshenIdentity?.prepare(G.party[0]);closeModal();trail=[];lastTownDistrict='';uiLog('A new adventurer arrives in Havenmere.');uiLog('Enter the northern Great Hall and speak to Elder Maelin.');refreshHud();saveGame(true);toast('Chapter I · The Hollow Bell');SFX.play('start')}
-function showModal(html,onChoice){resetJoystick();document.documentElement.classList.remove('title-menu-open','tavern-creation-open');$('modal').setAttribute('data-screen','dialog');modalCallback=onChoice;$('modal').innerHTML=html;$('overlay').classList.remove('hidden');$('modal').scrollTop=0;$('modal').querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.action;modalCallback?.(action,btn)}))}
-function closeModal(){resetJoystick();window.AshenTavern?.close();document.documentElement.classList.remove('title-menu-open');$('overlay').classList.add('hidden');$('modal').innerHTML='';modalCallback=null;updateMobileAction()}
+function showModal(html,onChoice){closeMobileSurfaces();resetJoystick();document.documentElement.classList.remove('title-menu-open','tavern-creation-open');$('modal').setAttribute('data-screen','dialog');modalCallback=onChoice;$('modal').innerHTML=html;$('overlay').classList.remove('hidden');$('modal').scrollTop=0;$('modal').querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.action;modalCallback?.(action,btn)}))}
+function closeModal(){closeMobileSurfaces();resetJoystick();window.AshenTavern?.close();document.documentElement.classList.remove('title-menu-open');$('overlay').classList.add('hidden');$('modal').innerHTML='';modalCallback=null;updateMobileAction()}
 function dialog(title,body,choices=[['Continue','close']],callback=null){showModal(`<h2>${title}</h2><p class="narrative">${body}</p><div class="choices">${choices.map(([label,id])=>`<button data-action="${id}">${label}</button>`).join('')}</div>`,(a)=>{closeModal();if(a!=='close')callback?.(a);else callback?.('close')})}
 function mainMenu(focus=null){
  window.AshenTavern?.close();
@@ -1812,6 +1812,17 @@ function resetJoystick(pointerId=null){
  const control=$('mobileJoystick'),knob=control?.querySelector('.joystick-knob');control?.classList.remove('is-active');if(knob)knob.style.transform='translate3d(0px,0px,0)';
  document.querySelectorAll('.mobilepad .is-pressed').forEach(button=>button.classList.remove('is-pressed'));
 }
+const mobileHudButtons={quest:'worldQuestBtn',map:'worldMapBtn',tools:'mobileMenu',settings:'mobileSettingsToggle'};
+function isMobileHud(){return window.matchMedia?.('(max-width: 899px)').matches??window.innerWidth<=899}
+function setMobileSurface(name=null){
+ const root=document.documentElement;if(!root?.dataset)return;
+ if(!Object.hasOwn(mobileHudButtons,name))name=null;
+ if(name)root.dataset.mobileSurface=name;else delete root.dataset.mobileSurface;
+ for(const [surface,id] of Object.entries(mobileHudButtons))$(id)?.setAttribute('aria-expanded',String(surface===name));
+ $('worldQuestBtn')?.classList.toggle('expanded',name==='quest');resetJoystick();
+}
+function closeMobileSurfaces(){setMobileSurface(null)}
+function toggleMobileSurface(name){setMobileSurface(document.documentElement.dataset?.mobileSurface===name?null:name)}
 function setJoystickIntent(event){
  if(joystick.pointerId===null||event.pointerId!==joystick.pointerId)return;
  event.preventDefault();const control=$('mobileJoystick'),knob=control?.querySelector('.joystick-knob');if(!control||!knob)return;
@@ -1838,13 +1849,15 @@ window.addEventListener('keydown',e=>{const k=e.key;const typing=['INPUT','SELEC
 window.addEventListener('keyup',e=>keyboard.delete(e.key.length===1?e.key.toLowerCase():e.key));window.addEventListener('blur',()=>{keyboard.clear();resetJoystick()});document.addEventListener?.('visibilitychange',()=>resetJoystick());
 $('worldViewBtn').onclick=()=>{document.documentElement.classList.add('world-windowed')};$('windowExpandBtn').onclick=()=>{document.documentElement.classList.remove('world-windowed')};
 $('worldZoomBtn').onclick=()=>{$('zoomBtn').click();$('worldZoomBtn').textContent=$('zoomBtn').textContent};
-$('worldMapBtn').onclick=()=>{if(G&&mode==='explore')mapMenu()};$('worldQuestBtn').onclick=()=>{if(G&&mode==='explore')$('worldQuestBtn').classList.toggle('expanded')};
-$('worldPartyBtn').onclick=()=>{if(G&&mode==='explore')partyMenu()};$('worldSaveBtn').onclick=()=>saveGame();$('worldSoundBtn').onclick=()=>SFX.toggle();$('worldMenuBtn').onclick=()=>helpMenu();$('worldBagBtn').onclick=()=>inventory();$('worldSkillsBtn').onclick=()=>spellbook();$('worldJournalBtn').onclick=()=>journalMenu();$('hudToggle').onclick=()=>document.documentElement.classList.toggle('hud-hidden');
+$('worldMapBtn').onclick=()=>{if(!G||mode!=='explore')return;if(!isMobileHud()){mapMenu();return}if(document.documentElement.dataset.mobileSurface==='map'){closeMobileSurfaces();mapMenu()}else toggleMobileSurface('map')};
+$('worldQuestBtn').onclick=()=>{if(!G||mode!=='explore')return;if(isMobileHud()){toggleMobileSurface('quest');return}const expanded=$('worldQuestBtn').classList.toggle('expanded');$('worldQuestBtn').setAttribute('aria-expanded',String(expanded))};
+$('worldPartyBtn').onclick=()=>{if(G&&mode==='explore')partyMenu()};$('worldMobilePartyBtn').onclick=()=>{closeMobileSurfaces();if(G&&mode==='explore')partyMenu()};
+$('worldSaveBtn').onclick=()=>{closeMobileSurfaces();saveGame()};$('worldSoundBtn').onclick=()=>{closeMobileSurfaces();SFX.toggle()};$('worldMenuBtn').onclick=()=>{closeMobileSurfaces();helpMenu()};$('worldBagBtn').onclick=()=>{closeMobileSurfaces();inventory()};$('worldSkillsBtn').onclick=()=>{closeMobileSurfaces();spellbook()};$('worldJournalBtn').onclick=()=>{closeMobileSurfaces();journalMenu()};$('hudToggle').onclick=()=>document.documentElement.classList.toggle('hud-hidden');
 $('zoomBtn').onclick=()=>{cameraZoom=zoomSteps[(zoomSteps.indexOf(cameraZoom)+1)%zoomSteps.length];window.AshenTitle?.save({zoom:cameraZoom});$('zoomBtn').textContent=`ZOOM ${Math.round(cameraZoom*100)}%`; $('worldZoomBtn').textContent=$('zoomBtn').textContent;toast(`World zoom: ${Math.round(cameraZoom*100)}%`)};
  $('saveBtn').onclick=()=>saveGame();$('loadBtn').onclick=()=>loadGame();$('soundBtn').onclick=()=>SFX.toggle();$('menuBtn').onclick=()=>{if(!G)mainMenu();else if(isOverlay())closeModal();else helpMenu()};
 $('skillsBtn').onclick=()=>{if(G&&mode==='explore')spellbook()};
 $('bagBtn').onclick=()=>{if(G&&mode==='explore')inventory()};$('partyBtn').onclick=()=>{if(G&&mode==='explore')partyMenu()};$('journalBtn').onclick=()=>{if(G&&mode==='explore')journalMenu()};$('mapBtn').onclick=()=>{if(G&&mode==='explore')mapMenu()};
-$('mobileAction').onclick=()=>{if(mode==='explore')interact()};$('mobileMenu').onclick=()=>{if(mode==='explore')inventory()};
+$('mobileAction').onclick=()=>{if(mode==='explore')interact()};$('mobileMenu').onclick=()=>{if(mode==='explore')toggleMobileSurface('tools')};$('mobileSettingsToggle').onclick=()=>{if(mode==='explore')toggleMobileSurface('settings')};
 const joystickControl=$('mobileJoystick');joystickControl.addEventListener('pointerdown',event=>{if(event.button!==undefined&&event.button!==0||joystick.pointerId!==null)return;event.preventDefault();joystick.pointerId=event.pointerId;joystick.lastStep=joystick.creditX=joystick.creditY=0;joystickControl.classList.add('is-active');try{joystickControl.setPointerCapture(event.pointerId)}catch(e){/* Synthetic pointers may not be capturable. */}setJoystickIntent(event)});joystickControl.addEventListener('pointermove',setJoystickIntent);for(const type of ['pointerup','pointercancel','lostpointercapture'])joystickControl.addEventListener(type,event=>resetJoystick(event.pointerId));
 for(const b of document.querySelectorAll('.mobilepad .actionkey')){b.addEventListener('pointerdown',()=>b.classList.add('is-pressed'));for(const type of ['pointerup','pointercancel','pointerleave'])b.addEventListener(type,()=>b.classList.remove('is-pressed'))}
 const presentation=window.AshenTitle?.preferences();
